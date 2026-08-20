@@ -1,0 +1,283 @@
+#!/usr/bin/env node
+// Listening Post poller CLI. The only writer of the plugin's state file:
+// fetches the curated feed set (plus any OPML-imported extras) with curl,
+// parses and classifies through the same Model.js the panel and the unit
+// suite load, merges into the stored item set preserving read flags, writes
+// the state atomically (tmp+mv), and sends gated desktop notifications for
+// new model releases and unresolved status incidents.
+//
+// The QML side never writes files and never touches the network; this script
+// is the entire I/O surface, which keeps the security review one file long.
+//
+//   listening-post-poll                 poll every source, write state, notify
+//   listening-post-poll --no-notify     poll without notifications
+//   listening-post-poll --mark-read G…  set read=true on guids, write state
+//   listening-post-poll --mark-all-read set read=true everywhere
+//   listening-post-poll --export-opml   print the source list as OPML
+//   listening-post-poll --import-opml F merge OPML outlines into extra sources
+//   listening-post-poll --status        print a one-line summary and exit
+//
+// Network hosts contacted (GET only): openai.com, blog.google,
+// deepmind.google, huggingface.co, status.claude.com, status.openai.com,
+// github.com, plus any feed the user imports via OPML (https only).
+"use strict"
+
+var fs = require("fs")
+var path = require("path")
+var os = require("os")
+var childProcess = require("child_process")
+
+var Model = require(path.join(__dirname, "..", "Model.js"))
+
+var PLUGIN_ID = "io.github.jeremylongshore.listening-post"
+var STATE_DIR = path.join(
+  process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local", "state"),
+  "omarchy", "listening-post")
+var STATE_FILE = path.join(STATE_DIR, "state.json")
+var EXTRAS_FILE = path.join(STATE_DIR, "extra-sources.json")
+var AGENTS_USAGE_DIR = path.join(
+  process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local", "state"),
+  "omarchy", "agents", "usage")
+var SHELL_CONFIG = path.join(
+  process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"),
+  "omarchy", "shell.json")
+
+var FETCH_TIMEOUT_SEC = 20
+var NOTIFY_CAP = 3
+
+function readJson(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch (e) { return fallback }
+}
+
+// Atomic write: the panel's reader can land mid-poll and must always see a
+// complete JSON document, never a half-written one.
+function writeAtomic(file, text) {
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  var tmp = file + ".tmp." + process.pid
+  fs.writeFileSync(tmp, text, { mode: 0o644 })
+  fs.renameSync(tmp, file)
+}
+
+// The plugin's settings live inline on its bar-layout entry in shell.json;
+// read them the same way the shell would hand them to the widget. Absent
+// file, absent entry, or malformed JSON all mean defaults.
+function readSettings() {
+  var defaults = { notifications: "On", personalization: "On" }
+  var conf = readJson(SHELL_CONFIG, null)
+  if (!conf || !conf.bar || !conf.bar.layout) return defaults
+  var zones = ["left", "center", "right"]
+  for (var z = 0; z < zones.length; z++) {
+    var list = conf.bar.layout[zones[z]] || []
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === PLUGIN_ID) {
+        return {
+          notifications: list[i].notifications === "Off" ? "Off" : "On",
+          personalization: list[i].personalization === "Off" ? "Off" : "On"
+        }
+      }
+    }
+  }
+  return defaults
+}
+
+function extraSources() {
+  var extras = readJson(EXTRAS_FILE, [])
+  if (!Array.isArray(extras)) return []
+  var out = []
+  for (var i = 0; i < extras.length && out.length < 50; i++) {
+    var e = extras[i]
+    if (!e || !e.url) continue
+    var url = Model.safeUrl(e.url)
+    if (!url) continue
+    out.push({
+      id: "extra-" + i,
+      vendor: "custom",
+      vendorName: Model.clean(e.title || "Custom", 32),
+      title: Model.clean(e.title || url, 60),
+      kind: "blog",
+      url: url
+    })
+  }
+  return out
+}
+
+// One curl per source. curl (not node's own https) so the network argv is a
+// grep-able audit surface: https-pinned via --proto, byte-bounded, timed out,
+// with the URL behind the option terminator.
+function fetchBody(url) {
+  var res = childProcess.spawnSync("curl", [
+    "-fsS",
+    "--proto", "=https",
+    "--max-time", String(FETCH_TIMEOUT_SEC),
+    "--max-filesize", String(Model.MAX_BODY_CHARS),
+    "-A", "listening-post/1.0 (Omarchy bar widget)",
+    "--", url
+  ], { encoding: "utf8", maxBuffer: Model.MAX_BODY_CHARS + 65536, timeout: (FETCH_TIMEOUT_SEC + 5) * 1000 })
+  if (res.status !== 0 || typeof res.stdout !== "string" || res.stdout === "") {
+    return { ok: false, body: "", error: (res.stderr || "fetch failed").toString().slice(0, 80) }
+  }
+  return { ok: true, body: res.stdout, error: "" }
+}
+
+function usedVendors(enabled) {
+  if (!enabled) return {}
+  var names
+  try { names = fs.readdirSync(AGENTS_USAGE_DIR) } catch (e) { return {} }
+  return Model.usedVendorsFromAgentFiles(names.filter(function(n) { return /\.json$/.test(n) }))
+}
+
+// Off an Omarchy box (dev, CI) the send binary is absent; spawnSync reports
+// ENOENT in res.error without throwing, and the poll just stays silent.
+function sendNotification(args) {
+  childProcess.spawnSync("omarchy-notification-send", args, { timeout: 10000 })
+}
+
+function notify(items) {
+  if (items.length === 0) return
+  if (items.length > NOTIFY_CAP) {
+    sendNotification([
+      "Listening Post", items.length + " new AI releases and incidents",
+      "-u", "low", "--app-name", "Listening Post"
+    ])
+    return
+  }
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i]
+    var urgent = it.lane === "incident"
+    var headline = urgent ? it.vendorName + " incident" : it.vendorName + " release"
+    var args = [
+      headline, it.title,
+      "-u", urgent ? "critical" : "low",
+      "--app-name", "Listening Post"
+    ]
+    // Only a Model-validated https URL ever reaches the click action.
+    if (it.url) args.push("--exec", "xdg-open " + it.url)
+    sendNotification(args)
+  }
+}
+
+function poll(opts) {
+  var prevState = Model.parseState(safeRead(STATE_FILE))
+  var firstRun = !prevState.valid
+  var prevGuids = {}
+  for (var p = 0; p < prevState.items.length; p++) prevGuids[prevState.items[p].guid] = true
+
+  var settings = readSettings()
+  var sources = Model.SOURCES.concat(extraSources())
+  var nowMs = Date.now()
+  var freshItems = []
+  var sourceStatus = []
+
+  for (var i = 0; i < sources.length; i++) {
+    var src = sources[i]
+    var res = fetchBody(src.url)
+    if (res.ok) {
+      var entries = Model.parseFeed(res.body)
+      freshItems = freshItems.concat(Model.normalizeItems(entries, src, nowMs))
+      sourceStatus.push({ id: src.id, title: src.title, ok: entries.length > 0, error: entries.length > 0 ? "" : "no items parsed" })
+    } else {
+      sourceStatus.push({ id: src.id, title: src.title, ok: false, error: res.error })
+    }
+  }
+
+  var merged = Model.mergeItems(prevState.items, freshItems, nowMs)
+  Model.markUsed(merged, usedVendors(settings.personalization === "On"))
+
+  // Install baseline: everything that existed before the first poll is
+  // history, not news. The pill starts quiet and only counts what ships
+  // from now on.
+  if (firstRun) {
+    for (var b = 0; b < merged.length; b++) merged[b].read = true
+  }
+
+  var state = { generatedAt: nowMs, sources: sourceStatus, items: merged }
+  writeAtomic(STATE_FILE, JSON.stringify(state))
+
+  if (settings.notifications === "On" && !opts.noNotify) {
+    notify(Model.newNotifiables(prevGuids, merged, firstRun))
+  }
+
+  var okCount = sourceStatus.filter(function(s) { return s.ok }).length
+  process.stderr.write("listening-post-poll: " + okCount + "/" + sourceStatus.length
+    + " sources ok, " + merged.length + " items\n")
+}
+
+function safeRead(file) {
+  try { return fs.readFileSync(file, "utf8") } catch (e) { return "" }
+}
+
+function markRead(guids, all) {
+  var state = Model.parseState(safeRead(STATE_FILE))
+  if (!state.valid) return
+  var set = {}
+  for (var g = 0; g < guids.length; g++) set[guids[g]] = true
+  for (var i = 0; i < state.items.length; i++) {
+    if (all || set[state.items[i].guid]) state.items[i].read = true
+  }
+  writeAtomic(STATE_FILE, JSON.stringify({
+    generatedAt: state.generatedAt, sources: state.sources, items: state.items
+  }))
+}
+
+function importOpml(file) {
+  var outlines = Model.parseOpml(safeRead(file))
+  if (outlines.length === 0) {
+    process.stderr.write("listening-post-poll: no https feed outlines found in " + file + "\n")
+    process.exit(1)
+  }
+  var existing = readJson(EXTRAS_FILE, [])
+  if (!Array.isArray(existing)) existing = []
+  var have = {}
+  for (var i = 0; i < existing.length; i++) have[existing[i].url] = true
+  var added = 0
+  for (var j = 0; j < outlines.length; j++) {
+    var url = outlines[j].url
+    if (have[url]) continue
+    // Curated URLs are already polled; importing one again would double-fetch.
+    var curated = false
+    for (var c = 0; c < Model.SOURCES.length; c++) {
+      if (Model.SOURCES[c].url === url) { curated = true; break }
+    }
+    if (curated) continue
+    existing.push({ title: outlines[j].title, url: url })
+    have[url] = true
+    added++
+  }
+  writeAtomic(EXTRAS_FILE, JSON.stringify(existing, null, 2))
+  process.stderr.write("listening-post-poll: imported " + added + " extra source(s)\n")
+}
+
+function main() {
+  var args = process.argv.slice(2)
+  if (args.indexOf("--export-opml") >= 0) {
+    process.stdout.write(Model.toOpml(Model.SOURCES, readJson(EXTRAS_FILE, [])))
+    return
+  }
+  var importIdx = args.indexOf("--import-opml")
+  if (importIdx >= 0) {
+    if (!args[importIdx + 1]) { process.stderr.write("usage: --import-opml <file>\n"); process.exit(1) }
+    importOpml(args[importIdx + 1])
+    return
+  }
+  if (args.indexOf("--mark-all-read") >= 0) {
+    markRead([], true)
+    return
+  }
+  var mrIdx = args.indexOf("--mark-read")
+  if (mrIdx >= 0) {
+    var guids = args.slice(mrIdx + 1).filter(function(a) { return a.slice(0, 2) !== "--" })
+    if (guids.length === 0) { process.stderr.write("usage: --mark-read <guid>...\n"); process.exit(1) }
+    markRead(guids, false)
+    return
+  }
+  if (args.indexOf("--status") >= 0) {
+    var st = Model.parseState(safeRead(STATE_FILE))
+    var c = Model.counts(st.items)
+    process.stdout.write((st.valid ? "state ok" : "no state") + ", items " + st.items.length
+      + ", unread " + c.unread + ", active incidents " + c.incidents + "\n")
+    return
+  }
+  poll({ noNotify: args.indexOf("--no-notify") >= 0 })
+}
+
+main()

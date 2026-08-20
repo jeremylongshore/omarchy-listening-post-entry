@@ -1,24 +1,51 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.YOURNAME.widget-name",
-  "name": "Widget Name",
-  "version": "0.1.0",
-  "author": "Your Name",
+  "id": "io.github.jeremylongshore.listening-post",
+  "name": "Listening Post",
+  "version": "1.0.0",
+  "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "One-sentence description of what the widget shows in the Omarchy bar.",
+  "description": "A curated AI vendor release radar that keeps working where RSS does not. Model releases, pricing changes, and status incidents in separate lanes, ranked by the agents you actually run, quiet when nothing shipped.",
   "kinds": [
+    "service",
     "bar-widget"
   ],
   "entryPoints": {
+    "service": "Service.qml",
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Widget Name",
-    "description": "Longer description: what the pill shows, what the panel carries, where the data comes from.",
-    "category": "Info",
+    "displayName": "Listening Post",
+    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Thirteen curated sources, including GitHub Atom substitutes for the vendors that publish no feed, plus OPML import for your own.",
+    "category": "AI",
     "aliases": [
-      "widget-name"
+      "listening-post",
+      "ai-news",
+      "release-radar",
+      "ai-status"
     ],
-    "allowMultiple": false
+    "allowMultiple": false,
+    "defaults": {
+      "notifications": "On",
+      "personalization": "On"
+    },
+    "schema": [
+      {
+        "key": "notifications",
+        "type": "enum",
+        "label": "Desktop notifications",
+        "options": ["On", "Off"],
+        "defaultValue": "On",
+        "description": "Notify on new model releases and unresolved status incidents. Engineering posts and changelog commits never notify."
+      },
+      {
+        "key": "personalization",
+        "type": "enum",
+        "label": "Rank by agents you use",
+        "options": ["On", "Off"],
+        "defaultValue": "On",
+        "description": "Reads the file names in the Agents plugin usage folder (read-only) to float vendors you actually run to the top."
+      }
+    ]
   }
 }

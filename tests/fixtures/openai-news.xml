@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title><![CDATA[OpenAI News]]></title>
+        <description><![CDATA[The OpenAI blog]]></description>
+        <link>https://openai.com/news</link>
+        <image>
+            <url>https://openai.com/apple-icon.png</url>
+            <title>OpenAI News</title>
+            <link>https://openai.com/news</link>
+        </image>
+        <generator>OpenAI</generator>
+        <lastBuildDate>Thu, 20 Aug 2026 22:53:25 GMT</lastBuildDate>
+        <atom:link href="https://openai.com/news/rss.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[Introducing AI Futures]]></title>
+            <description><![CDATA[Introducing AI Futures, a new OpenAI blog exploring how transformative AI could reshape power, governance, the economy, and individual freedom.]]></description>
+            <link>https://openai.com/index/introducing-ai-futures</link>
+            <guid isPermaLink="true">https://openai.com/index/introducing-ai-futures</guid>
+            <category><![CDATA[AI Futures]]></category>
+            <pubDate>Thu, 20 Aug 2026 07:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Stampli cuts launch hours by 68% using ChatGPT Work]]></title>
+            <description><![CDATA[With a fixed deadline and design resources committed elsewhere, Stampli used Codex and ChatGPT Work to compress weeks of launch production into days.]]></description>
+            <link>https://openai.com/index/stampli</link>
+            <guid isPermaLink="true">https://openai.com/index/stampli</guid>
+            <pubDate>Thu, 20 Aug 2026 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Offering Zero Data Retention for frontier models]]></title>
+            <description><![CDATA[OpenAI reaffirms Zero Data Retention for eligible API customers and previews Private Safety Processing for advanced AI safety without compromising data privacy.]]></description>
+            <link>https://openai.com/index/offering-zero-data-retention-for-frontier-models</link>
+            <guid isPermaLink="true">https://openai.com/index/offering-zero-data-retention-for-frontier-models</guid>
+            <category><![CDATA[Company]]></category>
+            <pubDate>Wed, 19 Aug 2026 19:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Replit expands access to software creation with GPT-5.6 Luna]]></title>
+            <description><![CDATA[Replit introduces Free Mode, powered by GPT-5.6 Luna, so anyone can turn ideas into working software without worrying about token costs.]]></description>
+            <link>https://openai.com/index/replit</link>
+            <guid isPermaLink="true">https://openai.com/index/replit</guid>
+            <category><![CDATA[Startup]]></category>
+            <pubDate>Wed, 19 Aug 2026 07:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[ChatGPT Ads expands across Europe]]></title>
+            <description><![CDATA[ChatGPT Ads is expanding to 31 European markets. Learn how advertisers can reach people as they explore, compare options, and make decisions.]]></description>
+            <link>https://openai.com/index/chatgpt-ads-expands-across-europe</link>
+            <guid isPermaLink="true">https://openai.com/index/chatgpt-ads-expands-across-europe</guid>
+            <category><![CDATA[Product]]></category>
+            <pubDate>Tue, 18 Aug 2026 22:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Strengthening democratic oversight in national security]]></title>
+            <description><![CDATA[OpenAI launches an initiative to strengthen democratic oversight of AI in national security, supporting government institutions with tools, training, and expertise.]]></description>
+            <link>https://openai.com/index/strengthening-democratic-oversight-in-national-security</link>
+            <guid isPermaLink="true">https://openai.com/index/strengthening-democratic-oversight-in-national-security</guid>
+            <category><![CDATA[Global Affairs]]></category>
+            <pubDate>Tue, 18 Aug 2026 19:00:00 GMT</pubDate>
+        </item>
+</channel>
+</rss>

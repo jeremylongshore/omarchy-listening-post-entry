@@ -5,44 +5,189 @@ import qs.Commons
 import qs.Ui
 import "Model.js" as Model
 
-// Panel: owns the fetch cycle and the popup UI. Hosted invisibly by
-// BarWidget.qml, which renders `label` in the bar slot.
-//
-// TEMPLATE: replace the example fetch with your data source. The security
-// pattern is not optional:
-//   - every network body parses in Model.js pure functions (testable in node)
-//   - every string that reaches a Text passed through Model.clean()
-//   - every Text that renders API data declares textFormat: Text.PlainText
-//   - every curl argv carries --max-time AND --max-filesize
-//   - a failed fetch keeps last-good state; the pill never silently vanishes
+// Listening Post panel: renders the state file the poller CLI maintains and
+// drives it with Herald-standard keys. This file never touches the network;
+// it reads ~/.local/state/omarchy/listening-post/state.json, and every
+// mutation (mark read, refresh) is a call into bin/listening-post-poll, the
+// single writer.
 Panel {
   id: root
-  moduleName: "io.github.YOURNAME.widget-name"
-  ipcTarget: "io.github.YOURNAME.widget-name"
+  moduleName: "io.github.jeremylongshore.listening-post"
+  ipcTarget: "io.github.jeremylongshore.listening-post"
   manageIpc: false
 
   property var anchorItem: null
-  property bool openedFromHotkey: false
 
   // The bar identifies this plugin by the widget mounted in its slot, not by
   // this nested panel.
   property var hostWidget: null
   readonly property var barIdentity: hostWidget || root
 
-  // ---- Fixed behavior. Prefer omakase constants over settings knobs; add a
-  //      manifest settings schema only for choices a user genuinely owns.
-  readonly property int refreshSec: 900
+  readonly property string home: Quickshell.env("HOME") || ""
+  readonly property string stateFile:
+    (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state")
+    + "/omarchy/listening-post/state.json"
+  readonly property string pollerPath:
+    Qt.resolvedUrl("bin/listening-post-poll").toString().replace(/^file:\/\//, "")
+
+  // ---- Fixed behavior. Omakase constants, not knobs.
+  readonly property int rereadSec: 60          // state file re-read cadence
+  readonly property int incidentRowsMax: 6
+  readonly property int releaseRowsMax: 10
+  readonly property int pricingRowsMax: 6
+  readonly property int engineeringRowsMax: 6
+
+  // ---- Data state. The parsed state file, plus a local overlay of guids
+  //      marked read whose CLI write-back is still in flight, so a keystroke
+  //      reads instantly.
+  property var feedState: Model.emptyState()
+  property var pendingRead: ({})
+  property double nowMs: Date.now()
+
+  readonly property var items: {
+    var src = feedState.items
+    var out = []
+    for (var i = 0; i < src.length; i++) {
+      var it = src[i]
+      if (pendingRead[it.guid] && !it.read) {
+        out.push({ guid: it.guid, sourceId: it.sourceId, vendor: it.vendor,
+          vendorName: it.vendorName, lane: it.lane, quiet: it.quiet,
+          title: it.title, url: it.url, timeMs: it.timeMs,
+          resolved: it.resolved, read: true, used: it.used })
+      } else {
+        out.push(it)
+      }
+    }
+    return out
+  }
+
+  readonly property var laneCounts: Model.counts(items)
+  readonly property bool isAlert: laneCounts.incidents > 0
+
+  // Bar pill: empty when nothing needs attention, which collapses the slot.
+  readonly property string label: Model.pillText(laneCounts)
+  readonly property string tooltip: Model.tooltipText(laneCounts, feedState.generatedAt, nowMs)
+
+  // ---- Rows. Four lanes flattened into one list the cursor walks; headers
+  //      are inert, rows are selectable.
+  readonly property var allRows: {
+    var rows = []
+    var lanes = [
+      { lane: "incident", header: "STATUS INCIDENTS", max: incidentRowsMax },
+      { lane: "release", header: "MODEL RELEASES", max: releaseRowsMax },
+      { lane: "pricing", header: "PRICING AND LIMITS", max: pricingRowsMax },
+      { lane: "engineering", header: "ENGINEERING POSTS", max: engineeringRowsMax }
+    ]
+    var sel = 0
+    for (var l = 0; l < lanes.length; l++) {
+      var laneRows = Model.laneRows(items, lanes[l].lane, lanes[l].max)
+      if (laneRows.length === 0) continue
+      rows.push({ type: "header", text: lanes[l].header, lane: lanes[l].lane,
+        guid: "", guids: [], title: "", url: "", vendorName: "",
+        timeMs: 0, read: true, resolved: true, used: false, count: 0, sel: -1 })
+      for (var r = 0; r < laneRows.length; r++) {
+        var row = laneRows[r]
+        rows.push({ type: "row", text: "", lane: row.lane, guid: row.guid,
+          guids: row.guids, title: row.title, url: row.url,
+          vendorName: row.vendorName, timeMs: row.timeMs, read: row.read,
+          resolved: row.resolved, used: row.used, count: row.count, sel: sel })
+        sel++
+      }
+    }
+    return rows
+  }
+
+  readonly property int selectableCount: {
+    var n = 0
+    for (var i = 0; i < allRows.length; i++) if (allRows[i].type === "row") n++
+    return n
+  }
+
+  property int selIdx: 0
+
+  onSelectableCountChanged: {
+    if (selIdx >= selectableCount) selIdx = selectableCount > 0 ? selectableCount - 1 : 0
+  }
+
+  function selectedRow() {
+    for (var i = 0; i < allRows.length; i++) {
+      if (allRows[i].type === "row" && allRows[i].sel === selIdx) return allRows[i]
+    }
+    return null
+  }
+
+  function moveCursor(dy) {
+    if (selectableCount === 0) return
+    var next = selIdx + dy
+    if (next < 0) next = 0
+    if (next >= selectableCount) next = selectableCount - 1
+    selIdx = next
+  }
+
+  function openSelected() {
+    var row = selectedRow()
+    if (!row || row.url === "") return
+    // State URLs are already Model.safeUrl-validated; this is the same check
+    // again at the point of use so a regression upstream cannot reach argv.
+    if (!/^https:\/\/\S+$/.test(row.url)) return
+    if (openProc.running) return
+    openProc.command = ["xdg-open", row.url]
+    openProc.running = true
+    markRowRead(row)
+  }
+
+  function markRowRead(row) {
+    if (!row) return
+    var overlay = ({})
+    for (var k in pendingRead) overlay[k] = true
+    var args = [pollerPath, "--mark-read"]
+    for (var i = 0; i < row.guids.length; i++) {
+      overlay[row.guids[i]] = true
+      args.push(row.guids[i])
+    }
+    pendingRead = overlay
+    if (!markProc.running) {
+      markProc.command = args
+      markProc.running = true
+    }
+  }
+
+  function markSelectedRead() {
+    markRowRead(selectedRow())
+  }
+
+  function markAllRead() {
+    var overlay = ({})
+    for (var i = 0; i < items.length; i++) overlay[items[i].guid] = true
+    pendingRead = overlay
+    if (!markProc.running) {
+      markProc.command = [pollerPath, "--mark-all-read"]
+      markProc.running = true
+    }
+  }
+
+  // Manual refresh polls without notifications: the panel is open, the user
+  // is already looking at the result.
+  function refresh() {
+    nowMs = Date.now()
+    if (!pollProc.running) {
+      pollProc.command = [root.pollerPath, "--no-notify"]
+      pollProc.running = true
+    }
+  }
+
+  function reread() {
+    if (!readProc.running) readProc.running = true
+  }
 
   function open() {
-    openedFromHotkey = false
     root.controller.show()
-    root.refresh()
+    root.reread()
   }
 
   function openFromHotkey() {
-    openedFromHotkey = true
     root.controller.show()
-    root.refresh()
+    root.reread()
   }
 
   function close() {
@@ -54,65 +199,61 @@ Panel {
     else root.openFromHotkey()
   }
 
+  property bool popoutSwitchClosing: false
+  function closeForPopoutSwitch() {
+    root.close()
+  }
+
   function switchPanel(direction) {
     if (root.bar && typeof root.bar.switchPanelFrom === "function")
       return root.bar.switchPanelFrom(root.barIdentity, direction)
     return false
   }
 
-  // ---- Data state. Raw responses parse into these; last-good values stay
-  //      visible when a fetch fails.
-  property var rows: []
-  property bool loaded: false
-
-  // Re-evaluated on a slow tick so time-based text moves without a fetch.
-  property double nowMs: Date.now()
-
-  // TEMPLATE: isAlert lights the bar pill (bar's active color).
-  readonly property bool isAlert: false
-
-  // Bar pill. Never silently vanishes: keep a glyph present so an
-  // unreachable API reads as "loading", not "widget gone". Return "" only
-  // when the widget is legitimately quiet (slot collapses).
-  readonly property string label: {
-    if (!loaded) return "… "
-    return Model.pillText(rows)
-  }
-
-  readonly property string tooltip: loaded ? Model.tooltipText(rows) : "Loading…"
-
-  function refresh() {
-    if (!exampleProc.running) exampleProc.running = true
-  }
-
-  // Shared curl argv. --max-filesize caps the body; curl exits non-zero past
-  // the cap, the collector gets nothing, and the parser keeps last-good —
-  // never a UI-thread stall on a giant JSON.parse.
-  function curl(url) {
-    return ["curl", "-fsS", "--max-time", "15", "--max-filesize", "8000000", url]
-  }
-
   Process {
-    id: exampleProc
-    command: root.curl("https://example.invalid/replace-me.json")
+    id: readProc
+    command: ["cat", root.stateFile]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var parsed = Model.parseExample(text)
-        if (parsed.length) {
-          root.rows = parsed
-          root.loaded = true
+        var parsed = Model.parseState(text)
+        if (parsed.valid) {
+          root.feedState = parsed
+          // Guids the CLI has persisted no longer need the local overlay.
+          var overlay = ({})
+          var any = false
+          for (var i = 0; i < parsed.items.length; i++) {
+            if (root.pendingRead[parsed.items[i].guid] && parsed.items[i].read === false) {
+              overlay[parsed.items[i].guid] = true
+              any = true
+            }
+          }
+          root.pendingRead = any ? overlay : ({})
         }
       }
     }
   }
 
+  Process {
+    id: pollProc
+    onExited: root.reread()
+  }
+
+  Process {
+    id: markProc
+    onExited: root.reread()
+  }
+
+  Process {
+    id: openProc
+  }
+
   Timer {
-    interval: root.refreshSec * 1000
+    interval: root.rereadSec * 1000
     running: true
     repeat: true
     triggeredOnStart: true
-    onTriggered: root.refresh()
+    onTriggered: root.reread()
   }
 
   Timer {
@@ -130,8 +271,6 @@ Panel {
     function show(): void { root.openFromHotkey() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
-    // Fan the refresh out to every monitor's widget. One bar exists per
-    // screen; broadcast() lives on the BarWidget host, so route through it.
     function refresh(): void {
       if (root.hostWidget && typeof root.hostWidget.broadcast === "function")
         root.hostWidget.broadcast("refresh")
@@ -148,7 +287,7 @@ Panel {
     open: root.opened
     centerOnBar: true
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(420))
+    contentWidth: panel.fittedContentWidth(Style.space(430))
     contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -156,6 +295,16 @@ Panel {
       anchors.fill: parent
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
+      onMoveRequested: function(dx, dy) { root.moveCursor(dy) }
+      onActivateRequested: root.openSelected()
+      onReturnRequested: root.openSelected()
+      onDeleteRequested: root.markSelectedRead()
+      onTextKey: function(t) {
+        if (t === "r") root.refresh()
+        else if (t === "o") root.openSelected()
+        else if (t === "x" || t === "a") root.markSelectedRead()
+        else if (t === "c") root.markAllRead()
+      }
 
       Flickable {
         anchors.fill: parent
@@ -168,76 +317,198 @@ Panel {
         Column {
           id: contentColumn
           width: parent.width
-          spacing: Style.space(12)
+          spacing: Style.space(10)
 
           // ---- Hero.
-          Column {
-            anchors.left: parent.left
-            anchors.leftMargin: Style.space(16)
-            anchors.right: parent.right
-            anchors.rightMargin: Style.space(16)
-            spacing: Style.space(4)
+          Item {
+            width: parent.width
+            height: heroCol.implicitHeight
 
-            Text {
-              text: root.loaded ? "WIDGET NAME" : "LOADING…"
-              textFormat: Text.PlainText
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : Style.font.family
-              font.pixelSize: Style.font.title
-              font.bold: true
-              font.letterSpacing: 1
+            Column {
+              id: heroCol
+              anchors.left: parent.left
+              anchors.leftMargin: Style.space(16)
+              anchors.right: parent.right
+              anchors.rightMargin: Style.space(16)
+              spacing: Style.space(4)
+
+              Text {
+                text: "LISTENING POST"
+                textFormat: Text.PlainText
+                color: root.bar ? root.bar.foreground : Color.foreground
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.title
+                font.bold: true
+                font.letterSpacing: 1
+              }
+
+              Text {
+                text: {
+                  if (!root.feedState.valid) return "Waiting for the first poll. The service checks every 15 minutes."
+                  var okCount = 0
+                  for (var i = 0; i < root.feedState.sources.length; i++)
+                    if (root.feedState.sources[i].ok) okCount++
+                  var age = Model.ageText(root.feedState.generatedAt, root.nowMs)
+                  return okCount + "/" + root.feedState.sources.length + " sources"
+                    + (age ? " checked " + age : "")
+                }
+                textFormat: Text.PlainText
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.4) : Color.muted
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+                font.letterSpacing: 1
+              }
             }
           }
 
-          // ---- Example list section.
+          // ---- All lanes in one keyboard-walkable list.
+          Repeater {
+            model: root.allRows
+
+            Item {
+              id: rowItem
+              required property var modelData
+              readonly property bool isHeader: modelData.type === "header"
+              readonly property bool isSelected: !isHeader && modelData.sel === root.selIdx
+              readonly property bool isHot: modelData.lane === "incident" && modelData.resolved === false
+              width: contentColumn.width
+              height: isHeader ? Style.space(26) : Style.space(24)
+
+              PanelSectionHeader {
+                visible: rowItem.isHeader
+                anchors.bottom: parent.bottom
+                text: rowItem.isHeader ? rowItem.modelData.text : ""
+                leftPadding: Style.space(16)
+                foreground: root.bar ? root.bar.foreground : Color.foreground
+                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+              }
+
+              Rectangle {
+                visible: rowItem.isSelected
+                anchors.fill: parent
+                anchors.leftMargin: Style.space(8)
+                anchors.rightMargin: Style.space(8)
+                radius: Style.cornerRadius
+                color: root.bar ? root.bar.foreground : Color.foreground
+                opacity: 0.12
+              }
+
+              MouseArea {
+                visible: !rowItem.isHeader
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: function(mouse) {
+                  root.selIdx = rowItem.modelData.sel
+                  if (mouse.button === Qt.RightButton) root.markSelectedRead()
+                  else root.openSelected()
+                }
+              }
+
+              Row {
+                visible: !rowItem.isHeader
+                anchors.left: parent.left
+                anchors.leftMargin: Style.space(16)
+                anchors.right: ageLabel.left
+                anchors.rightMargin: Style.space(8)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(8)
+
+                Text {
+                  visible: rowItem.isHot
+                  text: "●"
+                  textFormat: Text.PlainText
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: root.bar ? root.bar.urgent : Color.urgent
+                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.bodySmall
+                }
+
+                Text {
+                  text: rowItem.isHeader ? "" : rowItem.modelData.vendorName
+                  textFormat: Text.PlainText
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
+                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.bodySmall
+                  // The personalization dot of honor: vendors whose agents
+                  // the user actually runs read bold.
+                  font.bold: rowItem.modelData.used === true
+                }
+
+                Text {
+                  text: rowItem.isHeader ? "" : rowItem.modelData.title
+                  textFormat: Text.PlainText
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: {
+                    if (!root.bar) return Color.foreground
+                    if (rowItem.isHot) return root.bar.foreground
+                    return rowItem.modelData.read
+                      ? Qt.darker(root.bar.foreground, 1.45)
+                      : root.bar.foreground
+                  }
+                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.body
+                  font.bold: !rowItem.modelData.read
+                  elide: Text.ElideRight
+                  width: Math.max(0, contentColumn.width - Style.space(190))
+                }
+              }
+
+              Text {
+                id: ageLabel
+                visible: !rowItem.isHeader
+                anchors.right: parent.right
+                anchors.rightMargin: Style.space(16)
+                anchors.verticalCenter: parent.verticalCenter
+                text: rowItem.isHeader ? "" : Model.ageText(rowItem.modelData.timeMs, root.nowMs)
+                textFormat: Text.PlainText
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+            }
+          }
+
+          // ---- Empty state.
+          Text {
+            visible: root.feedState.valid && root.allRows.length === 0
+            anchors.left: parent.left
+            anchors.leftMargin: Style.space(16)
+            text: "Nothing in the window. The radar is listening."
+            textFormat: Text.PlainText
+            color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.body
+          }
+
+          // ---- Footer: keys and the honesty line.
           Column {
-            visible: root.rows.length > 0
             width: parent.width
             spacing: Style.space(2)
 
             PanelSeparator { foreground: root.bar ? root.bar.foreground : Color.foreground }
 
-            PanelSectionHeader {
-              text: "SECTION"
-              leftPadding: Style.space(16)
-              foreground: root.bar ? root.bar.foreground : Color.foreground
-              fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            Text {
+              anchors.left: parent.left
+              anchors.leftMargin: Style.space(16)
+              text: "j/k move · enter open · x read · c clear · r refresh"
+              textFormat: Text.PlainText
+              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+              font.family: root.bar ? root.bar.fontFamily : Style.font.family
+              font.pixelSize: Style.font.caption
             }
 
-            Repeater {
-              model: root.rows
-
-              Item {
-                required property var modelData
-                width: contentColumn.width
-                height: Style.space(22)
-
-                Text {
-                  anchors.left: parent.left
-                  anchors.leftMargin: Style.space(16)
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: modelData.name
-                  textFormat: Text.PlainText
-                  color: root.bar ? root.bar.foreground : Color.foreground
-                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
-                  font.pixelSize: Style.font.body
-                }
-
-                Text {
-                  anchors.right: parent.right
-                  anchors.rightMargin: Style.space(16)
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: modelData.value
-                  textFormat: Text.PlainText
-                  color: root.bar ? Qt.darker(root.bar.foreground, 1.3) : Color.muted
-                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
-                  font.pixelSize: Style.font.bodySmall
-                }
-              }
+            Text {
+              anchors.left: parent.left
+              anchors.leftMargin: Style.space(16)
+              text: "Curated titles only. No article bodies, no engagement counts."
+              textFormat: Text.PlainText
+              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+              font.family: root.bar ? root.bar.fontFamily : Style.font.family
+              font.pixelSize: Style.font.caption
             }
           }
 
-          // Bottom breathing room inside the flickable.
           Item { width: 1; height: Style.space(4) }
         }
       }

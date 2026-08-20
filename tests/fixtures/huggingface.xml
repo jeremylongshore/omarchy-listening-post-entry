@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+ <channel>
+  <atom:link href="https://huggingface.co/blog/feed.xml" rel="self" type="application/rss+xml"/>
+  <title>Hugging Face - Blog</title>
+  <link>https://huggingface.co/blog</link>
+  <description>The Hugging Face blog</description>
+  <language>en-US</language>
+  <item>
+   <title>Up to 3.2x Faster Inference with LFM2.5-DSpark</title>
+   <pubDate>Thu, 20 Aug 2026 16:52:57 GMT</pubDate>
+   <link>https://huggingface.co/blog/LiquidAI/lfm25-dspark</link>
+   <guid isPermaLink="false">https://huggingface.co/blog/LiquidAI/lfm25-dspark</guid>
+  </item>
+  <item>
+   <title>How Much Memory Does Your Agent Actually Need?</title>
+   <pubDate>Tue, 18 Aug 2026 18:09:38 GMT</pubDate>
+   <link>https://huggingface.co/blog/ibm-research/altk-evolve-hmm</link>
+   <guid isPermaLink="false">https://huggingface.co/blog/ibm-research/altk-evolve-hmm</guid>
+  </item>
+  <item>
+   <title>Multi-Vector (Late Interaction) Embedding Models with Sentence Transformers</title>
+   <pubDate>Tue, 18 Aug 2026 00:00:00 GMT</pubDate>
+   <link>https://huggingface.co/blog/multi-vector-encoder</link>
+   <guid isPermaLink="true">https://huggingface.co/blog/multi-vector-encoder</guid>
+  </item>
+  <item>
+   <title>Same Cluster, 33 Points More Utilization: What Changed Was the Order</title>
+   <pubDate>Mon, 17 Aug 2026 19:46:21 GMT</pubDate>
+   <link>https://huggingface.co/blog/Dharma-AI/gpu-management-pt2</link>
+   <guid isPermaLink="false">https://huggingface.co/blog/Dharma-AI/gpu-management-pt2</guid>
+  </item>
+  <item>
+   <title>State of Open Models: Summer 2026 Observations</title>
+   <pubDate>Fri, 14 Aug 2026 00:00:00 GMT</pubDate>
+   <link>https://huggingface.co/blog/state-of-open-models-summer-2026</link>
+   <guid isPermaLink="true">https://huggingface.co/blog/state-of-open-models-summer-2026</guid>
+  </item>
+  <item>
+   <title>Record, train, and deploy from one place with Strands Agents, LeRobot, and Hugging Face Storage Buckets</title>
+   <pubDate>Thu, 13 Aug 2026 17:16:04 GMT</pubDate>
+   <link>https://huggingface.co/blog/amazon/strands-lerobot-streaming-data-loop</link>
+   <guid isPermaLink="false">https://huggingface.co/blog/amazon/strands-lerobot-streaming-data-loop</guid>
+  </item>
+</channel>
+</rss>

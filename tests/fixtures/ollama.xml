@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/ollama/ollama/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/ollama/ollama/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/ollama/ollama/releases.atom"/>
+  <title>Release notes from ollama</title>
+  <updated>2026-08-19T22:40:16Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.15</id>
+    <updated>2026-08-20T18:47:06Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.15"/>
+    <title>v0.32.15</title>
+    <content type="html">&lt;h2&gt;What&#39;s Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;New desktop onboarding flow on first launch&lt;/li&gt;
+&lt;li&gt;Caches resolved model metadata between requests, cutting time-to-first-token by roughly half (TTFT dropped from ~995 ms to ~524 ms in benchmarks)&lt;/li&gt;
+&lt;li&gt;Fixes a bug where chat and generate could wedge after a mid-stream parser error&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Qwen 3.8&lt;/strong&gt; system messages are now normalized so non-leading system messages are handled consistently&lt;/li&gt;
+&lt;li&gt;MLX and llama.cpp dependency updates&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;New Contributors&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/gaugarg-nv/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/gaugarg-nv&quot;&gt;@gaugarg-nv&lt;/a&gt; made their first contribution in &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5154639823&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/ollama/ollama/issues/17752&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/ollama/ollama/pull/17752/hovercard&quot; href=&quot;https://github.com/ollama/ollama/pull/17752&quot;&gt;#17752&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Full Changelog&lt;/strong&gt;: &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/ollama/ollama/compare/v0.32.14...v0.32.15&quot;&gt;&lt;tt&gt;v0.32.14...v0.32.15&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.15-rc2</id>
+    <updated>2026-08-19T22:40:16Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.15-rc2"/>
+    <title>v0.32.15-rc2</title>
+    <content type="html">&lt;p&gt;app: add desktop onboarding flow (&lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5185937101&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/ollama/ollama/issues/17853&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/ollama/ollama/pull/17853/hovercard&quot; href=&quot;https://github.com/ollama/ollama/pull/17853&quot;&gt;#17853&lt;/a&gt;)&lt;/p&gt;</content>
+    <author>
+      <name>hoyyeva</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/63033505?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.15-rc1</id>
+    <updated>2026-08-19T15:33:53Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.15-rc1"/>
+    <title>v0.32.15-rc1: ci: plumb temporary MLX patch through to docker stages (#17874)</title>
+    <content type="html">&lt;p&gt;Follow up to &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5184486002&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/ollama/ollama/issues/17850&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/ollama/ollama/pull/17850/hovercard&quot; href=&quot;https://github.com/ollama/ollama/pull/17850&quot;&gt;#17850&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>dhiltgen</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/4033016?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.15-rc0</id>
+    <updated>2026-08-19T14:15:11Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.15-rc0"/>
+    <title>v0.32.15-rc0: mlx update (#17850)</title>
+    <content type="html">&lt;p&gt;Temporarily carry &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5183064236&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/ml-explore/mlx-c/issues/127&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/ml-explore/mlx-c/pull/127/hovercard&quot; href=&quot;https://github.com/ml-explore/mlx-c/pull/127&quot;&gt;ml-explore/mlx-c#127&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>dhiltgen</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/4033016?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.14</id>
+    <updated>2026-08-16T17:41:11Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.14"/>
+    <title>v0.32.14</title>
+    <content type="html">&lt;h2&gt;What&#39;s Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;llm: transcode WebP images for llama-server&lt;/li&gt;
+&lt;li&gt;renderers/qwen: tolerate non-leading system messages&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Full Changelog&lt;/strong&gt;: &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/ollama/ollama/compare/v0.32.13...v0.32.14&quot;&gt;&lt;tt&gt;v0.32.13...v0.32.14&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/658928958/v0.32.14-rc0</id>
+    <updated>2026-08-15T18:56:40Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/ollama/ollama/releases/tag/v0.32.14-rc0"/>
+    <title>v0.32.14-rc0</title>
+    <content type="html">&lt;p&gt;mlx update (&lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5156900281&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/ollama/ollama/issues/17761&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/ollama/ollama/pull/17761/hovercard&quot; href=&quot;https://github.com/ollama/ollama/pull/17761&quot;&gt;#17761&lt;/a&gt;)&lt;/p&gt;</content>
+    <author>
+      <name>dhiltgen</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/4033016?s=60&amp;v=4"/>
+  </entry>
+</feed>
