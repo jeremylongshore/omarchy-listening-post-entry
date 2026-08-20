@@ -41,16 +41,42 @@ lives in one auditable script, `bin/listening-post-poll`:
    a second layer. The bar pill and tooltip render inside first-party shell
    components whose format this plugin does not set; on those paths the
    sanitizer is the only layer, which is why it runs on everything.
-4. URLs are validated twice: once when parsed into state, and again in the
-   panel immediately before the `xdg-open` argv, so a regression upstream
-   cannot reach a spawn. Only `https://` survives either check.
-5. Bounded rendering: 60 items per source at parse, 400 items in the
-   store, hard per-lane row caps in the panel, so a hostile feed cannot
-   turn a Repeater into a UI-thread stall.
-6. Notifications go through `omarchy-notification-send` with sanitized
-   title text and a validated https URL in the click action; more than
-   three new items collapse into one summary, so a feed cannot storm the
-   notification daemon.
+4. URLs are validated by a strict allowlist charset. Omarchy dispatches a
+   notification click action as `bash -lc "<value>"`, so a URL carrying a
+   shell metacharacter (`;`, `$`, backtick, `|`, `(`) would be command
+   injection. `Model.safeUrl` admits only
+   `https://[A-Za-z0-9._~:/?#@%=&+,-]+` (every shell-active byte, quote,
+   and space is rejected). The poller re-tests that exact pattern
+   immediately before building the `--exec` action, and single-quotes the
+   URL inside it. The `xdg-open` path from the panel passes an argv list
+   (no shell) with the same check at the point of use. URLs are validated
+   at parse into state and again at every point of use.
+5. Notification argv safety: the poller puts every flag first and passes
+   the two feed-derived positionals (headline, body) last behind `--`,
+   with a defensive leading-dash strip, so an option-shaped feed title
+   can never be parsed as an option by `notify-send`.
+6. Bounded parsing and rendering: 64 KB per field-scan (the two lazy
+   regexes are the ReDoS surface, so their input is capped before they
+   run, a 2 MB CDATA-bomb body parses in well under a second, tested),
+   60 items per source, an unconditional 400-item store cap (an earlier
+   unread-exempt cap let a hostile OPML grow the state file past the
+   parse bound and dark the plugin), and hard per-lane row caps in the
+   panel.
+7. Notifications go through `omarchy-notification-send` with sanitized
+   text; more than three new items collapse into one summary, so a feed
+   cannot storm the notification daemon.
+8. OPML import is bounded and host-screened: at most 50 stored extra
+   sources, and an imported feed whose host is a literal IP or a
+   private-network suffix (`.local`, `.internal`, `localhost`) is
+   refused, so an attacker-authored source list cannot turn the poller
+   into an internal-endpoint prober.
+9. Atomic writes refuse a pre-planted symlink: the tmp file is opened
+   `wx` (`O_CREAT|O_EXCL`) at mode 0600, so a same-uid attacker cannot
+   redirect the write through a symlink at the predictable path.
+10. The poll re-reads the current on-disk read flags immediately before
+    writing, so a mark-read the panel performed during the (up to a
+    minute long) fetch loop is never reverted by the poll's stale
+    snapshot.
 
 ## What this plugin reads and writes
 

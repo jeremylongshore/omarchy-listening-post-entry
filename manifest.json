@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "A curated AI vendor release radar that keeps working where RSS does not. Model releases, pricing changes, and status incidents in separate lanes, ranked by the agents you actually run, quiet when nothing shipped.",
+  "description": "Model releases, pricing changes, and status incidents from 13 curated AI-vendor sources, with GitHub Atom substitutes for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped.",
   "kinds": [
     "service",
     "bar-widget"
@@ -22,6 +22,8 @@
       "listening-post",
       "ai-news",
       "release-radar",
+      "model-releases",
+      "ai-incidents",
       "ai-status"
     ],
     "allowMultiple": false,
@@ -44,7 +46,7 @@
         "label": "Rank by agents you use",
         "options": ["On", "Off"],
         "defaultValue": "On",
-        "description": "Reads the file names in the Agents plugin usage folder (read-only) to float vendors you actually run to the top."
+        "description": "Reads the file names in the Agents plugin usage folder (read-only) so vendors you actually run float to the top of each lane."
       }
     ]
   }

@@ -50,12 +50,20 @@ function readJson(file, fallback) {
 }
 
 // Atomic write: the panel's reader can land mid-poll and must always see a
-// complete JSON document, never a half-written one.
+// complete JSON document, never a half-written one. The tmp file is opened
+// with "wx" (O_CREAT|O_EXCL) so a pre-planted symlink at the predictable
+// path is refused rather than followed, and mode 0600 keeps the reading
+// history from being world-readable.
 function writeAtomic(file, text) {
-  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 })
   var tmp = file + ".tmp." + process.pid
-  fs.writeFileSync(tmp, text, { mode: 0o644 })
-  fs.renameSync(tmp, file)
+  try {
+    fs.writeFileSync(tmp, text, { mode: 0o600, flag: "wx" })
+    fs.renameSync(tmp, file)
+  } catch (e) {
+    try { fs.unlinkSync(tmp) } catch (e2) { /* nothing to clean */ }
+    throw e
+  }
 }
 
 // The plugin's settings live inline on its bar-layout entry in shell.json;
@@ -80,6 +88,20 @@ function readSettings() {
   return defaults
 }
 
+// Reject an imported feed URL whose host is a literal IP or a private-network
+// suffix. An attacker-authored OPML must not turn the poller into an
+// internal-endpoint prober that fetches http://127.0.0.1:.../ every 15 min.
+function isPublicHost(url) {
+  var m = /^https:\/\/([^\/:?#]+)/i.exec(String(url || ""))
+  if (!m) return false
+  var host = m[1].toLowerCase()
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false           // IPv4 literal
+  if (host.indexOf("[") >= 0 || host.indexOf(":") >= 0) return false // IPv6 literal
+  if (/(^|\.)(local|internal|localhost|lan|home|corp)$/.test(host)) return false
+  if (host === "localhost") return false
+  return true
+}
+
 function extraSources() {
   var extras = readJson(EXTRAS_FILE, [])
   if (!Array.isArray(extras)) return []
@@ -88,7 +110,7 @@ function extraSources() {
     var e = extras[i]
     if (!e || !e.url) continue
     var url = Model.safeUrl(e.url)
-    if (!url) continue
+    if (!url || !isPublicHost(url)) continue
     out.push({
       id: "extra-" + i,
       vendor: "custom",
@@ -128,31 +150,48 @@ function usedVendors(enabled) {
 
 // Off an Omarchy box (dev, CI) the send binary is absent; spawnSync reports
 // ENOENT in res.error without throwing, and the poll just stays silent.
-function sendNotification(args) {
+// Flags go FIRST and the two feed-derived positionals (headline, body) go
+// LAST behind "--", so an option-shaped title can never be parsed as an
+// option by notify-send. A defensive leading-dash strip is a second layer.
+function sendNotification(flags, headline, body) {
+  var args = flags.concat(["--", stripLead(headline)])
+  if (body !== undefined) args.push(stripLead(body))
   childProcess.spawnSync("omarchy-notification-send", args, { timeout: 10000 })
+}
+
+function stripLead(s) {
+  return String(s === undefined ? "" : s).replace(/^[-\s]+/, "")
 }
 
 function notify(items) {
   if (items.length === 0) return
   if (items.length > NOTIFY_CAP) {
-    sendNotification([
-      "Listening Post", items.length + " new AI releases and incidents",
-      "-u", "low", "--app-name", "Listening Post"
-    ])
+    var releases = 0
+    var incidents = 0
+    for (var n = 0; n < items.length; n++) {
+      if (items[n].lane === "incident") incidents++
+      else releases++
+    }
+    var parts = []
+    if (releases > 0) parts.push(releases + " release" + (releases > 1 ? "s" : ""))
+    if (incidents > 0) parts.push(incidents + " incident" + (incidents > 1 ? "s" : ""))
+    sendNotification(["-u", "low", "--app-name", "Listening Post"],
+      "Listening Post", parts.join(", ") + " are new")
     return
   }
   for (var i = 0; i < items.length; i++) {
     var it = items[i]
     var urgent = it.lane === "incident"
     var headline = urgent ? it.vendorName + " incident" : it.vendorName + " release"
-    var args = [
-      headline, it.title,
-      "-u", urgent ? "critical" : "low",
-      "--app-name", "Listening Post"
-    ]
-    // Only a Model-validated https URL ever reaches the click action.
-    if (it.url) args.push("--exec", "xdg-open " + it.url)
-    sendNotification(args)
+    var flags = ["-u", urgent ? "critical" : "low", "--app-name", "Listening Post"]
+    // The --exec value is dispatched by the shell as `bash -lc "<value>"`, so
+    // the URL is single-quoted. That quoting is safe ONLY because safeUrl has
+    // already rejected any quote or shell metacharacter; the re-test here
+    // refuses to build the action if that guarantee ever regresses.
+    if (it.url && /^https:\/\/[A-Za-z0-9._~:\/?#@%=&+,-]+$/.test(it.url)) {
+      flags.push("--exec", "xdg-open '" + it.url + "'")
+    }
+    sendNotification(flags, headline, it.title)
   }
 }
 
@@ -188,6 +227,23 @@ function poll(opts) {
   // from now on.
   if (firstRun) {
     for (var b = 0; b < merged.length; b++) merged[b].read = true
+  }
+
+  // Close the read-modify-write race with a concurrent mark-read: this poll
+  // read prevState up to a minute ago, and the panel may have marked items
+  // read (writing state.json) while the fetch loop ran. Re-read the CURRENT
+  // on-disk read flags and OR them in, so a mark-read landing mid-poll is
+  // never reverted. Read is monotonic (nothing un-reads an item), so a union
+  // is always the correct merge.
+  var current = Model.parseState(safeRead(STATE_FILE))
+  if (current.valid) {
+    var readOnDisk = {}
+    for (var c = 0; c < current.items.length; c++) {
+      if (current.items[c].read === true) readOnDisk[current.items[c].guid] = true
+    }
+    for (var d = 0; d < merged.length; d++) {
+      if (readOnDisk[merged[d].guid]) merged[d].read = true
+    }
   }
 
   var state = { generatedAt: nowMs, sources: sourceStatus, items: merged }
@@ -243,6 +299,9 @@ function importOpml(file) {
     have[url] = true
     added++
   }
+  // Hard ceiling on the persisted list so repeated imports cannot grow the
+  // file without bound (fetch is already capped at 50 in extraSources).
+  if (existing.length > 50) existing = existing.slice(0, 50)
   writeAtomic(EXTRAS_FILE, JSON.stringify(existing, null, 2))
   process.stderr.write("listening-post-poll: imported " + added + " extra source(s)\n")
 }

@@ -64,8 +64,8 @@ Left-click opens, right-click marks read. Middle-click the pill to refresh.
 
 ## Sources
 
-Thirteen curated sources, five vendors that publish real feeds and four that
-need the GitHub Atom substitute:
+Thirteen curated sources: six real RSS feeds, and seven GitHub Atom
+substitutes for the vendors that publish none.
 
 | Source | Type |
 | --- | --- |
@@ -76,12 +76,16 @@ need the GitHub Atom substitute:
 | Claude Status | status history RSS |
 | OpenAI Status | status history RSS |
 | Claude Code Releases | GitHub releases Atom |
-| Claude Code Changelog | GitHub commits Atom (quiet lane) |
+| Claude Code Changelog | GitHub commits Atom (quiet: never counted, never notified) |
 | Anthropic SDK Releases | GitHub releases Atom |
 | xAI SDK Releases | GitHub releases Atom |
 | Mistral SDK Releases | GitHub releases Atom |
-| Meta Llama Models | GitHub commits Atom (quiet lane) |
+| Meta Llama Models | GitHub commits Atom (quiet: never counted, never notified) |
 | Ollama Releases | GitHub releases Atom |
+
+A changelog feed's commits never headline the release lane: they collapse
+into one quiet "Claude Code changelog · N commits this week" row so a
+janitorial commit subject never masquerades as a model release.
 
 Add your own with OPML:
 

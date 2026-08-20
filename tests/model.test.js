@@ -54,11 +54,54 @@ test("feedText strips CDATA, decodes, strips tags, then sanitizes", () => {
 
 test("safeUrl accepts only https and refuses option-shaped values", () => {
   assert.equal(Model.safeUrl("https://openai.com/news"), "https://openai.com/news")
+  assert.equal(Model.safeUrl("https://github.com/anthropics/claude-code/releases/tag/v2.1.0"),
+    "https://github.com/anthropics/claude-code/releases/tag/v2.1.0")
+  assert.equal(Model.safeUrl("https://x.test/a?b=c&d=e#frag"), "https://x.test/a?b=c&d=e#frag")
   assert.equal(Model.safeUrl("http://openai.com/news"), "")
   assert.equal(Model.safeUrl("file:///etc/passwd"), "")
   assert.equal(Model.safeUrl("javascript:alert(1)"), "")
   assert.equal(Model.safeUrl("-K https://x"), "")
   assert.equal(Model.safeUrl("https://x/" + "a".repeat(600)), "")
+})
+
+test("safeUrl rejects every shell metacharacter that reaches bash -lc via --exec", () => {
+  // The notification click action is dispatched as `bash -lc "xdg-open <url>"`,
+  // so a URL carrying a shell-active byte would be command injection.
+  var bad = [
+    "https://evil.test/a;curl${IFS}x|sh",
+    "https://evil.test/a`id`",
+    "https://evil.test/a$(id)",
+    "https://evil.test/a'b",
+    'https://evil.test/a"b',
+    "https://evil.test/a|b",
+    "https://evil.test/a&b;c",
+    "https://evil.test/a b",
+    "https://evil.test/a<b>"
+  ]
+  for (const u of bad) assert.equal(Model.safeUrl(u), "", "must reject " + u)
+})
+
+test("parseFeed on a 2MB unterminated-CDATA body returns fast, not in minutes", () => {
+  var body = "<rss version=\"2.0\"><channel><item><title>"
+    + "<![CDATA[".repeat(220000) // ~1.9 MB of unterminated CDATA opens
+  var start = process.hrtime.bigint()
+  var out = Model.parseFeed(body)
+  var ms = Number(process.hrtime.bigint() - start) / 1e6
+  assert.ok(Array.isArray(out))
+  assert.ok(ms < 1000, "parseFeed took " + ms.toFixed(0) + "ms on a 2MB CDATA-bomb body")
+})
+
+test("parseFeed anchors format detection to the document root, not body text", () => {
+  // A valid RSS body that quotes Atom syntax inside a description must parse
+  // as RSS, not be mis-detected as Atom and yield zero items.
+  var body = "<?xml version=\"1.0\"?><rss version=\"2.0\"><channel>"
+    + "<item><title>On Atom feeds</title>"
+    + "<description>we use &lt;feed&gt; and &lt;entry&gt; tags</description>"
+    + "<guid>g1</guid><pubDate>Thu, 20 Aug 2026 10:00:00 GMT</pubDate></item>"
+    + "</channel></rss>"
+  var out = Model.parseFeed(body)
+  assert.equal(out.length, 1)
+  assert.equal(out[0].title, "On Atom feeds")
 })
 
 // ---- parseFeed against every captured source ----
@@ -154,8 +197,9 @@ test("normalizeItems carries resolved only from status blocks", () => {
 
 const mkItem = (over) => Object.assign({
   guid: "s:g1", sourceId: "s", vendor: "openai", vendorName: "OpenAI",
-  lane: "release", quiet: false, title: "t", url: "https://x.test/a",
-  timeMs: NOW_MS - 3600000, resolved: true, read: false, used: false
+  product: "OpenAI SDK", lane: "release", quiet: false, title: "t",
+  url: "https://x.test/a", timeMs: NOW_MS - 3600000, resolved: true,
+  read: false, used: false
 }, over)
 
 test("mergeItems preserves the stored read flag and adopts fresh fields", () => {
@@ -176,17 +220,26 @@ test("mergeItems drops items past retention and sorts newest first", () => {
   assert.deepEqual(merged.map((i) => i.guid), ["s:b", "s:a"])
 })
 
-test("mergeItems caps the store but never drops unread inside retention", () => {
+test("mergeItems caps the store hard, keeping the newest by recency", () => {
   const prev = []
   for (let i = 0; i < Model.MAX_ITEMS + 50; i++) {
     prev.push(mkItem({ guid: "s:" + i, timeMs: NOW_MS - i * 60000, read: i % 2 === 0 }))
   }
   const merged = Model.mergeItems(prev, [], NOW_MS)
-  assert.ok(merged.length >= Model.MAX_ITEMS)
+  // The cap is unconditional: an unread-exempt cap let a hostile OPML grow the
+  // store past MAX_BODY_CHARS and dark the plugin. Newest-first survives.
+  assert.equal(merged.length, Model.MAX_ITEMS)
   const kept = new Set(merged.map((i) => i.guid))
-  for (let i = Model.MAX_ITEMS; i < Model.MAX_ITEMS + 50; i++) {
-    if (i % 2 !== 0) assert.ok(kept.has("s:" + i), "unread tail item survived the cap")
-  }
+  assert.ok(kept.has("s:0"), "newest survives")
+  assert.ok(!kept.has("s:" + (Model.MAX_ITEMS + 49)), "oldest is cut regardless of read state")
+})
+
+test("mergeItems does not mutate the caller's prev items in place", () => {
+  const prev = [mkItem({ read: true, title: "old", resolved: false })]
+  const fresh = [mkItem({ title: "new", resolved: true })]
+  Model.mergeItems(prev, fresh, NOW_MS)
+  assert.equal(prev[0].title, "old", "prev object left untouched")
+  assert.equal(prev[0].resolved, false)
 })
 
 // ---- notification gating ----
@@ -220,30 +273,57 @@ test("isoWeekKey buckets by ISO week across a year boundary", () => {
     Model.isoWeekKey(Date.parse("2026-08-17T12:00:00Z")))
 })
 
-test("laneRows clusters a vendor's same-week release burst into one row", () => {
+test("laneRows clusters one source's same-week release burst and prefixes the product", () => {
   const monday = Date.parse("2026-08-17T10:00:00Z")
   const items = [
-    mkItem({ guid: "s:1", timeMs: monday, title: "v1.0.1" }),
-    mkItem({ guid: "s:2", timeMs: monday + 86400000, title: "v1.0.2" }),
-    mkItem({ guid: "s:3", timeMs: monday + 2 * 86400000, title: "v1.0.3", read: true }),
-    mkItem({ guid: "s:other", timeMs: monday, vendor: "anthropic", vendorName: "Anthropic", title: "sdk v2" })
+    mkItem({ guid: "s:1", sourceId: "cc", product: "Claude Code", timeMs: monday, title: "v1.0.1" }),
+    mkItem({ guid: "s:2", sourceId: "cc", product: "Claude Code", timeMs: monday + 86400000, title: "v1.0.2" }),
+    mkItem({ guid: "s:3", sourceId: "cc", product: "Claude Code", timeMs: monday + 2 * 86400000, title: "v1.0.3", read: true })
   ]
   const rows = Model.laneRows(items, "release", 12)
-  assert.equal(rows.length, 2)
-  const openaiRow = rows.find((r) => r.vendor === "openai")
-  assert.equal(openaiRow.count, 3)
-  assert.ok(openaiRow.title.indexOf("(+2 more this week)") > 0)
-  assert.equal(openaiRow.read, false, "one unread member keeps the cluster unread")
-  assert.equal(openaiRow.guids.length, 3)
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].count, 3)
+  // The product is the row label; the title is the tag alone (so a row never
+  // doubles its own name against the label column).
+  assert.equal(rows[0].label, "Claude Code")
+  assert.ok(rows[0].title.startsWith("v1.0."), "title is the tag, not the product")
+  assert.ok(rows[0].title.indexOf("(+2 more this week)") > 0)
+  assert.equal(rows[0].read, false, "one unread member keeps the cluster unread")
+  assert.equal(rows[0].guids.length, 3)
 })
 
-test("laneRows keeps quiet changelog clusters separate from loud releases", () => {
+test("laneRows never merges two products of the same vendor into one cluster", () => {
   const monday = Date.parse("2026-08-17T10:00:00Z")
   const items = [
-    mkItem({ guid: "s:rel", timeMs: monday }),
-    mkItem({ guid: "s:log", timeMs: monday, quiet: true })
+    mkItem({ guid: "s:cc", sourceId: "cc", vendor: "anthropic", vendorName: "Anthropic", product: "Claude Code", timeMs: monday, title: "v2.1.238" }),
+    mkItem({ guid: "s:sdk", sourceId: "sdk", vendor: "anthropic", vendorName: "Anthropic", product: "Anthropic SDK", timeMs: monday, title: "v0.44.0" })
   ]
-  assert.equal(Model.laneRows(items, "release", 12).length, 2)
+  const rows = Model.laneRows(items, "release", 12)
+  assert.equal(rows.length, 2, "same vendor, different product = two rows")
+  assert.ok(rows.some((r) => r.label === "Claude Code" && r.title === "v2.1.238"))
+  assert.ok(rows.some((r) => r.label === "Anthropic SDK" && r.title === "v0.44.0"))
+})
+
+test("laneRows blog release falls back to vendor label with a bare title", () => {
+  const items = [
+    mkItem({ guid: "s:g", sourceId: "dm", vendor: "google", vendorName: "Google DeepMind", product: "", title: "Introducing Gemini 3.7 Flash", timeMs: NOW_MS })
+  ]
+  const rows = Model.laneRows(items, "release", 12)
+  assert.equal(rows[0].label, "Google DeepMind")
+  assert.equal(rows[0].title, "Introducing Gemini 3.7 Flash", "no product prefix baked into the title")
+})
+
+test("laneRows collapses a quiet changelog week to a fixed summary, never a commit subject", () => {
+  const monday = Date.parse("2026-08-17T10:00:00Z")
+  const items = [
+    mkItem({ guid: "s:c1", sourceId: "ccl", product: "Claude Code", quiet: true, timeMs: monday, title: "chore: Update CHANGELOG.md" }),
+    mkItem({ guid: "s:c2", sourceId: "ccl", product: "Claude Code", quiet: true, timeMs: monday + 3600000, title: "fix: typo" })
+  ]
+  const rows = Model.laneRows(items, "release", 12)
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].label, "Claude Code")
+  assert.equal(rows[0].title, "changelog · 2 commits this week")
+  assert.ok(rows[0].title.indexOf("chore:") === -1, "raw commit subject never surfaces")
 })
 
 test("laneRows orders unresolved incidents first, then used vendors", () => {
@@ -268,6 +348,17 @@ test("laneRows respects the row cap", () => {
     items.push(mkItem({ guid: "s:" + i, lane: "engineering", timeMs: NOW_MS - i }))
   }
   assert.equal(Model.laneRows(items, "engineering", 6).length, 6)
+})
+
+test("laneRows caps resolved incidents at 2 when nothing is active, lifts when one is", () => {
+  const calm = []
+  for (let i = 0; i < 6; i++) {
+    calm.push(mkItem({ guid: "s:" + i, lane: "incident", resolved: true, timeMs: NOW_MS - i * 1000 }))
+  }
+  assert.equal(Model.laneRows(calm, "incident", 6).length, 2, "calm day shows 2 resolved rows")
+
+  const active = calm.concat([mkItem({ guid: "s:hot", lane: "incident", resolved: false, timeMs: NOW_MS })])
+  assert.ok(Model.laneRows(active, "incident", 6).length > 2, "an active incident lifts the cap")
 })
 
 // ---- personalization ----

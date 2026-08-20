@@ -83,14 +83,15 @@ Panel {
       var laneRows = Model.laneRows(items, lanes[l].lane, lanes[l].max)
       if (laneRows.length === 0) continue
       rows.push({ type: "header", text: lanes[l].header, lane: lanes[l].lane,
-        guid: "", guids: [], title: "", url: "", vendorName: "",
+        guid: "", guids: [], title: "", url: "", label: "", vendorName: "",
         timeMs: 0, read: true, resolved: true, used: false, count: 0, sel: -1 })
       for (var r = 0; r < laneRows.length; r++) {
         var row = laneRows[r]
         rows.push({ type: "row", text: "", lane: row.lane, guid: row.guid,
           guids: row.guids, title: row.title, url: row.url,
-          vendorName: row.vendorName, timeMs: row.timeMs, read: row.read,
-          resolved: row.resolved, used: row.used, count: row.count, sel: sel })
+          label: row.label, vendorName: row.vendorName, timeMs: row.timeMs,
+          read: row.read, resolved: row.resolved, used: row.used,
+          count: row.count, sel: sel })
         sel++
       }
     }
@@ -124,6 +125,10 @@ Panel {
     selIdx = next
   }
 
+  // Guids whose mark-read write is waiting because markProc was busy when the
+  // keystroke arrived. Flushed in markProc.onExited so no action is dropped.
+  property var queuedGuids: []
+
   function openSelected() {
     var row = selectedRow()
     if (!row || row.url === "") return
@@ -133,34 +138,49 @@ Panel {
     if (openProc.running) return
     openProc.command = ["xdg-open", row.url]
     openProc.running = true
-    markRowRead(row)
+    // Opening a cluster row opens only its newest item, so mark only that
+    // one read here. Draining the rest of a "(+N more this week)" cluster is
+    // an explicit act (x), never a side effect of opening the top item.
+    markGuidsRead([row.guid])
   }
 
-  function markRowRead(row) {
-    if (!row) return
+  function markGuidsRead(guids) {
+    if (!guids || guids.length === 0) return
     var overlay = ({})
     for (var k in pendingRead) overlay[k] = true
-    var args = [pollerPath, "--mark-read"]
-    for (var i = 0; i < row.guids.length; i++) {
-      overlay[row.guids[i]] = true
-      args.push(row.guids[i])
+    var queued = queuedGuids.slice()
+    for (var i = 0; i < guids.length; i++) {
+      overlay[guids[i]] = true
+      queued.push(guids[i])
     }
     pendingRead = overlay
-    if (!markProc.running) {
-      markProc.command = args
+    if (markProc.running) {
+      // A write is in flight: remember these and flush when it returns,
+      // rather than dropping them (which would leave the overlay permanently
+      // ahead of disk and lose the action on the next restart).
+      queuedGuids = queued
+    } else {
+      queuedGuids = []
+      markProc.command = [pollerPath, "--mark-read"].concat(guids)
       markProc.running = true
     }
   }
 
   function markSelectedRead() {
-    markRowRead(selectedRow())
+    var row = selectedRow()
+    if (row) markGuidsRead(row.guids)
   }
 
   function markAllRead() {
     var overlay = ({})
     for (var i = 0; i < items.length; i++) overlay[items[i].guid] = true
     pendingRead = overlay
-    if (!markProc.running) {
+    if (markProc.running) {
+      // Fold into the queued flush; onExited issues --mark-all-read when the
+      // whole-store flag was requested.
+      queuedGuids = ["*all*"]
+    } else {
+      queuedGuids = []
       markProc.command = [pollerPath, "--mark-all-read"]
       markProc.running = true
     }
@@ -241,7 +261,22 @@ Panel {
 
   Process {
     id: markProc
-    onExited: root.reread()
+    onExited: {
+      // Flush anything that arrived while this write was in flight, so no
+      // mark-read/clear keystroke is ever silently dropped.
+      if (root.queuedGuids.length > 0) {
+        var pending = root.queuedGuids
+        root.queuedGuids = []
+        if (pending.length === 1 && pending[0] === "*all*") {
+          markProc.command = [root.pollerPath, "--mark-all-read"]
+        } else {
+          markProc.command = [root.pollerPath, "--mark-read"].concat(pending)
+        }
+        markProc.running = true
+      } else {
+        root.reread()
+      }
+    }
   }
 
   Process {
@@ -296,13 +331,17 @@ Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onMoveRequested: function(dx, dy) { root.moveCursor(dy) }
+      // PanelKeyCatcher emits returnRequested THEN activateRequested on the
+      // same Return press, so wiring both would fire openSelected twice; wire
+      // only activate (Space maps to it too, matching the first-party agents
+      // panel). `x` is consumed by the catcher as deleteRequested before
+      // textKey fires, so it is handled there, not in onTextKey.
       onActivateRequested: root.openSelected()
-      onReturnRequested: root.openSelected()
       onDeleteRequested: root.markSelectedRead()
       onTextKey: function(t) {
         if (t === "r") root.refresh()
         else if (t === "o") root.openSelected()
-        else if (t === "x" || t === "a") root.markSelectedRead()
+        else if (t === "a") root.markSelectedRead()
         else if (t === "c") root.markAllRead()
       }
 
@@ -346,11 +385,16 @@ Panel {
                 text: {
                   if (!root.feedState.valid) return "Waiting for the first poll. The service checks every 15 minutes."
                   var okCount = 0
-                  for (var i = 0; i < root.feedState.sources.length; i++)
+                  var firstBad = ""
+                  for (var i = 0; i < root.feedState.sources.length; i++) {
                     if (root.feedState.sources[i].ok) okCount++
+                    else if (!firstBad) firstBad = root.feedState.sources[i].title
+                  }
                   var age = Model.ageText(root.feedState.generatedAt, root.nowMs)
-                  return okCount + "/" + root.feedState.sources.length + " sources"
+                  var total = root.feedState.sources.length
+                  return okCount + "/" + total + " sources"
                     + (age ? " checked " + age : "")
+                    + (okCount < total && firstBad ? " · " + firstBad + " failing" : "")
                 }
                 textFormat: Text.PlainText
                 color: root.bar ? Qt.darker(root.bar.foreground, 1.4) : Color.muted
@@ -424,7 +468,7 @@ Panel {
                 }
 
                 Text {
-                  text: rowItem.isHeader ? "" : rowItem.modelData.vendorName
+                  text: rowItem.isHeader ? "" : rowItem.modelData.label
                   textFormat: Text.PlainText
                   anchors.verticalCenter: parent.verticalCenter
                   color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
@@ -474,7 +518,7 @@ Panel {
             visible: root.feedState.valid && root.allRows.length === 0
             anchors.left: parent.left
             anchors.leftMargin: Style.space(16)
-            text: "Nothing in the window. The radar is listening."
+            text: "Nothing new in the last 45 days. Still listening."
             textFormat: Text.PlainText
             color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
             font.family: root.bar ? root.bar.fontFamily : Style.font.family

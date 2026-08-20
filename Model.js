@@ -29,25 +29,25 @@ var SOURCES = [
     title: "OpenAI Status", kind: "status",
     url: "https://status.openai.com/history.rss" },
   { id: "claude-code-releases", vendor: "anthropic", vendorName: "Anthropic",
-    title: "Claude Code Releases", kind: "releases",
+    title: "Claude Code Releases", product: "Claude Code", kind: "releases",
     url: "https://github.com/anthropics/claude-code/releases.atom" },
   { id: "claude-code-changelog", vendor: "anthropic", vendorName: "Anthropic",
-    title: "Claude Code Changelog", kind: "changelog",
+    title: "Claude Code Changelog", product: "Claude Code", kind: "changelog",
     url: "https://github.com/anthropics/claude-code/commits/main/CHANGELOG.md.atom" },
   { id: "anthropic-sdk", vendor: "anthropic", vendorName: "Anthropic",
-    title: "Anthropic SDK Releases", kind: "releases",
+    title: "Anthropic SDK Releases", product: "Anthropic SDK", kind: "releases",
     url: "https://github.com/anthropics/anthropic-sdk-python/releases.atom" },
   { id: "xai-sdk", vendor: "xai", vendorName: "xAI",
-    title: "xAI SDK Releases", kind: "releases",
+    title: "xAI SDK Releases", product: "xAI SDK", kind: "releases",
     url: "https://github.com/xai-org/xai-sdk-python/releases.atom" },
   { id: "mistral-sdk", vendor: "mistral", vendorName: "Mistral",
-    title: "Mistral SDK Releases", kind: "releases",
+    title: "Mistral SDK Releases", product: "Mistral SDK", kind: "releases",
     url: "https://github.com/mistralai/client-python/releases.atom" },
   { id: "meta-llama", vendor: "meta", vendorName: "Meta",
-    title: "Meta Llama Models", kind: "changelog",
+    title: "Meta Llama Models", product: "Meta Llama", kind: "changelog",
     url: "https://github.com/meta-llama/llama-models/commits/main.atom" },
   { id: "ollama", vendor: "ollama", vendorName: "Ollama",
-    title: "Ollama Releases", kind: "releases",
+    title: "Ollama Releases", product: "Ollama", kind: "releases",
     url: "https://github.com/ollama/ollama/releases.atom" }
 ]
 
@@ -62,8 +62,7 @@ var AGENT_VENDORS = {
   gemini: "google",
   grok: "xai",
   mistral: "mistral",
-  ollama: "ollama",
-  fireworks: "fireworks"
+  ollama: "ollama"
 }
 
 // A response bigger than this is not a feed. The curl argv carries the same
@@ -126,8 +125,17 @@ function safeFromCode(code) {
   try { return String.fromCodePoint(code) } catch (e) { return "" }
 }
 
+// The two lazy-scan regexes below (`[\s\S]*?` up to a delimiter) backtrack
+// quadratically on a body full of unterminated open tags, so both bound
+// their input first. A single feed field is never legitimately larger than
+// this; capping here turns a 2 MB adversarial body from ~14 minutes of pinned
+// CPU into a bounded scan.
+var FIELD_SCAN_CAP = 65536
+
 function stripCdata(s) {
-  return String(s || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+  var str = String(s || "")
+  if (str.length > FIELD_SCAN_CAP) str = str.slice(0, FIELD_SCAN_CAP)
+  return str.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
 }
 
 function stripTags(s) {
@@ -136,8 +144,10 @@ function stripTags(s) {
 
 // First <tag>inner</tag> inside a block, tolerant of attributes on the tag.
 function textOf(block, tag) {
+  var str = String(block || "")
+  if (str.length > FIELD_SCAN_CAP) str = str.slice(0, FIELD_SCAN_CAP)
   var re = new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + tag + ">", "i")
-  var m = re.exec(String(block || ""))
+  var m = re.exec(str)
   return m ? m[1] : ""
 }
 
@@ -155,12 +165,17 @@ function atomLink(block) {
   return first
 }
 
-// A URL is only a URL if it is https. Anything else (http, file, javascript,
-// a dash that curl or xdg-open would parse as an option) becomes "", and the
-// row simply is not openable.
+// A URL is only a URL if it is https AND drawn from a conservative character
+// set that contains no shell metacharacter. This is the load-bearing guard:
+// a notification click action is dispatched by the shell as
+// `bash -lc "xdg-open <url>"`, so a `;`, `$`, backtick, `|`, or `(` in a feed
+// permalink would be command injection. The set below keeps everything a real
+// http URL needs (path, query, fragment, percent-escapes) and drops every
+// shell-active byte, whitespace, and quote. Anything outside it becomes "",
+// and the row is simply not openable.
 function safeUrl(u) {
   var s = decodeEntities(String(u || "").trim())
-  if (!/^https:\/\/[^\s"'<>]+$/.test(s)) return ""
+  if (!/^https:\/\/[A-Za-z0-9._~:\/?#@%=&+,-]+$/.test(s)) return ""
   return s.length > 500 ? "" : s
 }
 
@@ -180,8 +195,14 @@ function feedText(rawText, max) {
 function parseFeed(raw) {
   var s = String(raw || "")
   if (!s || s.length > MAX_BODY_CHARS) return []
-  var isAtom = /<feed[\s>]/i.test(s) && /<entry[\s>]/i.test(s)
-  var isRss = /<(rss|channel)[\s>]/i.test(s) && /<item[\s>]/i.test(s)
+  // Detect the format from the DOCUMENT ROOT, not a body-wide substring
+  // search: an RSS blog post that quotes Atom XML in its body must not be
+  // mis-parsed as Atom (which would split on a tag that never appears as a
+  // real element and silently yield zero items). The first real element after
+  // any XML declaration is <rss>/<rdf> or <feed>.
+  var rootMatch = /<\s*(feed|rss|rdf:rdf|rdf)\b/i.exec(s.slice(0, 4000))
+  var isAtom = rootMatch && /^feed$/i.test(rootMatch[1])
+  var isRss = rootMatch && !isAtom
   if (!isAtom && !isRss) return []
   var splitTag = isAtom ? "entry" : "item"
   var blocks = s.split(new RegExp("<" + splitTag + "(?:\\s[^>]*)?>", "i"))
@@ -192,6 +213,9 @@ function parseFeed(raw) {
     var b = blocks[i]
     var end = b.search(new RegExp("</" + splitTag + ">", "i"))
     if (end >= 0) b = b.slice(0, end)
+    // Bound each block unconditionally (the unterminated case, end < 0, is
+    // exactly the quadratic-blowup input) before any field regex runs on it.
+    if (b.length > FIELD_SCAN_CAP) b = b.slice(0, FIELD_SCAN_CAP)
     var title = feedText(textOf(b, "title"), 140)
     var url
     var guid
@@ -249,6 +273,7 @@ function normalizeItems(rawEntries, source, nowMs) {
       sourceId: source.id,
       vendor: source.vendor,
       vendorName: source.vendorName,
+      product: source.product || "",
       lane: classifyLane(e.title, source.kind),
       quiet: source.kind === "changelog",
       title: e.title,
@@ -265,8 +290,14 @@ function normalizeItems(rawEntries, source, nowMs) {
 // Merge freshly fetched items into the stored set. Keyed by guid; the stored
 // copy keeps its read flag but adopts fresh title/url/resolved (a status item
 // updates in place as an incident progresses). Pruning: hard age cutoff, then
-// newest-first cap. An unread item inside the retention window is never
-// dropped by the cap alone.
+// an UNCONDITIONAL newest-first cap. The cap must be unconditional: an earlier
+// version exempted unread items, which let a hostile OPML import grow the
+// store past MAX_BODY_CHARS so parseState returned empty on both readers and
+// the plugin (including all incident alerts) went permanently dark. Because
+// the list is sorted newest-first before the cut, recent unread items survive
+// by recency, which is the property that actually matters.
+// Stored objects are never mutated in place: a fresh update produces a new
+// object, so a caller that retains prevItems sees no surprise write-through.
 function mergeItems(prevItems, freshItems, nowMs) {
   var byGuid = {}
   var order = []
@@ -280,11 +311,15 @@ function mergeItems(prevItems, freshItems, nowMs) {
     var f = fresh[j]
     var old = byGuid[f.guid]
     if (old) {
-      old.title = f.title
-      old.url = f.url
-      old.resolved = f.resolved
-      old.lane = f.lane
-      if (f.timeMs > old.timeMs) old.timeMs = f.timeMs
+      var updated = {}
+      for (var key in old) updated[key] = old[key]
+      updated.title = f.title
+      updated.url = f.url
+      updated.resolved = f.resolved
+      updated.lane = f.lane
+      if (f.product) updated.product = f.product
+      if (f.timeMs > old.timeMs) updated.timeMs = f.timeMs
+      byGuid[f.guid] = updated
     } else {
       byGuid[f.guid] = f
       order.push(f.guid)
@@ -298,14 +333,7 @@ function mergeItems(prevItems, freshItems, nowMs) {
     merged.push(it)
   }
   merged.sort(function(a, b) { return b.timeMs - a.timeMs })
-  if (merged.length > MAX_ITEMS) {
-    var kept = []
-    for (var m = 0; m < merged.length; m++) {
-      if (m < MAX_ITEMS || merged[m].read === false) kept.push(merged[m])
-    }
-    merged = kept
-  }
-  return merged
+  return merged.length > MAX_ITEMS ? merged.slice(0, MAX_ITEMS) : merged
 }
 
 // Which merged items deserve a desktop notification this run. Nothing on the
@@ -373,11 +401,15 @@ function laneRows(items, lane, maxRows) {
   }
   var rows = []
   if (lane === "release") {
+    // Cluster by SOURCE + week, never by vendor: Claude Code releases and the
+    // Anthropic SDK are the same vendor but different products, and merging
+    // "Claude Code v2.1.238" with an SDK bump into one "(+N more)" row loses
+    // the product identity a reader needs.
     var clusters = {}
     var orderKeys = []
     for (var j = 0; j < list.length; j++) {
       var it = list[j]
-      var key = it.vendor + ":" + isoWeekKey(it.timeMs) + ":" + (it.quiet ? "q" : "n")
+      var key = it.sourceId + ":" + isoWeekKey(it.timeMs)
       if (!clusters[key]) { clusters[key] = []; orderKeys.push(key) }
       clusters[key].push(it)
     }
@@ -391,17 +423,33 @@ function laneRows(items, lane, maxRows) {
         if (group[g].read === false) unread = true
         guids.push(group[g].guid)
       }
+      // The row's label column carries the product for a GitHub source
+      // ("Claude Code", "Anthropic SDK") and the vendor for a blog release
+      // ("Google DeepMind"); the title carries only the tag or summary. That
+      // split keeps the label out of the title so a row never doubles its
+      // own name ("Anthropic Anthropic SDK").
+      var label = newest.product || newest.vendorName
+      var title
+      if (newest.quiet) {
+        // A changelog feed's items are commit subjects, not releases; a
+        // janitorial "chore: update CHANGELOG.md" must never headline the
+        // release lane. Collapse the whole week to one honest summary row.
+        title = "changelog · " + group.length
+          + (group.length === 1 ? " commit this week" : " commits this week")
+      } else {
+        title = newest.title
+        if (group.length > 1) title += "  (+" + (group.length - 1) + " more this week)"
+      }
       rows.push({
         guid: newest.guid,
         guids: guids,
         count: group.length,
+        label: label,
         vendorName: newest.vendorName,
         vendor: newest.vendor,
         lane: lane,
         quiet: newest.quiet,
-        title: group.length > 1
-          ? newest.title + "  (+" + (group.length - 1) + " more this week)"
-          : newest.title,
+        title: title,
         url: newest.url,
         timeMs: newest.timeMs,
         resolved: true,
@@ -416,6 +464,7 @@ function laneRows(items, lane, maxRows) {
         guid: one.guid,
         guids: [one.guid],
         count: 1,
+        label: one.vendorName,
         vendorName: one.vendorName,
         vendor: one.vendor,
         lane: lane,
@@ -434,6 +483,14 @@ function laneRows(items, lane, maxRows) {
     if (a.used !== b.used) return a.used ? -1 : 1
     return b.timeMs - a.timeMs
   })
+  // On a calm day the incident lane is all resolved history; two rows of "all
+  // clear" is plenty, and it must not push actual releases below the fold. The
+  // cap lifts to the full maxRows the moment anything is unresolved.
+  if (lane === "incident") {
+    var anyActive = false
+    for (var s = 0; s < rows.length; s++) if (rows[s].resolved === false) { anyActive = true; break }
+    if (!anyActive) return rows.slice(0, 2)
+  }
   return rows.slice(0, maxRows || 12)
 }
 
@@ -510,6 +567,7 @@ function parseState(raw) {
       sourceId: clean(it.sourceId, 40),
       vendor: clean(it.vendor, 24),
       vendorName: clean(it.vendorName, 32),
+      product: clean(it.product, 32),
       lane: /^(release|pricing|incident|engineering)$/.test(String(it.lane)) ? String(it.lane) : "engineering",
       quiet: it.quiet === true,
       title: clean(it.title, 160),
