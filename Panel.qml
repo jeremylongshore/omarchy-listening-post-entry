@@ -72,7 +72,7 @@ Panel {
   Connections {
     target: root.service
     ignoreUnknownSignals: true
-    function onStateChanged() { root.revision++ }
+    function onFeedStateChanged() { root.revision++ }
   }
 
   // ---- Rows. Four lanes flattened into one list the cursor walks; headers

@@ -56,7 +56,11 @@ Item {
   property var prevGuids: ({})          // guids present before this run
   property bool polling: false
 
-  signal stateChanged()
+  // Named feedStateChanged, not stateChanged: the root is an Item, which already
+  // owns a `state` property and therefore a built-in stateChanged() signal.
+  // Declaring stateChanged() here is an invalid override (qt.qml.invalidOverride)
+  // and silently aliases our data-updated notification onto Item.state.
+  signal feedStateChanged()
 
   // ---------------------------------------------------------------- helpers
 
@@ -91,19 +95,11 @@ Item {
 
   readonly property string moduleId: "io.github.jeremylongshore.listening-post"
 
-  // Reject an imported feed URL whose host is a literal IP or a private-network
-  // suffix, so an attacker-authored OPML cannot turn the poll into an
-  // internal-endpoint prober.
-  function isPublicHost(url) {
-    var m = /^https:\/\/([^\/:?#]+)/i.exec(String(url || ""))
-    if (!m) return false
-    var host = m[1].toLowerCase()
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false
-    if (host.indexOf("[") >= 0 || host.indexOf(":") >= 0) return false
-    if (/(^|\.)(local|internal|localhost|lan|home|corp)$/.test(host)) return false
-    if (host === "localhost") return false
-    return true
-  }
+  // Host policy for imported feed URLs lives in Model.js so it is covered by
+  // the offline suite. It shipped inside this file, untested, and a userinfo
+  // bypass reached loopback. Reported on submission 1229.
+  function isPublicHost(url) { return Model.isPublicHost(url) }
+
 
   function extraSources() {
     var extras
@@ -299,7 +295,7 @@ Item {
       sources: root.sourceStatus,
       items: root.storedItems
     }))
-    root.stateChanged()
+    root.feedStateChanged()
   }
 
   function loadState(raw) {
@@ -315,7 +311,7 @@ Item {
       root.firstRun = data && data.firstRun === true ? true : parsed.items.length === 0
     }
     root.stateLoaded = true
-    root.stateChanged()
+    root.feedStateChanged()
     // First poll only after the state is known, so the baseline decision is
     // made against real history rather than an empty store.
     root.poll()

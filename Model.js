@@ -222,6 +222,49 @@ function atomLink(block) {
 // http URL needs (path, query, fragment, percent-escapes) and drops every
 // shell-active byte, whitespace, and quote. Anything outside it becomes "",
 // and the row is simply not openable.
+
+// --------------------------------------------------------------------------
+// Host policy for user-imported feed URLs.
+//
+// Lives here rather than in Service.qml for one reason: it is security
+// logic, and logic that cannot be reached by the offline suite is logic
+// that ships broken. It did.
+function isPublicHost(url) {
+  // Capture the whole authority, up to the first / ? or #. The earlier
+  // pattern also stopped at ':' and '@' was never removed, so the authority
+  // of "https://user@127.0.0.1/feed" was read as the HOST "user@127.0.0.1",
+  // which is not a dotted quad and is not a private suffix, so it passed and
+  // curl then dialled 127.0.0.1. The ':' variant was worse still:
+  // "https://user:pass@127.0.0.1/" captured only "user". Reported against
+  // this plugin by the marketplace reviewer on submission 1229.
+  var m = /^https:\/\/([^\/?#]+)/i.exec(String(url || ""))
+  if (!m) return false
+  var authority = m[1]
+
+  // Userinfo is everything before the LAST '@'. Strip it before any host
+  // test, because curl resolves what follows, not what precedes.
+  var at = authority.lastIndexOf("@")
+  if (at >= 0) authority = authority.slice(at + 1)
+
+  // No explicit port and no bracketed IPv6 literal, as before.
+  if (authority.indexOf(":") >= 0 || authority.indexOf("[") >= 0) return false
+
+  // A single trailing dot is a fully qualified form of the same name, so
+  // "localhost." must not slip past a suffix test anchored on '$'.
+  var host = authority.toLowerCase().replace(/\.$/, "")
+  if (host === "") return false
+
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false
+  if (/(^|\.)(local|internal|localhost|lan|home|corp|intranet)$/.test(host)) return false
+
+  // A public feed host is always a dotted name. This one rule also rejects
+  // "localhost", the decimal form "2130706433" and the hex form
+  // "0x7f000001", each of which resolves to loopback.
+  if (host.indexOf(".") < 0) return false
+
+  return true
+}
+
 function safeUrl(u) {
   var s = decodeEntities(String(u || "").trim())
   if (!/^https:\/\/[A-Za-z0-9._~:\/?#@%=&+,-]+$/.test(s)) return ""
@@ -697,6 +740,7 @@ if (typeof module !== "undefined") {
     stripTags: stripTags,
     feedText: feedText,
     safeUrl: safeUrl,
+    isPublicHost: isPublicHost,
     parseFeed: parseFeed,
     classifyLane: classifyLane,
     normalizeItems: normalizeItems,

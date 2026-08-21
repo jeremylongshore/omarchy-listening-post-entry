@@ -477,3 +477,61 @@ test("every curated source is https, unique, and carries a known kind", () => {
     assert.ok(src.vendor.length > 0 && src.vendorName.length > 0 && src.title.length > 0)
   }
 })
+
+// ---------------------------------------------------------------------------
+// Host policy for user-imported feeds.
+//
+// Reported by the marketplace reviewer on submission 1229: the filter treated
+// URL userinfo as part of the hostname, so "https://user@127.0.0.1/feed"
+// passed the private-host check and curl was then pointed at loopback. The
+// check lived in Service.qml where no test could reach it, which is why it
+// shipped. It lives in Model.js now and these cases pin it.
+test("isPublicHost rejects the reported userinfo bypass", () => {
+  assert.equal(Model.isPublicHost("https://user@127.0.0.1/feed"), false)
+})
+
+test("isPublicHost rejects userinfo with a password, which hid the host entirely", () => {
+  // The old pattern stopped at ':' and captured only "user".
+  assert.equal(Model.isPublicHost("https://user:pass@127.0.0.1/"), false)
+  assert.equal(Model.isPublicHost("https://user:pass@localhost/"), false)
+})
+
+test("isPublicHost rejects loopback and private ranges written plainly", () => {
+  for (const u of ["https://127.0.0.1/f", "https://10.0.0.5/f", "https://192.168.1.1/f",
+                   "https://172.16.0.1/f", "https://169.254.169.254/f", "https://0.0.0.0/f"]) {
+    assert.equal(Model.isPublicHost(u), false, u)
+  }
+})
+
+test("isPublicHost rejects loopback written as an integer", () => {
+  // Both resolve to 127.0.0.1 without containing a single dot.
+  assert.equal(Model.isPublicHost("https://2130706433/f"), false)
+  assert.equal(Model.isPublicHost("https://0x7f000001/f"), false)
+})
+
+test("isPublicHost rejects internal suffixes including a trailing dot", () => {
+  for (const u of ["https://localhost/f", "https://localhost./f", "https://box.local/f",
+                   "https://git.internal/f", "https://nas.lan/f", "https://wiki.corp/f"]) {
+    assert.equal(Model.isPublicHost(u), false, u)
+  }
+})
+
+test("isPublicHost rejects an explicit port and an IPv6 literal", () => {
+  assert.equal(Model.isPublicHost("https://example.com:8080/f"), false)
+  assert.equal(Model.isPublicHost("https://[::1]/f"), false)
+})
+
+test("isPublicHost rejects anything that is not https", () => {
+  assert.equal(Model.isPublicHost("http://example.com/f"), false)
+  assert.equal(Model.isPublicHost("file:///etc/passwd"), false)
+  assert.equal(Model.isPublicHost(""), false)
+  assert.equal(Model.isPublicHost(null), false)
+})
+
+test("isPublicHost still allows the real feed hosts this plugin ships", () => {
+  for (const u of ["https://openai.com/blog/rss.xml",
+                   "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/a.xml",
+                   "https://status.anthropic.com/history.rss"]) {
+    assert.equal(Model.isPublicHost(u), true, u)
+  }
+})
