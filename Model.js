@@ -254,13 +254,49 @@ function isPublicHost(url) {
   var host = authority.toLowerCase().replace(/\.$/, "")
   if (host === "") return false
 
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false
+  var labels = host.split(".")
+
+  // An empty label ("a..b", ".a") is not a resolvable name. Reject it here
+  // rather than let it fall through the tests below, each of which assumes
+  // every label is non-empty.
+  for (var i = 0; i < labels.length; i++) {
+    if (labels[i] === "") return false
+  }
+
+  // Reject anything inet_aton parses as an address, in ANY base and with ANY
+  // number of parts.
+  //
+  // The previous rule was /^\d{1,3}(\.\d{1,3}){3}$/ — a full four-part dotted
+  // quad of one-to-three DECIMAL digits, and nothing else. inet_aton, which is
+  // what curl actually resolves with, is far more permissive: it accepts one
+  // to four parts and reads a leading "0" as octal and "0x" as hex. So every
+  // one of these was read as a public dotted name and dialled loopback:
+  //
+  //   https://127.1/feed         two parts        -> 127.0.0.1
+  //   https://0177.0.0.1/feed    octal 0177 = 127 -> 127.0.0.1
+  //   https://0x7f.1/feed        hex 0x7f = 127   -> 127.0.0.1
+  //
+  // The first two were reported against this plugin by the marketplace
+  // maintainer on submission 1229, after an earlier fix for a userinfo bypass
+  // in the same function. The third was found while fixing them.
+  //
+  // Enumerating bad forms is what failed twice here, so this does the
+  // inverse: a public feed host is a NAME, so if every label is numeric in
+  // some base it is an address literal, whatever its shape, and it is out.
+  var allNumeric = true
+  for (var j = 0; j < labels.length; j++) {
+    if (!/^(0[xX][0-9a-fA-F]+|[0-9]+)$/.test(labels[j])) {
+      allNumeric = false
+      break
+    }
+  }
+  if (allNumeric) return false
+
   if (/(^|\.)(local|internal|localhost|lan|home|corp|intranet)$/.test(host)) return false
 
-  // A public feed host is always a dotted name. This one rule also rejects
-  // "localhost", the decimal form "2130706433" and the hex form
-  // "0x7f000001", each of which resolves to loopback.
-  if (host.indexOf(".") < 0) return false
+  // A public feed host is always a dotted name, so a bare single label
+  // ("localhost", any intranet short name) is out.
+  if (labels.length < 2) return false
 
   return true
 }

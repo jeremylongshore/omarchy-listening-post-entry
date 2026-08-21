@@ -503,6 +503,41 @@ test("isPublicHost rejects loopback and private ranges written plainly", () => {
   }
 })
 
+test("isPublicHost rejects the alternate IPv4 forms inet_aton accepts", () => {
+  // Reported against submission 1229 after the userinfo fix: the old rule
+  // only matched a four-part dotted quad of decimal digits, so a short form
+  // and an octal form both read as public names and curl dialled loopback.
+  // 0x7f.1 was found while fixing those two and is pinned with them.
+  for (const u of [
+    "https://127.1/feed",        // two parts
+    "https://127.0.1/feed",      // three parts
+    "https://0177.0.0.1/feed",   // octal
+    "https://0x7f.1/feed",       // hex, short
+    "https://0x7f.0.0.1/feed",   // hex, four parts
+    "https://010.0.0.1/feed",    // octal 8
+  ]) {
+    assert.equal(Model.isPublicHost(u), false, u)
+  }
+})
+
+test("isPublicHost still accepts ordinary public feed hosts", () => {
+  // The numeric-label rule must not swallow real names, including ones whose
+  // labels merely contain digits or are entirely digits in ONE label only.
+  for (const u of [
+    "https://example.com/feed",
+    "https://news.ycombinator.com/rss",
+    "https://3suisses.fr/feed",     // leading digit
+    "https://403.example.com/feed", // an all-digit label beside a name label
+  ]) {
+    assert.equal(Model.isPublicHost(u), true, u)
+  }
+})
+
+test("isPublicHost rejects a host with an empty label", () => {
+  assert.equal(Model.isPublicHost("https://127..1/feed"), false)
+  assert.equal(Model.isPublicHost("https://.example.com/feed"), false)
+})
+
 test("isPublicHost rejects loopback written as an integer", () => {
   // Both resolve to 127.0.0.1 without containing a single dot.
   assert.equal(Model.isPublicHost("https://2130706433/f"), false)
