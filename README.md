@@ -14,10 +14,12 @@ OpenAI incident               a provider status page has an open incident
 
 ## Why this is not another RSS reader
 
-- **The source list is the product.** Anthropic, xAI, Mistral, and Meta
-  publish no blog feed. Listening Post rides GitHub release and changelog
-  Atom feeds for those vendors, so the radar keeps working when marketing
-  sites drop RSS. Every shipped URL was fetched live before release.
+- **The source list is the product.** Twenty-nine curated feeds across every
+  major lab, provider, and AI tool. For the vendors that publish no
+  first-party blog feed (Anthropic, xAI, Mistral, Meta, and more), Listening
+  Post pulls a curated community RSS mirror for news plus their GitHub release
+  atoms for SDK versions, so the radar keeps working where marketing sites
+  drop RSS. Every shipped URL was fetched live before release.
 - **Lanes, not folders.** Every item is classified: **Model releases**,
   **Pricing and limits**, **Status incidents** (louder, first), and
   **Engineering posts** (shown, never counted, never notified). A vendor's
@@ -66,28 +68,27 @@ Left-click opens, right-click marks read. Middle-click the pill to refresh.
 
 ## Sources
 
-Thirteen curated sources: six real RSS feeds, and seven GitHub Atom
-substitutes for the vendors that publish none.
+Twenty-nine curated sources.
 
-| Source | Type |
-| --- | --- |
-| OpenAI News | blog RSS |
-| Google AI Blog | blog RSS |
-| Google DeepMind Blog | blog RSS |
-| Hugging Face Blog | blog RSS |
-| Claude Status | status history RSS |
-| OpenAI Status | status history RSS |
-| Claude Code Releases | GitHub releases Atom |
-| Claude Code Changelog | GitHub commits Atom (quiet: never counted, never notified) |
-| Anthropic SDK Releases | GitHub releases Atom |
-| xAI SDK Releases | GitHub releases Atom |
-| Mistral SDK Releases | GitHub releases Atom |
-| Meta Llama Models | GitHub commits Atom (quiet: never counted, never notified) |
-| Ollama Releases | GitHub releases Atom |
+- **Vendor news (first-party RSS):** OpenAI, Google AI, Google DeepMind,
+  Hugging Face, Together AI.
+- **Vendor news (community RSS mirror, for vendors with no first-party
+  feed):** Anthropic (news, engineering, research), xAI, Mistral, Meta,
+  Cohere, Groq, Perplexity.
+- **AI commentary and research:** The Batch, The Verge AI, Chip Huyen,
+  Lil'Log.
+- **Status incidents:** Claude Status, OpenAI Status.
+- **Releases and changelogs:** Claude Code (releases and changelog), the
+  Anthropic / xAI / Mistral SDKs, Ollama, vLLM, MCP Servers, Cursor.
 
-A changelog feed's commits never headline the release lane: they collapse
-into one quiet "Claude Code changelog · N commits this week" row so a
-janitorial commit subject never masquerades as a model release.
+The community RSS mirror ([Olshansk/rss-feeds](https://github.com/Olshansk/rss-feeds))
+is third-party and labeled as such; every source is polled independently, so
+if the mirror lags, only those rows go quiet. Add your own feeds with OPML at
+any time.
+
+A changelog feed (Claude Code, Cursor) never headlines the release lane: its
+entries collapse into one quiet "Cursor changelog · N this week" row, so a
+routine version bump never masquerades as a model release.
 
 Add your own with OPML:
 
@@ -136,10 +137,12 @@ I/O surface of this plugin is one auditable script. Parsing, classification,
 merging, and sanitizing live in `Model.js`, pure functions loaded by the
 shell, the CLI, and the unit suite alike.
 
-Network hosts contacted (GET only): `openai.com`, `blog.google`,
-`deepmind.google`, `huggingface.co`, `status.claude.com`,
-`status.openai.com`, `github.com`, plus anything you import via OPML
-(https only). No account, no token, no telemetry, nothing sent anywhere.
+Network hosts contacted (GET only): the curated feed hosts (`openai.com`,
+`blog.google`, `deepmind.google`, `huggingface.co`, `together.ai`,
+`raw.githubusercontent.com`, `theverge.com`, `huyenchip.com`,
+`lilianweng.github.io`, `status.claude.com`, `status.openai.com`,
+`code.claude.com`, `cursor.com`, `github.com`), plus anything you import via
+OPML (https only). No account, no token, no telemetry, nothing sent anywhere.
 
 ## Testing
 
@@ -147,8 +150,8 @@ Network hosts contacted (GET only): `openai.com`, `blog.google`,
 npm test
 ```
 
-56 tests over the pure data layer: the RSS and Atom parsers against captured
-bodies from all thirteen live sources, lane classification, week clustering,
+72 tests over the pure data layer: the RSS and Atom parsers against captured
+bodies from all twenty-nine live sources, lane classification, week clustering,
 merge and retention, read-state, notification gating, personalization
 mapping, OPML round-trip, and the state record. Offline by design; the
 capture procedure is in `docs/FIXTURES.md`.

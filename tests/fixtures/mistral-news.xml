@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>Mistral AI News</title>
+    <link>https://mistral.ai/news</link>
+    <description/>
+    <atom:link href="https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_mistral.xml" rel="self"/>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <generator>python-feedgen</generator>
+    <language>en</language>
+    <lastBuildDate>Thu, 28 May 2026 07:51:06 +0000</lastBuildDate>
+    <item>
+      <title>Emmi joins Mistral to accelerate the AI-native industry</title>
+      <link>https://mistral.ai/news/accelerate-ai-native-industry</link>
+      <description/>
+      <guid isPermaLink="false">https://mistral.ai/news/accelerate-ai-native-industry</guid>
+      <category>Research</category>
+      <pubDate>Fri, 22 May 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Remote agents in Vibe. Powered by Mistral Medium 3.5.</title>
+      <link>https://mistral.ai/news/vibe-remote-agents-mistral-medium-3-5</link>
+      <description/>
+      <guid isPermaLink="false">https://mistral.ai/news/vibe-remote-agents-mistral-medium-3-5</guid>
+      <category>Product</category>
+      <pubDate>Wed, 29 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Workflows for work that runs the business</title>
+      <link>https://mistral.ai/news/workflows</link>
+      <description/>
+      <guid isPermaLink="false">https://mistral.ai/news/workflows</guid>
+      <category>Product</category>
+      <pubDate>Mon, 27 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Connect the dots: Build with built-in and custom MCPs in Studio</title>
+      <link>https://mistral.ai/news/connectors</link>
+      <description/>
+      <guid isPermaLink="false">https://mistral.ai/news/connectors</guid>
+      <category>Product</category>
+      <pubDate>Wed, 15 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+</channel></rss>

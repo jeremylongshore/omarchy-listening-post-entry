@@ -40,7 +40,7 @@ Run `npm test` after recapture. Two classes of failure matter:
 
 ## Capture provenance
 
-Current fixtures were captured 2026-08-20 from all thirteen live sources.
+Current fixtures were captured 2026-08-20 from all twenty-nine live sources.
 The two URLs that had moved that day (Google AI blog, Anthropic status,
 which now lives at status.claude.com) were re-pointed to their final
 locations before capture, which is exactly the drift this procedure

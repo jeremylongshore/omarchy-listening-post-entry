@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Chip Huyen</title>
+    <description/>
+    <link>https://huyenchip.com</link>
+    <atom:link href="https://huyenchip.com/feed.xml" rel="self" type="application/rss+xml" />
+    
+      <item>
+        <title>Common pitfalls when building generative AI applications</title>
+        <description/>
+        <pubDate>Thu, 16 Jan 2025 00:00:00 +0000</pubDate>
+        <link>https://huyenchip.com//2025/01/16/ai-engineering-pitfalls.html</link>
+        <guid isPermaLink="true">https://huyenchip.com/2025/01/16/ai-engineering-pitfalls.html</guid>
+      </item>
+    
+      <item>
+        <title>Agents</title>
+        <description/>
+        <pubDate>Tue, 07 Jan 2025 00:00:00 +0000</pubDate>
+        <link>https://huyenchip.com//2025/01/07/agents.html</link>
+        <guid isPermaLink="true">https://huyenchip.com/2025/01/07/agents.html</guid>
+      </item>
+    
+      <item>
+        <title>Building A Generative AI Platform</title>
+        <description/>
+        <pubDate>Thu, 25 Jul 2024 00:00:00 +0000</pubDate>
+        <link>https://huyenchip.com//2024/07/25/genai-platform.html</link>
+        <guid isPermaLink="true">https://huyenchip.com/2024/07/25/genai-platform.html</guid>
+      </item>
+    
+      <item>
+        <title>Measuring personal growth</title>
+        <description/>
+        <pubDate>Wed, 17 Apr 2024 00:00:00 +0000</pubDate>
+        <link>https://huyenchip.com//2024/04/17/personal-growth.html</link>
+        <guid isPermaLink="true">https://huyenchip.com/2024/04/17/personal-growth.html</guid>
+      </item>
+</channel></rss>

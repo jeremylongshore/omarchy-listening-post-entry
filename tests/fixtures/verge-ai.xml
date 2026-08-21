@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><feed
+	xmlns="http://www.w3.org/2005/Atom"
+	xmlns:thr="http://purl.org/syndication/thread/1.0"
+	xml:lang="en-US"
+	>
+	<title type="text">AI | The Verge</title>
+	<subtitle type="text">The Verge is about technology and how it makes us feel. Founded in 2011, we offer our audience everything from breaking news to reviews to award-winning features and investigations, on our site, in video, and in podcasts.</subtitle>
+
+	<updated>2026-08-20T21:50:22+00:00</updated>
+
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/ai-artificial-intelligence" />
+	<id>https://www.theverge.com/rss/ai-artificial-intelligence/index.xml</id>
+	<link rel="self" type="application/atom+xml" href="https://www.theverge.com/rss/ai-artificial-intelligence/index.xml" />
+
+	<icon>https://platform.theverge.com/wp-content/uploads/sites/2/2025/01/verge-rss-large_80b47e.png?w=150&amp;h=150&amp;crop=1</icon>
+		<entry>
+			
+			<author>
+				<name>Emma Roth</name>
+			</author>
+			
+			<title type="html"><![CDATA[Google Discover is getting an AI chatbot-tuned feed]]></title>
+			<link rel="alternate" type="text/html" href="https://www.theverge.com/tech/983088/google-discover-ai-chatbot-feed" />
+			<id>https://www.theverge.com/?p=983088</id>
+			<updated>2026-08-20T17:50:22-04:00</updated>
+			<published>2026-08-20T17:50:22-04:00</published>
+			<category scheme="https://www.theverge.com" term="AI" /><category scheme="https://www.theverge.com" term="Apps" /><category scheme="https://www.theverge.com" term="Google" /><category scheme="https://www.theverge.com" term="News" /><category scheme="https://www.theverge.com" term="Tech" />
+							<summary/>
+			
+							<content/>
+			
+					</entry>
+			<entry>
+			
+			<author>
+				<name>Hayden Field</name>
+			</author>
+			
+			<title type="html"><![CDATA[It’s Greg Brockman’s OpenAI now]]></title>
+			<link rel="alternate" type="text/html" href="https://www.theverge.com/ai-artificial-intelligence/982774/greg-brockman-openai-role-expansion" />
+			<id>https://www.theverge.com/?p=982774</id>
+			<updated>2026-08-20T16:16:13-04:00</updated>
+			<published>2026-08-20T11:45:55-04:00</published>
+			<category scheme="https://www.theverge.com" term="AI" /><category scheme="https://www.theverge.com" term="OpenAI" /><category scheme="https://www.theverge.com" term="Report" />
+							<summary/>
+			
+							<content/>
+			
+					</entry>
+			<entry>
+			
+			<author>
+				<name>Nilay Patel</name>
+			</author>
+			
+			<title type="html"><![CDATA[Welcome to the AI crisis in math]]></title>
+			<link rel="alternate" type="text/html" href="https://www.theverge.com/podcast/982434/ai-math-openai-astra-existential-crisis" />
+			<id>https://www.theverge.com/?p=982434</id>
+			<updated>2026-08-20T14:32:18-04:00</updated>
+			<published>2026-08-20T10:00:00-04:00</published>
+			<category scheme="https://www.theverge.com" term="AI" /><category scheme="https://www.theverge.com" term="Decoder" /><category scheme="https://www.theverge.com" term="OpenAI" /><category scheme="https://www.theverge.com" term="Podcasts" /><category scheme="https://www.theverge.com" term="Tech" />
+							<summary/>
+			
+							<content/>
+			
+					</entry>
+			<entry>
+			
+			<author>
+				<name>Jess Weatherbed</name>
+			</author>
+			
+			<title type="html"><![CDATA[Slack is launching collaborative vibe-coding channels]]></title>
+			<link rel="alternate" type="text/html" href="https://www.theverge.com/tech/982628/slack-code-vibe-coding-channels-launch" />
+			<id>https://www.theverge.com/?p=982628</id>
+			<updated>2026-08-20T08:06:09-04:00</updated>
+			<published>2026-08-20T08:00:00-04:00</published>
+			<category scheme="https://www.theverge.com" term="AI" /><category scheme="https://www.theverge.com" term="Business" /><category scheme="https://www.theverge.com" term="News" /><category scheme="https://www.theverge.com" term="Tech" />
+							<summary/>
+			
+							<content/>
+			
+					</entry>
+</feed>

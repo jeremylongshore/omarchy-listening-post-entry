@@ -4,8 +4,8 @@ What has actually been proven, how, and what remains.
 
 ## Unit suite (dev box + CI)
 
-**56 tests, all passing** (`npm test`), offline. The whole `Model.js` data
-layer: the RSS and Atom parsers against captured bodies from all thirteen
+**72 tests, all passing** (`npm test`), offline. The whole `Model.js` data
+layer: the RSS and Atom parsers against captured bodies from all twenty-nine
 live sources, format detection anchored to the document root, lane
 classification, ISO-week clustering by source with product labels, the
 quiet-changelog collapse, merge and unconditional retention cap, read-state,
@@ -14,14 +14,14 @@ record. Security regressions are pinned: `safeUrl` rejecting every shell
 metacharacter, and `parseFeed` returning in under a second on a 2 MB
 unterminated-CDATA body.
 
-Fixtures were captured 2026-08-20 from all thirteen live sources; the two
+Fixtures were captured 2026-08-20 from all twenty-nine live sources; the two
 URLs that had moved that day (Google AI blog, Anthropic status → status.claude.com)
 were re-pointed before capture. Recapture procedure: `docs/FIXTURES.md`.
 
 ## Live poll (dev box, real feeds)
 
-`bin/listening-post-poll` run against the real feeds: **13/13 sources ok,
-253 items** classified across the four lanes; first-run baseline leaves the
+`bin/listening-post-poll` run against the real feeds: **29/29 sources ok,
+324 items** classified across the four lanes; first-run baseline leaves the
 pill quiet; a second poll preserves read flags; `--mark-read` and
 `--mark-all-read` round-trip; `--export-opml` / `--import-opml` round-trip;
 `--status` reports correctly. State file weighs ~100 KB, an order of

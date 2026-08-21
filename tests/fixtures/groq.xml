@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>Groq Blog</title>
+    <link>https://groq.com/blog/</link>
+    <description/>
+    <atom:link href="https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_groq.xml" rel="self"/>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <generator>python-feedgen</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 04 Aug 2026 15:46:54 +0000</lastBuildDate>
+    <item>
+      <title>Canopy Labs’ Orpheus TTS is live on GroqCloud</title>
+      <link>https://groq.com/blog/canopy-labs-orpheus-tts-is-live-on-groqcloud</link>
+      <description/>
+      <guid isPermaLink="false">https://groq.com/blog/canopy-labs-orpheus-tts-is-live-on-groqcloud</guid>
+      <pubDate>Thu, 09 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>GroqCloud: Expanding to Meet Demand</title>
+      <link>https://groq.com/blog/groqcloud-expanding-to-meet-demand</link>
+      <description/>
+      <guid isPermaLink="false">https://groq.com/blog/groqcloud-expanding-to-meet-demand</guid>
+      <pubDate>Mon, 16 Feb 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Groq Recognized in 2025 Gartner® Cool Vendor in AI Infrastructure report</title>
+      <link>https://groq.com/blog/groq-recognized-gartner-cool-vendor</link>
+      <description/>
+      <guid isPermaLink="false">https://groq.com/blog/groq-recognized-gartner-cool-vendor</guid>
+      <pubDate>Mon, 01 Dec 2025 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Introducing MCP Connectors in Beta on GroqCloud</title>
+      <link>https://groq.com/blog/introducing-mcp-connectors-in-beta-on-groqcloud</link>
+      <description/>
+      <guid isPermaLink="false">https://groq.com/blog/introducing-mcp-connectors-in-beta-on-groqcloud</guid>
+      <pubDate>Tue, 25 Nov 2025 00:00:00 +0000</pubDate>
+    </item>
+</channel></rss>

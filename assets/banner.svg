@@ -51,8 +51,8 @@
   <!-- Title block -->
   <text x="72" y="132" font-family="'JetBrains Mono',ui-monospace,'SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="66" font-weight="700" letter-spacing="5" fill="#e6edf3">LISTENING POST</text>
   <rect x="76" y="158" width="470" height="4" fill="url(#rule)"/>
-  <text x="72" y="204" font-family="'JetBrains Mono',ui-monospace,'SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="24" letter-spacing="1" fill="#b0bac6">A curated AI release radar. Quiet until something ships.</text>
-  <text x="72" y="238" font-family="'JetBrains Mono',ui-monospace,'SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="16" letter-spacing="1" fill="#6b7684">model releases · pricing changes · status incidents · engineering</text>
+  <text x="72" y="204" font-family="'JetBrains Mono',ui-monospace,'SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="24" letter-spacing="1" fill="#b0bac6">A curated AI release radar.</text>
+  <text x="72" y="238" font-family="'JetBrains Mono',ui-monospace,'SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="15" letter-spacing="1" fill="#6b7684">releases · pricing · status incidents · engineering</text>
 
   <!-- Bar pill mocks, top right -->
   <g transform="translate(812,46)">

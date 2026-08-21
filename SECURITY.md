@@ -2,7 +2,7 @@
 
 ## Threat model
 
-Listening Post renders strings that originate from thirteen public web
+Listening Post renders strings that originate from twenty-nine public web
 feeds plus any feed the user imports via OPML. Feed bodies are
 attacker-influenceable content (a compromised blog, a malicious OPML
 import); the shell process must never fetch, execute, or mis-render
@@ -80,7 +80,7 @@ lives in one auditable script, `bin/listening-post-poll`:
 
 ## What this plugin reads and writes
 
-- Reads: the thirteen curated feed URLs (GET), optional OPML-imported
+- Reads: the twenty-nine curated feed URLs (GET), optional OPML-imported
   feeds (https only), `~/.config/omarchy/shell.json` (its own settings
   entry), and the file *names* under
   `~/.local/state/omarchy/agents/usage/` for personalization (never file

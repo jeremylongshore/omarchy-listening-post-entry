@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Cursor Changelog</title>
+    <description/>
+    <link>https://cursor.com/changelog</link>
+    <language>en-US</language>
+    <lastBuildDate>Fri, 21 Aug 2026 01:00:33 GMT</lastBuildDate>
+    <atom:link href="https://cursor.com/changelog/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Cloud Agents and Cursor Harness Improvements</title>
+      <link>https://cursor.com/changelog/08-19-26</link>
+      <guid isPermaLink="true">https://cursor.com/changelog/08-19-26</guid>
+      <pubDate>Wed, 19 Aug 2026 00:00:00 GMT</pubDate>
+      <description/>
+
+      <content:encoded/>
+    </item>
+    <item>
+      <title>Origin Code Hosting</title>
+      <link>https://cursor.com/changelog/origin-code-hosting</link>
+      <guid isPermaLink="true">https://cursor.com/changelog/origin-code-hosting</guid>
+      <pubDate>Mon, 17 Aug 2026 00:00:00 GMT</pubDate>
+      <description/>
+
+      <content:encoded/>
+    </item>
+    <item>
+      <title>Cloud Agents Start 3x Faster with Builds</title>
+      <link>https://cursor.com/changelog/08-13-26</link>
+      <guid isPermaLink="true">https://cursor.com/changelog/08-13-26</guid>
+      <pubDate>Thu, 13 Aug 2026 00:00:00 GMT</pubDate>
+      <description/>
+
+      <content:encoded/>
+    </item>
+    <item>
+      <title>Google Workspace Plugins</title>
+      <link>https://cursor.com/changelog/google-workspace-plugins</link>
+      <guid isPermaLink="true">https://cursor.com/changelog/google-workspace-plugins</guid>
+      <pubDate>Mon, 03 Aug 2026 00:00:00 GMT</pubDate>
+      <description/>
+
+      <content:encoded/>
+    </item>
+</channel></rss>

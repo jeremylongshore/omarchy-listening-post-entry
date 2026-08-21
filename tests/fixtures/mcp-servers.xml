@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/modelcontextprotocol/servers/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/modelcontextprotocol/servers/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/modelcontextprotocol/servers/releases.atom"/>
+  <title>Release notes from servers</title>
+  <updated>2026-08-18T16:04:55Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/890668799/2026.8.18</id>
+    <updated>2026-08-18T16:16:12Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/modelcontextprotocol/servers/releases/tag/2026.8.18"/>
+    <title>Release 2026.8.18</title>
+    <content/>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/890668799/2026.7.10</id>
+    <updated>2026-07-10T03:39:07Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/modelcontextprotocol/servers/releases/tag/2026.7.10"/>
+    <title>Release 2026.7.10</title>
+    <content/>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/890668799/2026.7.4</id>
+    <updated>2026-07-04T23:05:56Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/modelcontextprotocol/servers/releases/tag/2026.7.4"/>
+    <title>Release 2026.7.4</title>
+    <content/>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/890668799/2026.6.16</id>
+    <updated>2026-06-16T14:53:11Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/modelcontextprotocol/servers/releases/tag/2026.6.16"/>
+    <title>2026.6.16</title>
+    <content/>
+    <author>
+      <name>actions-user</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=60&amp;v=4"/>
+  </entry>
+</feed>

@@ -9,7 +9,15 @@
 // instead; those keep working when marketing sites drop RSS. Every URL here
 // was fetched live before shipping and the fixtures under tests/fixtures are
 // the captured bodies.
+// A community RSS mirror (github.com/Olshansk/rss-feeds) supplies real news
+// feeds for the vendors that publish none first-party (Anthropic, xAI,
+// Mistral, Meta, and others). It is third-party, so it is labeled honestly in
+// the source table; each source is independent, so if the mirror lags, only
+// those rows go quiet.
+var MIRROR = "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/"
+
 var SOURCES = [
+  // ---- Vendor news (first-party blog feeds) ----
   { id: "openai-news", vendor: "openai", vendorName: "OpenAI",
     title: "OpenAI News", kind: "blog",
     url: "https://openai.com/news/rss.xml" },
@@ -22,18 +30,56 @@ var SOURCES = [
   { id: "huggingface", vendor: "huggingface", vendorName: "Hugging Face",
     title: "Hugging Face Blog", kind: "blog",
     url: "https://huggingface.co/blog/feed.xml" },
+  { id: "together", vendor: "together", vendorName: "Together AI",
+    title: "Together AI Blog", kind: "blog",
+    url: "https://www.together.ai/blog/rss.xml" },
+
+  // ---- Vendor news (community RSS mirror; no first-party feed) ----
+  { id: "anthropic-news", vendor: "anthropic", vendorName: "Anthropic",
+    title: "Anthropic News", kind: "blog", url: MIRROR + "feed_anthropic_news.xml" },
+  { id: "anthropic-engineering", vendor: "anthropic", vendorName: "Anthropic",
+    title: "Anthropic Engineering", kind: "blog", url: MIRROR + "feed_anthropic_engineering.xml" },
+  { id: "anthropic-research", vendor: "anthropic", vendorName: "Anthropic",
+    title: "Anthropic Research", kind: "blog", url: MIRROR + "feed_anthropic_research.xml" },
+  { id: "xai-news", vendor: "xai", vendorName: "xAI",
+    title: "xAI News", kind: "blog", url: MIRROR + "feed_xainews.xml" },
+  { id: "mistral-news", vendor: "mistral", vendorName: "Mistral",
+    title: "Mistral News", kind: "blog", url: MIRROR + "feed_mistral.xml" },
+  { id: "meta-ai", vendor: "meta", vendorName: "Meta",
+    title: "Meta AI Blog", kind: "blog", url: MIRROR + "feed_meta_ai.xml" },
+  { id: "cohere", vendor: "cohere", vendorName: "Cohere",
+    title: "Cohere Blog", kind: "blog", url: MIRROR + "feed_cohere.xml" },
+  { id: "groq", vendor: "groq", vendorName: "Groq",
+    title: "Groq Blog", kind: "blog", url: MIRROR + "feed_groq.xml" },
+  { id: "perplexity", vendor: "perplexity", vendorName: "Perplexity",
+    title: "Perplexity Hub", kind: "blog", url: MIRROR + "feed_perplexity_hub.xml" },
+
+  // ---- AI commentary and research (fills the engineering lane) ----
+  { id: "the-batch", vendor: "deeplearning", vendorName: "The Batch",
+    title: "The Batch (DeepLearning.AI)", kind: "blog", url: MIRROR + "feed_the_batch.xml" },
+  { id: "verge-ai", vendor: "verge", vendorName: "The Verge",
+    title: "The Verge AI", kind: "blog",
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml" },
+  { id: "chip-huyen", vendor: "chip-huyen", vendorName: "Chip Huyen",
+    title: "Chip Huyen", kind: "blog", url: "https://huyenchip.com/feed.xml" },
+  { id: "lilian-weng", vendor: "lilian-weng", vendorName: "Lilian Weng",
+    title: "Lil'Log (Lilian Weng)", kind: "blog", url: "https://lilianweng.github.io/index.xml" },
+
+  // ---- Status incidents ----
   { id: "anthropic-status", vendor: "anthropic", vendorName: "Anthropic",
     title: "Claude Status", kind: "status",
     url: "https://status.claude.com/history.rss" },
   { id: "openai-status", vendor: "openai", vendorName: "OpenAI",
     title: "OpenAI Status", kind: "status",
     url: "https://status.openai.com/history.rss" },
+
+  // ---- Releases and changelogs ----
   { id: "claude-code-releases", vendor: "anthropic", vendorName: "Anthropic",
     title: "Claude Code Releases", product: "Claude Code", kind: "releases",
     url: "https://github.com/anthropics/claude-code/releases.atom" },
   { id: "claude-code-changelog", vendor: "anthropic", vendorName: "Anthropic",
     title: "Claude Code Changelog", product: "Claude Code", kind: "changelog",
-    url: "https://github.com/anthropics/claude-code/commits/main/CHANGELOG.md.atom" },
+    url: "https://code.claude.com/docs/en/changelog/rss.xml" },
   { id: "anthropic-sdk", vendor: "anthropic", vendorName: "Anthropic",
     title: "Anthropic SDK Releases", product: "Anthropic SDK", kind: "releases",
     url: "https://github.com/anthropics/anthropic-sdk-python/releases.atom" },
@@ -43,12 +89,18 @@ var SOURCES = [
   { id: "mistral-sdk", vendor: "mistral", vendorName: "Mistral",
     title: "Mistral SDK Releases", product: "Mistral SDK", kind: "releases",
     url: "https://github.com/mistralai/client-python/releases.atom" },
-  { id: "meta-llama", vendor: "meta", vendorName: "Meta",
-    title: "Meta Llama Models", product: "Meta Llama", kind: "changelog",
-    url: "https://github.com/meta-llama/llama-models/commits/main.atom" },
   { id: "ollama", vendor: "ollama", vendorName: "Ollama",
     title: "Ollama Releases", product: "Ollama", kind: "releases",
-    url: "https://github.com/ollama/ollama/releases.atom" }
+    url: "https://github.com/ollama/ollama/releases.atom" },
+  { id: "vllm", vendor: "vllm", vendorName: "vLLM",
+    title: "vLLM Releases", product: "vLLM", kind: "releases",
+    url: "https://github.com/vllm-project/vllm/releases.atom" },
+  { id: "mcp-servers", vendor: "mcp", vendorName: "MCP",
+    title: "MCP Servers Releases", product: "MCP Servers", kind: "releases",
+    url: "https://github.com/modelcontextprotocol/servers/releases.atom" },
+  { id: "cursor", vendor: "cursor", vendorName: "Cursor",
+    title: "Cursor Changelog", product: "Cursor", kind: "changelog",
+    url: "https://cursor.com/changelog/rss.xml" }
 ]
 
 // Which local agent usage records (the first-party agents plugin writes one

@@ -1,104 +1,39 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
-  <id>tag:github.com,2008:/anthropics/claude-code/commits/main/CHANGELOG.md</id>
-  <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commits/main/CHANGELOG.md"/>
-  <link type="application/atom+xml" rel="self" href="https://github.com/anthropics/claude-code/commits/main/CHANGELOG.md.atom"/>
-  <title>Recent Commits to claude-code:main</title>
-  <updated>2026-08-20T20:33:43Z</updated>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/8a8e81d098cbd0fae4ee5b9c853542945fe87016</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/8a8e81d098cbd0fae4ee5b9c853542945fe87016"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-20T20:33:43Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/770933ea1ad2fa7b858191e397a65e6644771c64</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/770933ea1ad2fa7b858191e397a65e6644771c64"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-20T00:54:35Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/084ca20bcf90249ecfcc01efe5c899554c400a85</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/084ca20bcf90249ecfcc01efe5c899554c400a85"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-19T20:01:58Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/c3d2e35e554060b5a20ee6b28140fbdbd4eb0048</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/c3d2e35e554060b5a20ee6b28140fbdbd4eb0048"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-18T20:38:47Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/354757e5b2d9aa1ebb62e5d05ecd384f0e11c0f7</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/354757e5b2d9aa1ebb62e5d05ecd384f0e11c0f7"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-17T20:20:52Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>tag:github.com,2008:Grit::Commit/0fa8c19d50f70f9f383fb6ff5ce5209575267d21</id>
-    <link type="text/html" rel="alternate" href="https://github.com/anthropics/claude-code/commit/0fa8c19d50f70f9f383fb6ff5ce5209575267d21"/>
-    <title>
-        chore: Update CHANGELOG.md and feed.xml
-    </title>
-    <updated>2026-08-14T22:20:50Z</updated>
-    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/65916846?s=30&amp;v=4"/>
-    <author>
-      <name>actions-user</name>
-      <uri>https://github.com/actions-user</uri>
-    </author>
-    <content type="html">
-      &lt;pre style=&#39;white-space:pre-wrap;width:81ex&#39;&gt;chore: Update CHANGELOG.md and feed.xml&lt;/pre&gt;
-    </content>
-  </entry>
-</feed>
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title><![CDATA[Claude Code changelog]]></title>
+        <description/>
+        <link>https://code.claude.com/docs</link>
+        <generator>Mintlify</generator>
+        <lastBuildDate>Fri, 21 Aug 2026 01:24:21 GMT</lastBuildDate>
+        <atom:link href="https://code.claude.com/docs/en/changelog/rss.xml" rel="self" type="application/rss+xml"/>
+        <copyright><![CDATA[Claude Code Docs]]></copyright>
+        <docs>https://code.claude.com/docs</docs>
+        <item>
+            <title><![CDATA[2.1.238]]></title>
+            <link>https://code.claude.com/docs/en/changelog#2-1-238</link>
+            <guid isPermaLink="false">ea3d1d928594a8e1</guid>
+            <pubDate>Thu, 20 Aug 2026 21:52:40 GMT</pubDate>
+            <content:encoded/>
+        </item>
+        <item>
+            <title><![CDATA[2.1.237]]></title>
+            <link>https://code.claude.com/docs/en/changelog#2-1-237</link>
+            <guid isPermaLink="false">c29a7e7771d28610</guid>
+            <pubDate>Thu, 20 Aug 2026 02:08:48 GMT</pubDate>
+            <content:encoded/>
+        </item>
+        <item>
+            <title><![CDATA[2.1.236]]></title>
+            <link>https://code.claude.com/docs/en/changelog#2-1-236</link>
+            <guid isPermaLink="false">4d57132b7c1db4cc</guid>
+            <pubDate>Wed, 19 Aug 2026 22:51:18 GMT</pubDate>
+            <content:encoded/>
+        </item>
+        <item>
+            <title><![CDATA[2.1.235]]></title>
+            <link>https://code.claude.com/docs/en/changelog#2-1-235</link>
+            <guid isPermaLink="false">a32d3a44f9dc69cc</guid>
+            <pubDate>Tue, 18 Aug 2026 22:28:55 GMT</pubDate>
+            <content:encoded/>
+        </item>
+</channel></rss>
