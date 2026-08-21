@@ -5,11 +5,13 @@ import qs.Commons
 import qs.Ui
 import "Model.js" as Model
 
-// Listening Post panel: renders the state file the poller CLI maintains and
-// drives it with Herald-standard keys. This file never touches the network;
-// it reads ~/.local/state/omarchy/listening-post/state.json, and every
-// mutation (mark read, refresh) is a call into bin/listening-post-poll, the
-// single writer.
+// Listening Post panel: renders the item store the Service owns and drives it
+// with Herald-standard keys. This file never touches the network and never
+// writes a file. There is NO node on a stock Omarchy install, so the whole
+// plugin runs on Quickshell plus curl; Service.qml does the fetching and the
+// persistence, and the panel calls straight into it, which means a mark-read
+// keystroke takes effect synchronously instead of round-tripping through a
+// CLI.
 Panel {
   id: root
   moduleName: "io.github.jeremylongshore.listening-post"
@@ -23,42 +25,41 @@ Panel {
   property var hostWidget: null
   readonly property var barIdentity: hostWidget || root
 
-  readonly property string home: Quickshell.env("HOME") || ""
-  readonly property string stateFile:
-    (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state")
-    + "/omarchy/listening-post/state.json"
-  readonly property string pollerPath:
-    Qt.resolvedUrl("bin/listening-post-poll").toString().replace(/^file:\/\//, "")
+  // Injected by the shell for a plugin that declares kind "service"; the
+  // BarWidget host passes it down. Everything below degrades to an empty view
+  // when it is missing rather than erroring.
+  property var service: null
 
   // ---- Fixed behavior. Omakase constants, not knobs.
-  readonly property int rereadSec: 60          // state file re-read cadence
   readonly property int incidentRowsMax: 6
   readonly property int releaseRowsMax: 10
   readonly property int pricingRowsMax: 6
   readonly property int engineeringRowsMax: 6
 
-  // ---- Data state. The parsed state file, plus a local overlay of guids
-  //      marked read whose CLI write-back is still in flight, so a keystroke
-  //      reads instantly.
-  property var feedState: Model.emptyState()
-  property var pendingRead: ({})
   property double nowMs: Date.now()
 
+  // Bumped by the service on every store change so the computed rows below
+  // re-evaluate (a JS array mutated in place does not notify QML on its own).
+  property int revision: 0
+
   readonly property var items: {
-    var src = feedState.items
-    var out = []
-    for (var i = 0; i < src.length; i++) {
-      var it = src[i]
-      if (pendingRead[it.guid] && !it.read) {
-        out.push({ guid: it.guid, sourceId: it.sourceId, vendor: it.vendor,
-          vendorName: it.vendorName, lane: it.lane, quiet: it.quiet,
-          title: it.title, url: it.url, timeMs: it.timeMs,
-          resolved: it.resolved, read: true, used: it.used })
-      } else {
-        out.push(it)
-      }
-    }
-    return out
+    root.revision   // dependency: re-read whenever the service signals a change
+    return root.service ? root.service.storedItems : []
+  }
+
+  readonly property var sources: {
+    root.revision
+    return root.service ? root.service.sourceStatus : []
+  }
+
+  readonly property double generatedAt: {
+    root.revision
+    return root.service ? root.service.generatedAt : 0
+  }
+
+  readonly property bool stateReady: {
+    root.revision
+    return root.service ? root.service.stateLoaded : false
   }
 
   readonly property var laneCounts: Model.counts(items)
@@ -66,7 +67,13 @@ Panel {
 
   // Bar pill: empty when nothing needs attention, which collapses the slot.
   readonly property string label: Model.pillText(laneCounts)
-  readonly property string tooltip: Model.tooltipText(laneCounts, feedState.generatedAt, nowMs)
+  readonly property string tooltip: Model.tooltipText(laneCounts, generatedAt, nowMs)
+
+  Connections {
+    target: root.service
+    ignoreUnknownSignals: true
+    function onStateChanged() { root.revision++ }
+  }
 
   // ---- Rows. Four lanes flattened into one list the cursor walks; headers
   //      are inert, rows are selectable.
@@ -125,10 +132,6 @@ Panel {
     selIdx = next
   }
 
-  // Guids whose mark-read write is waiting because markProc was busy when the
-  // keystroke arrived. Flushed in markProc.onExited so no action is dropped.
-  property var queuedGuids: []
-
   function openSelected() {
     var row = selectedRow()
     if (!row || row.url === "") return
@@ -138,76 +141,32 @@ Panel {
     if (openProc.running) return
     openProc.command = ["xdg-open", row.url]
     openProc.running = true
-    // Opening a cluster row opens only its newest item, so mark only that
-    // one read here. Draining the rest of a "(+N more this week)" cluster is
-    // an explicit act (x), never a side effect of opening the top item.
-    markGuidsRead([row.guid])
-  }
-
-  function markGuidsRead(guids) {
-    if (!guids || guids.length === 0) return
-    var overlay = ({})
-    for (var k in pendingRead) overlay[k] = true
-    var queued = queuedGuids.slice()
-    for (var i = 0; i < guids.length; i++) {
-      overlay[guids[i]] = true
-      queued.push(guids[i])
-    }
-    pendingRead = overlay
-    if (markProc.running) {
-      // A write is in flight: remember these and flush when it returns,
-      // rather than dropping them (which would leave the overlay permanently
-      // ahead of disk and lose the action on the next restart).
-      queuedGuids = queued
-    } else {
-      queuedGuids = []
-      markProc.command = [pollerPath, "--mark-read"].concat(guids)
-      markProc.running = true
-    }
+    // Opening a cluster row opens only its newest item, so mark only that one
+    // read. Draining the rest of a "(+N more this week)" cluster is an
+    // explicit act (x), never a side effect of opening the top item.
+    if (root.service) root.service.markRead([row.guid])
   }
 
   function markSelectedRead() {
     var row = selectedRow()
-    if (row) markGuidsRead(row.guids)
+    if (row && root.service) root.service.markRead(row.guids)
   }
 
   function markAllRead() {
-    var overlay = ({})
-    for (var i = 0; i < items.length; i++) overlay[items[i].guid] = true
-    pendingRead = overlay
-    if (markProc.running) {
-      // Fold into the queued flush; onExited issues --mark-all-read when the
-      // whole-store flag was requested.
-      queuedGuids = ["*all*"]
-    } else {
-      queuedGuids = []
-      markProc.command = [pollerPath, "--mark-all-read"]
-      markProc.running = true
-    }
+    if (root.service) root.service.markAllRead()
   }
 
-  // Manual refresh polls without notifications: the panel is open, the user
-  // is already looking at the result.
   function refresh() {
     nowMs = Date.now()
-    if (!pollProc.running) {
-      pollProc.command = [root.pollerPath, "--no-notify"]
-      pollProc.running = true
-    }
-  }
-
-  function reread() {
-    if (!readProc.running) readProc.running = true
+    if (root.service) root.service.poll()
   }
 
   function open() {
     root.controller.show()
-    root.reread()
   }
 
   function openFromHotkey() {
     root.controller.show()
-    root.reread()
   }
 
   function close() {
@@ -231,64 +190,7 @@ Panel {
   }
 
   Process {
-    id: readProc
-    command: ["cat", root.stateFile]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var parsed = Model.parseState(text)
-        if (parsed.valid) {
-          root.feedState = parsed
-          // Guids the CLI has persisted no longer need the local overlay.
-          var overlay = ({})
-          var any = false
-          for (var i = 0; i < parsed.items.length; i++) {
-            if (root.pendingRead[parsed.items[i].guid] && parsed.items[i].read === false) {
-              overlay[parsed.items[i].guid] = true
-              any = true
-            }
-          }
-          root.pendingRead = any ? overlay : ({})
-        }
-      }
-    }
-  }
-
-  Process {
-    id: pollProc
-    onExited: root.reread()
-  }
-
-  Process {
-    id: markProc
-    onExited: {
-      // Flush anything that arrived while this write was in flight, so no
-      // mark-read/clear keystroke is ever silently dropped.
-      if (root.queuedGuids.length > 0) {
-        var pending = root.queuedGuids
-        root.queuedGuids = []
-        if (pending.length === 1 && pending[0] === "*all*") {
-          markProc.command = [root.pollerPath, "--mark-all-read"]
-        } else {
-          markProc.command = [root.pollerPath, "--mark-read"].concat(pending)
-        }
-        markProc.running = true
-      } else {
-        root.reread()
-      }
-    }
-  }
-
-  Process {
     id: openProc
-  }
-
-  Timer {
-    interval: root.rereadSec * 1000
-    running: true
-    repeat: true
-    triggeredOnStart: true
-    onTriggered: root.reread()
   }
 
   Timer {
@@ -383,15 +285,15 @@ Panel {
 
               Text {
                 text: {
-                  if (!root.feedState.valid) return "Waiting for the first poll. The service checks every 15 minutes."
+                  if (!root.stateReady) return "Waiting for the first poll. The service checks every 15 minutes."
                   var okCount = 0
                   var firstBad = ""
-                  for (var i = 0; i < root.feedState.sources.length; i++) {
-                    if (root.feedState.sources[i].ok) okCount++
-                    else if (!firstBad) firstBad = root.feedState.sources[i].title
+                  for (var i = 0; i < root.sources.length; i++) {
+                    if (root.sources[i].ok) okCount++
+                    else if (!firstBad) firstBad = root.sources[i].title
                   }
-                  var age = Model.ageText(root.feedState.generatedAt, root.nowMs)
-                  var total = root.feedState.sources.length
+                  var age = Model.ageText(root.generatedAt, root.nowMs)
+                  var total = root.sources.length
                   return okCount + "/" + total + " sources"
                     + (age ? " checked " + age : "")
                     + (okCount < total && firstBad ? " · " + firstBad + " failing" : "")
@@ -515,7 +417,7 @@ Panel {
 
           // ---- Empty state.
           Text {
-            visible: root.feedState.valid && root.allRows.length === 0
+            visible: root.stateReady && root.allRows.length === 0
             anchors.left: parent.left
             anchors.leftMargin: Style.space(16)
             text: "Nothing new in the last 45 days. Still listening."

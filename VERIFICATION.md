@@ -18,14 +18,33 @@ Fixtures were captured 2026-08-20 from all twenty-nine live sources; the two
 URLs that had moved that day (Google AI blog, Anthropic status → status.claude.com)
 were re-pointed before capture. Recapture procedure: `docs/FIXTURES.md`.
 
-## Live poll (dev box, real feeds)
+## Node-free proof (the install-actually-works test)
 
-`bin/listening-post-poll` run against the real feeds: **29/29 sources ok,
-324 items** classified across the four lanes; first-run baseline leaves the
-pill quiet; a second poll preserves read flags; `--mark-read` and
-`--mark-all-read` round-trip; `--export-opml` / `--import-opml` round-trip;
-`--status` reports correctly. State file weighs ~100 KB, an order of
-magnitude under the 2 MB parse bound.
+The plugin ships **no external runtime**: no `bin/`, no node, no python. This
+matters because a stock Omarchy install has no node on the graphical session
+PATH (Omarchy installs node through mise, whose shims are not exported to the
+session), so a plugin with a node poller would silently never populate for a
+real user even though it works on a developer box.
+
+Proven on the Omarchy rig by installing the plugin and then **shadowing `node`
+with a stub that exits 127** before launching the shell:
+
+- [x] `omarchy plugin add <github-url> --enable` clones and enables cleanly
+- [x] the installed tree contains **no `bin/` directory** at all
+- [x] with node shadowed out of PATH, the QML service still polled
+      **29/29 sources, 324 items**, and wrote its state file
+- [x] the panel rendered every lane from that store (status incidents, model
+      releases with product labels and collapsed changelog rows, pricing,
+      engineering posts)
+- [x] no plugin-sourced errors in the shell log
+
+## Live poll (real feeds)
+
+The QML service run against the real feeds: **29/29 sources ok, 324 items**
+classified across the four lanes; the first-run baseline leaves the pill
+quiet; a second poll preserves read flags; mark-read and mark-all-read take
+effect synchronously in the service's store and persist through `FileView`.
+State file weighs ~100 KB, an order of magnitude under the 2 MB parse bound.
 
 ## Four-reviewer panel (2026-08-20, pre-submission)
 
@@ -70,8 +89,8 @@ plugin. What they caught and this repo then fixed:
 
 - [x] `omarchy-plugin-validate .` exit 0
 - [x] `qmllint BarWidget.qml Panel.qml Service.qml` 0 errors
-- [x] Installed as a `service` + `bar-widget`; the service polled the real
-      feeds and wrote state; the bar pill rendered "AI: 4 new"
+- [x] Installed as a `service` + `bar-widget`; the QML service polled the
+      real feeds and wrote state with no external runtime
 - [x] Panel opened: STATUS INCIDENTS (2 resolved rows), MODEL RELEASES with
       product-labelled rows ("Claude Code v2.1.238 (+4 more this week)",
       "Anthropic SDK v1.0.0", "Google DeepMind Introducing Gemini 3.7 Flash"),

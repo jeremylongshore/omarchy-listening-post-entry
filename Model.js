@@ -1,14 +1,11 @@
 // Listening Post data layer: pure parse/classify/merge functions over RSS and
-// Atom feed bodies plus the on-disk state record the poller CLI writes. No QML
-// and no network access here. The same file loads in Quickshell (via
-// `import "Model.js" as Model`), in node for the unit suite, and in the poller
-// CLI (bin/listening-post-poll) via require.
+// Atom feed bodies plus the on-disk state record. No QML and no network access
+// here, so the same file loads unchanged in Quickshell (via
+// `import "Model.js" as Model`, which is where it actually runs in production)
+// and in node for the unit suite. There is NO node runtime on a stock Omarchy
+// install, so every line here must stay ES5-compatible plain JS that the QML
+// engine accepts: no require(), no template literals, no arrow functions.
 
-// The curated source set is the product. Anthropic, xAI, Mistral, and Meta
-// publish no blog feed, so their lanes ride GitHub release/commit Atom feeds
-// instead; those keep working when marketing sites drop RSS. Every URL here
-// was fetched live before shipping and the fixtures under tests/fixtures are
-// the captured bodies.
 // A community RSS mirror (github.com/Olshansk/rss-feeds) supplies real news
 // feeds for the vendors that publish none first-party (Anthropic, xAI,
 // Mistral, Meta, and others). It is third-party, so it is labeled honestly in

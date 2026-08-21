@@ -83,22 +83,26 @@ Twenty-nine curated sources.
 
 The community RSS mirror ([Olshansk/rss-feeds](https://github.com/Olshansk/rss-feeds))
 is third-party and labeled as such; every source is polled independently, so
-if the mirror lags, only those rows go quiet. Add your own feeds with OPML at
-any time.
+if the mirror lags, only those rows go quiet. You can add your own feeds too
+(see below).
 
 A changelog feed (Claude Code, Cursor) never headlines the release lane: its
 entries collapse into one quiet "Cursor changelog · N this week" row, so a
 routine version bump never masquerades as a model release.
 
-Add your own with OPML:
+Add your own feeds by dropping an `extra-sources.json` beside the state file:
 
 ```bash
-~/.config/omarchy/plugins/io.github.jeremylongshore.listening-post/bin/listening-post-poll --import-opml my-feeds.opml
-~/.config/omarchy/plugins/io.github.jeremylongshore.listening-post/bin/listening-post-poll --export-opml > listening-post.opml
+mkdir -p ~/.local/state/omarchy/listening-post
+cat > ~/.local/state/omarchy/listening-post/extra-sources.json <<'JSON'
+[
+  { "title": "My Feed", "url": "https://example.com/feed.xml" }
+]
+JSON
 ```
 
-Imported feeds must be https and land in the blog lane with the same
-classification rules.
+Extra feeds must be https, must not resolve to a private-network host, and
+land in the blog lane with the same classification rules. Up to 50 are polled.
 
 ## Notifications
 
@@ -122,27 +126,36 @@ nothing and costs the publishers.
 ## Architecture
 
 ```
-bin/listening-post-poll   the only network and the only writer (node CLI)
+Service.qml   the whole poll cycle, in QML, with no external runtime
         |  curl -fsS --proto =https --max-filesize, one GET per source
+        |  Model.js parses on Quickshell's own JS engine
         v
-~/.local/state/omarchy/listening-post/state.json   atomic tmp+mv
+~/.local/state/omarchy/listening-post/state.json   FileView atomic write
         ^
-        |  read only
-Service.qml (timer)   BarWidget.qml + Panel.qml (render + keys)
+        |  read + mark-read, synchronously
+BarWidget.qml + Panel.qml (render + keys)
 ```
 
-The QML side never touches the network and never writes a file. Every
-mutation, including mark-read, is a call into the poller CLI, so the entire
-I/O surface of this plugin is one auditable script. Parsing, classification,
-merging, and sanitizing live in `Model.js`, pure functions loaded by the
-shell, the CLI, and the unit suite alike.
+**No Node.js, no Python, no external runtime.** A stock Omarchy install has no
+node on the graphical session PATH (Omarchy installs it through mise, whose
+shims are not exported to the session), so this plugin depends on nothing but
+Quickshell and the `curl` every Omarchy box already ships. That is the same
+pattern the marketplace-validated MLB Booth and Pit Wall widgets use.
+
+`Service.qml` owns the item store: it fetches, merges, persists (via
+`FileView`, the API the first-party clipboard and agents plugins use), and
+notifies. The panel renders that store and calls straight into the service, so
+marking an item read takes effect immediately instead of round-tripping
+through a subprocess. Parsing, classification, merging, and sanitizing live in
+`Model.js`, pure ES5 functions loaded identically by Quickshell and by the
+offline unit suite.
 
 Network hosts contacted (GET only): the curated feed hosts (`openai.com`,
 `blog.google`, `deepmind.google`, `huggingface.co`, `together.ai`,
 `raw.githubusercontent.com`, `theverge.com`, `huyenchip.com`,
 `lilianweng.github.io`, `status.claude.com`, `status.openai.com`,
-`code.claude.com`, `cursor.com`, `github.com`), plus anything you import via
-OPML (https only). No account, no token, no telemetry, nothing sent anywhere.
+`code.claude.com`, `cursor.com`, `github.com`), plus any extra feed you add
+yourself (https only). No account, no token, no telemetry, nothing sent anywhere.
 
 ## Testing
 
@@ -153,7 +166,7 @@ npm test
 72 tests over the pure data layer: the RSS and Atom parsers against captured
 bodies from all twenty-nine live sources, lane classification, week clustering,
 merge and retention, read-state, notification gating, personalization
-mapping, OPML round-trip, and the state record. Offline by design; the
+mapping, the feed-list parser, and the state record. Offline by design; the
 capture procedure is in `docs/FIXTURES.md`.
 
 ## License

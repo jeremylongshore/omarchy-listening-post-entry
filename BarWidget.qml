@@ -8,6 +8,35 @@ BarWidget {
   id: root
   moduleName: "io.github.jeremylongshore.listening-post"
 
+  // The service singleton this plugin's "service" kind loaded. The shell
+  // injects `service` into PANEL-kind plugins only; a bar widget receives just
+  // bar/moduleName/settings, so resolve it ourselves through the bar's shell
+  // handle. It carries the item store and the poll cycle; the panel renders it
+  // and calls into it.
+  property var service: null
+
+  // serviceFor() returns null until the shell has finished loading the
+  // service singleton, and it is not a bound property, so poll briefly at
+  // startup rather than binding once and latching null forever.
+  function resolveService() {
+    if (root.service) return
+    if (!root.bar || !root.bar.shell) return
+    if (typeof root.bar.shell.serviceFor !== "function") return
+    var svc = root.bar.shell.serviceFor(root.moduleName)
+    if (svc) {
+      root.service = svc
+      root.injectPanel()
+    }
+  }
+
+  Timer {
+    interval: 500
+    running: root.service === null
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.resolveService()
+  }
+
   function injectPanel() {
     var target = panelLoader.item
     if (!target) return
@@ -15,7 +44,10 @@ BarWidget {
     if ("settings" in target) target.settings = root.settings
     if ("anchorItem" in target) target.anchorItem = button
     if ("hostWidget" in target) target.hostWidget = root
+    if ("service" in target) target.service = root.service
   }
+
+  onServiceChanged: injectPanel()
 
   function refresh() {
     if (panelLoader.item && panelLoader.item.refresh) panelLoader.item.refresh()
@@ -50,7 +82,7 @@ BarWidget {
   implicitWidth: visible ? button.implicitWidth : 0
   implicitHeight: button.implicitHeight
 
-  onBarChanged: injectPanel()
+  onBarChanged: { root.resolveService(); injectPanel() }
   onSettingsChanged: injectPanel()
 
   Loader {
