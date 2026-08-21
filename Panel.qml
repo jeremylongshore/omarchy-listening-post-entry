@@ -372,6 +372,8 @@ Panel {
                 Text {
                   text: rowItem.isHeader ? "" : rowItem.modelData.label
                   textFormat: Text.PlainText
+                  width: Math.min(implicitWidth, contentColumn.width * 0.25)
+                  elide: Text.ElideRight
                   anchors.verticalCenter: parent.verticalCenter
                   color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -408,6 +410,8 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
                 text: rowItem.isHeader ? "" : Model.ageText(rowItem.modelData.timeMs, root.nowMs)
                 textFormat: Text.PlainText
+                width: Math.min(implicitWidth, contentColumn.width * 0.15)
+                elide: Text.ElideRight
                 color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
@@ -422,6 +426,8 @@ Panel {
             anchors.leftMargin: Style.space(16)
             text: "Nothing new in the last 45 days. Still listening."
             textFormat: Text.PlainText
+            width: parent.width - Style.space(32)
+            wrapMode: Text.WordWrap
             color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.body
@@ -439,6 +445,8 @@ Panel {
               anchors.leftMargin: Style.space(16)
               text: "j/k move · enter open · x read · c clear · r refresh"
               textFormat: Text.PlainText
+              width: parent.width - Style.space(32)
+              wrapMode: Text.WordWrap
               color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
@@ -449,6 +457,8 @@ Panel {
               anchors.leftMargin: Style.space(16)
               text: "Curated titles only. No article bodies, no engagement counts."
               textFormat: Text.PlainText
+              width: parent.width - Style.space(32)
+              wrapMode: Text.WordWrap
               color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
