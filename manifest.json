@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Model releases, pricing changes, and status incidents from 13 curated AI-vendor sources, with GitHub Atom substitutes for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped.",
+  "description": "Model releases, pricing changes, and status incidents from 29 curated AI-vendor sources, including community RSS mirrors for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Thirteen curated sources, including GitHub Atom substitutes for the vendors that publish no feed, plus OPML import for your own.",
+    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Twenty-nine curated sources across the major labs, providers, and AI tools, plus any feed you add yourself.",
     "category": "AI",
     "aliases": [
       "listening-post",
@@ -36,7 +36,10 @@
         "key": "notifications",
         "type": "enum",
         "label": "Desktop notifications",
-        "options": ["On", "Off"],
+        "options": [
+          "On",
+          "Off"
+        ],
         "defaultValue": "On",
         "description": "Notify on new model releases and unresolved status incidents. Engineering posts and changelog commits never notify."
       },
@@ -44,7 +47,10 @@
         "key": "personalization",
         "type": "enum",
         "label": "Rank by agents you use",
-        "options": ["On", "Off"],
+        "options": [
+          "On",
+          "Off"
+        ],
         "defaultValue": "On",
         "description": "Reads the file names in the Agents plugin usage folder (read-only) so vendors you actually run float to the top of each lane."
       }
