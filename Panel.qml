@@ -299,6 +299,13 @@ Panel {
                     + (okCount < total && firstBad ? " · " + firstBad + " failing" : "")
                 }
                 textFormat: Text.PlainText
+                // Bounded because this line is assembled at runtime: the source
+                // count, the age phrase and the name of the first failing feed
+                // all vary, and the longest source titles push it past the
+                // panel. Unbounded, the last words are clipped by the container
+                // and a reader sees a sentence that stops mid-word.
+                width: parent.width
+                wrapMode: Text.WordWrap
                 color: root.bar ? Qt.darker(root.bar.foreground, 1.4) : Color.muted
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
