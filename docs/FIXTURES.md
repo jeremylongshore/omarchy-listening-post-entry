@@ -15,7 +15,7 @@ const { execFileSync } = require("child_process")
 const fs = require("fs")
 for (const src of SOURCES) {
   const body = execFileSync("curl", [
-    "-fsSL", "--proto", "=https", "--max-time", "20",
+    "-fsS", "--proto", "=https", "--max-time", "20",
     "--max-filesize", "3000000", "--", src.url
   ], { encoding: "utf8", maxBuffer: 4000000 })
   fs.writeFileSync("tests/fixtures/" + src.id + ".xml", body)

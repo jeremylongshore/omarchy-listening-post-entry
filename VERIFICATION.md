@@ -84,7 +84,7 @@ plugin. What they caught and this repo then fixed:
 ## Honest boundary
 
 The QML layer is proven by the rig render, not by unit tests; the data layer
-is proven by 56 offline tests. The notification click action and the BYOK
+is proven by 72 offline tests. The notification click action and the BYOK
 paths are exercised by code inspection and the security fixes above, not yet
 by a live notification click on a real desktop. Nothing in CI touches the
 network.

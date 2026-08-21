@@ -17,9 +17,13 @@
 //   listening-post-poll --import-opml F merge OPML outlines into extra sources
 //   listening-post-poll --status        print a one-line summary and exit
 //
-// Network hosts contacted (GET only): openai.com, blog.google,
-// deepmind.google, huggingface.co, status.claude.com, status.openai.com,
-// github.com, plus any feed the user imports via OPML (https only).
+// Network hosts contacted (GET only): every host in the Model.SOURCES table
+// (the 29 curated feeds: openai.com, blog.google, deepmind.google,
+// huggingface.co, together.ai, raw.githubusercontent.com [the community RSS
+// mirror], theverge.com, huyenchip.com, lilianweng.github.io,
+// status.claude.com, status.openai.com, code.claude.com, cursor.com,
+// github.com), plus any feed the user imports via OPML (https only). Read
+// Model.js for the authoritative, always-current list.
 "use strict"
 
 var fs = require("fs")
