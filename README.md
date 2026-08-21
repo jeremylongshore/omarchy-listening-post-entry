@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/banner.svg" alt="Listening Post" width="720"></p>
+
 # Listening Post
 
 A curated AI vendor release radar for the Omarchy bar that keeps working
@@ -145,7 +147,7 @@ Network hosts contacted (GET only): `openai.com`, `blog.google`,
 npm test
 ```
 
-49 tests over the pure data layer: the RSS and Atom parsers against captured
+56 tests over the pure data layer: the RSS and Atom parsers against captured
 bodies from all thirteen live sources, lane classification, week clustering,
 merge and retention, read-state, notification gating, personalization
 mapping, OPML round-trip, and the state record. Offline by design; the
