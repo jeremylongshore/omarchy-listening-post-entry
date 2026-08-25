@@ -26,7 +26,6 @@ Item {
   readonly property string stateDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/listening-post"
   readonly property string statePath: stateDir + "/state.json"
-  readonly property string extrasPath: stateDir + "/extra-sources.json"
   readonly property string agentsUsageDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/agents/usage"
 
@@ -50,7 +49,7 @@ Item {
   property bool firstRun: true
   property bool stateLoaded: false
 
-  property var allSources: []           // curated + OPML extras for this run
+  property var allSources: []           // the curated SOURCES list for this run
   property int fetchIndex: -1           // -1 idle; else index into allSources
   property var freshItems: []           // accumulated across this run
   property var prevGuids: ({})          // guids present before this run
@@ -95,33 +94,10 @@ Item {
 
   readonly property string moduleId: "io.github.jeremylongshore.listening-post"
 
-  // Host policy for imported feed URLs lives in Model.js so it is covered by
-  // the offline suite. It shipped inside this file, untested, and a userinfo
-  // bypass reached loopback. Reported on submission 1229.
-  function isPublicHost(url) { return Model.isPublicHost(url) }
-
-
-  function extraSources() {
-    var extras
-    try { extras = JSON.parse(extrasFile.text() || "[]") } catch (e) { return [] }
-    if (!extras || !extras.length) return []
-    var out = []
-    for (var i = 0; i < extras.length && out.length < 50; i++) {
-      var e = extras[i]
-      if (!e || !e.url) continue
-      var url = Model.safeUrl(e.url)
-      if (!url || !isPublicHost(url)) continue
-      out.push({
-        id: "extra-" + i,
-        vendor: "custom",
-        vendorName: Model.clean(e.title || "Custom", 32),
-        title: Model.clean(e.title || url, 60),
-        kind: "blog",
-        url: url
-      })
-    }
-    return out
-  }
+  // Custom feed hosts were removed in 1.1.0. extraSources() read a user-written
+  // extra-sources.json and merged those URLs into the fetch list, which is the
+  // only place this plugin ever fetched a host it did not ship. See the note in
+  // Model.js for why a host allowlist could not make that safe.
 
   // ---------------------------------------------------------------- polling
 
@@ -135,7 +111,7 @@ Item {
     var seen = ({})
     for (var i = 0; i < root.storedItems.length; i++) seen[root.storedItems[i].guid] = true
     root.prevGuids = seen
-    root.allSources = Model.SOURCES.concat(root.extraSources())
+    root.allSources = Model.SOURCES
     root.fetchIndex = 0
     root.fetchCurrent()
   }
@@ -370,12 +346,6 @@ Item {
     printErrors: false
     onLoaded: root.loadState(text())
     onLoadFailed: root.loadState("")
-  }
-
-  FileView {
-    id: extrasFile
-    path: root.extrasPath
-    printErrors: false
   }
 
   FileView {

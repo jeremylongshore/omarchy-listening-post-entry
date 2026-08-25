@@ -12,6 +12,29 @@ Regenerate with `scripts/gen-changelog.sh`.
 
 Nothing yet.
 
+## [1.1.0] - 2026-08-25
+
+### Removed
+
+- **Custom feed hosts.** `extra-sources.json`, `Service.extraSources()`, the
+  `extrasFile` reader and `Model.isPublicHost()` are gone. This was the only path
+  by which the plugin fetched a host it did not ship.
+
+### Security
+
+- Close the request-forgery surface reported on marketplace submission 1229 by
+  removing the feature rather than by hardening the allowlist again. Three rounds
+  of review established that a host policy can only validate the name: a userinfo
+  bypass (`https://user@127.0.0.1/feed`), then the alternate IPv4 spellings
+  `inet_aton` accepts (`127.1`, `0177.0.0.1`), and finally the finding that an
+  attacker-controlled hostname resolves to whatever its owner points it at, with
+  DNS rebinding defeating any separate lookup. The resolution belongs to `curl`,
+  which the parse layer never runs, so no amount of parsing could reach it.
+- Every fetched source is now a compile-time constant in `Model.SOURCES`. Two
+  regression tests assert that `Model.isPublicHost` is `undefined` and that every
+  source URL is a hardcoded https constant, so reintroducing a name-only allowlist
+  fails the suite rather than shipping quietly.
+
 ## [1.0.0] - 2026-08-22
 
 ### Security

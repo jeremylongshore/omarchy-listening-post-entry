@@ -85,26 +85,34 @@ Twenty-nine curated sources.
 
 The community RSS mirror ([Olshansk/rss-feeds](https://github.com/Olshansk/rss-feeds))
 is third-party and labeled as such; every source is polled independently, so
-if the mirror lags, only those rows go quiet. You can add your own feeds too
-(see below).
+if the mirror lags, only those rows go quiet.
 
 A changelog feed (Claude Code, Cursor) never headlines the release lane: its
 entries collapse into one quiet "Cursor changelog · N this week" row, so a
 routine version bump never masquerades as a model release.
 
-Add your own feeds by dropping an `extra-sources.json` beside the state file:
+### Custom feeds were removed in 1.1.0
 
-```bash
-mkdir -p ~/.local/state/omarchy/listening-post
-cat > ~/.local/state/omarchy/listening-post/extra-sources.json <<'JSON'
-[
-  { "title": "My Feed", "url": "https://example.com/feed.xml" }
-]
-JSON
-```
+Earlier versions let you add your own feed URLs through an `extra-sources.json`
+file. That feature is gone, and it is not coming back in the same shape.
 
-Extra feeds must be https, must not resolve to a private-network host, and
-land in the blog lane with the same classification rules. Up to 50 are polled.
+It was the only place this plugin fetched a host it did not ship, and it was
+guarded by a host allowlist. A marketplace reviewer took that allowlist apart in
+three rounds: first a userinfo bypass (`https://user@127.0.0.1/feed`), then the
+alternate IPv4 spellings `inet_aton` accepts (`127.1`, `0177.0.0.1`), and finally
+the one that ended it. A host policy can only check the **name**. An ordinary
+hostname an attacker controls resolves to whatever they point it at, and DNS
+rebinding can change that after any separate lookup. The parsing was never the
+problem, because the resolution belongs to `curl` and no amount of regex reaches it.
+
+Making it safe would have meant resolving each host, rejecting every non-public
+result, pinning the validated address to the request, and revalidating every
+redirect hop. That is a real amount of machinery to protect a field nobody
+installs this plugin for. Twenty-nine curated sources is the pitch.
+
+Every source is now a compile-time constant. If a feed you want is missing,
+open an issue and it can be added to the curated list where it gets reviewed
+like everything else.
 
 ## Notifications
 
@@ -156,8 +164,9 @@ Network hosts contacted (GET only): the curated feed hosts (`openai.com`,
 `blog.google`, `deepmind.google`, `huggingface.co`, `together.ai`,
 `raw.githubusercontent.com`, `theverge.com`, `huyenchip.com`,
 `lilianweng.github.io`, `status.claude.com`, `status.openai.com`,
-`code.claude.com`, `cursor.com`, `github.com`), plus any extra feed you add
-yourself (https only). No account, no token, no telemetry, nothing sent anywhere.
+`code.claude.com`, `cursor.com`, `github.com`). That list is fixed at build
+time and there is no way for a user, a config file or a feed body to add a host
+to it. No account, no token, no telemetry, nothing sent anywhere.
 
 ## Testing
 
