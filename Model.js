@@ -223,83 +223,21 @@ function atomLink(block) {
 // shell-active byte, whitespace, and quote. Anything outside it becomes "",
 // and the row is simply not openable.
 
-// --------------------------------------------------------------------------
-// Host policy for user-imported feed URLs.
+// Custom feed hosts were REMOVED in 1.1.0.
 //
-// Lives here rather than in Service.qml for one reason: it is security
-// logic, and logic that cannot be reached by the offline suite is logic
-// that ships broken. It did.
-function isPublicHost(url) {
-  // Capture the whole authority, up to the first / ? or #. The earlier
-  // pattern also stopped at ':' and '@' was never removed, so the authority
-  // of "https://user@127.0.0.1/feed" was read as the HOST "user@127.0.0.1",
-  // which is not a dotted quad and is not a private suffix, so it passed and
-  // curl then dialled 127.0.0.1. The ':' variant was worse still:
-  // "https://user:pass@127.0.0.1/" captured only "user". Reported against
-  // this plugin by the marketplace reviewer on submission 1229.
-  var m = /^https:\/\/([^\/?#]+)/i.exec(String(url || ""))
-  if (!m) return false
-  var authority = m[1]
-
-  // Userinfo is everything before the LAST '@'. Strip it before any host
-  // test, because curl resolves what follows, not what precedes.
-  var at = authority.lastIndexOf("@")
-  if (at >= 0) authority = authority.slice(at + 1)
-
-  // No explicit port and no bracketed IPv6 literal, as before.
-  if (authority.indexOf(":") >= 0 || authority.indexOf("[") >= 0) return false
-
-  // A single trailing dot is a fully qualified form of the same name, so
-  // "localhost." must not slip past a suffix test anchored on '$'.
-  var host = authority.toLowerCase().replace(/\.$/, "")
-  if (host === "") return false
-
-  var labels = host.split(".")
-
-  // An empty label ("a..b", ".a") is not a resolvable name. Reject it here
-  // rather than let it fall through the tests below, each of which assumes
-  // every label is non-empty.
-  for (var i = 0; i < labels.length; i++) {
-    if (labels[i] === "") return false
-  }
-
-  // Reject anything inet_aton parses as an address, in ANY base and with ANY
-  // number of parts.
-  //
-  // The previous rule was /^\d{1,3}(\.\d{1,3}){3}$/ — a full four-part dotted
-  // quad of one-to-three DECIMAL digits, and nothing else. inet_aton, which is
-  // what curl actually resolves with, is far more permissive: it accepts one
-  // to four parts and reads a leading "0" as octal and "0x" as hex. So every
-  // one of these was read as a public dotted name and dialled loopback:
-  //
-  //   https://127.1/feed         two parts        -> 127.0.0.1
-  //   https://0177.0.0.1/feed    octal 0177 = 127 -> 127.0.0.1
-  //   https://0x7f.1/feed        hex 0x7f = 127   -> 127.0.0.1
-  //
-  // The first two were reported against this plugin by the marketplace
-  // maintainer on submission 1229, after an earlier fix for a userinfo bypass
-  // in the same function. The third was found while fixing them.
-  //
-  // Enumerating bad forms is what failed twice here, so this does the
-  // inverse: a public feed host is a NAME, so if every label is numeric in
-  // some base it is an address literal, whatever its shape, and it is out.
-  var allNumeric = true
-  for (var j = 0; j < labels.length; j++) {
-    if (!/^(0[xX][0-9a-fA-F]+|[0-9]+)$/.test(labels[j])) {
-      allNumeric = false
-      break
-    }
-  }
-  if (allNumeric) return false
-
-  if (/(^|\.)(local|internal|localhost|lan|home|corp|intranet)$/.test(host)) return false
-
-  // A public feed host is always a dotted name, so a bare single label
-  // ("localhost", any intranet short name) is out.
-  if (labels.length < 2) return false
-
-  return true
-}
+// This is where isPublicHost used to live: the allowlist that decided whether a
+// user-supplied feed URL was safe to hand to curl. Three rounds of review on
+// marketplace submission 1229 took it from a userinfo bypass, to alternate IPv4
+// spellings, to the finding that ended it: a host policy can only validate the
+// NAME. An ordinary attacker-controlled hostname resolves to whatever its owner
+// points it at, and DNS rebinding can change that after any separate lookup. No
+// amount of parsing fixes that, because the resolution is curl's and this file
+// never runs curl.
+//
+// The feature that needed it is gone, so the hole is gone with it. Every source
+// this plugin fetches is now a compile-time constant in SOURCES. Do not
+// reintroduce a user-supplied URL without resolve-and-pin plus redirect
+// revalidation, and do not reintroduce a name-only allowlist at all.
 
 function safeUrl(u) {
   var s = decodeEntities(String(u || "").trim())
@@ -776,7 +714,6 @@ if (typeof module !== "undefined") {
     stripTags: stripTags,
     feedText: feedText,
     safeUrl: safeUrl,
-    isPublicHost: isPublicHost,
     parseFeed: parseFeed,
     classifyLane: classifyLane,
     normalizeItems: normalizeItems,

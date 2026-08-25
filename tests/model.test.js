@@ -486,87 +486,20 @@ test("every curated source is https, unique, and carries a known kind", () => {
 // passed the private-host check and curl was then pointed at loopback. The
 // check lived in Service.qml where no test could reach it, which is why it
 // shipped. It lives in Model.js now and these cases pin it.
-test("isPublicHost rejects the reported userinfo bypass", () => {
-  assert.equal(Model.isPublicHost("https://user@127.0.0.1/feed"), false)
+
+// The custom-feed host allowlist was removed in 1.1.0 along with the feature it
+// guarded. These two assertions are the anti-regression: if someone reintroduces a
+// user-supplied feed URL, the natural move is to bring isPublicHost back, and a
+// name-only allowlist is exactly what the marketplace reviewer rejected on
+// submission 1229. Fail loudly rather than let it return quietly.
+test("the custom-feed host allowlist is gone and must not come back by name", () => {
+  assert.equal(Model.isPublicHost, undefined)
 })
 
-test("isPublicHost rejects userinfo with a password, which hid the host entirely", () => {
-  // The old pattern stopped at ':' and captured only "user".
-  assert.equal(Model.isPublicHost("https://user:pass@127.0.0.1/"), false)
-  assert.equal(Model.isPublicHost("https://user:pass@localhost/"), false)
-})
-
-test("isPublicHost rejects loopback and private ranges written plainly", () => {
-  for (const u of ["https://127.0.0.1/f", "https://10.0.0.5/f", "https://192.168.1.1/f",
-                   "https://172.16.0.1/f", "https://169.254.169.254/f", "https://0.0.0.0/f"]) {
-    assert.equal(Model.isPublicHost(u), false, u)
-  }
-})
-
-test("isPublicHost rejects the alternate IPv4 forms inet_aton accepts", () => {
-  // Reported against submission 1229 after the userinfo fix: the old rule
-  // only matched a four-part dotted quad of decimal digits, so a short form
-  // and an octal form both read as public names and curl dialled loopback.
-  // 0x7f.1 was found while fixing those two and is pinned with them.
-  for (const u of [
-    "https://127.1/feed",        // two parts
-    "https://127.0.1/feed",      // three parts
-    "https://0177.0.0.1/feed",   // octal
-    "https://0x7f.1/feed",       // hex, short
-    "https://0x7f.0.0.1/feed",   // hex, four parts
-    "https://010.0.0.1/feed",    // octal 8
-  ]) {
-    assert.equal(Model.isPublicHost(u), false, u)
-  }
-})
-
-test("isPublicHost still accepts ordinary public feed hosts", () => {
-  // The numeric-label rule must not swallow real names, including ones whose
-  // labels merely contain digits or are entirely digits in ONE label only.
-  for (const u of [
-    "https://example.com/feed",
-    "https://news.ycombinator.com/rss",
-    "https://3suisses.fr/feed",     // leading digit
-    "https://403.example.com/feed", // an all-digit label beside a name label
-  ]) {
-    assert.equal(Model.isPublicHost(u), true, u)
-  }
-})
-
-test("isPublicHost rejects a host with an empty label", () => {
-  assert.equal(Model.isPublicHost("https://127..1/feed"), false)
-  assert.equal(Model.isPublicHost("https://.example.com/feed"), false)
-})
-
-test("isPublicHost rejects loopback written as an integer", () => {
-  // Both resolve to 127.0.0.1 without containing a single dot.
-  assert.equal(Model.isPublicHost("https://2130706433/f"), false)
-  assert.equal(Model.isPublicHost("https://0x7f000001/f"), false)
-})
-
-test("isPublicHost rejects internal suffixes including a trailing dot", () => {
-  for (const u of ["https://localhost/f", "https://localhost./f", "https://box.local/f",
-                   "https://git.internal/f", "https://nas.lan/f", "https://wiki.corp/f"]) {
-    assert.equal(Model.isPublicHost(u), false, u)
-  }
-})
-
-test("isPublicHost rejects an explicit port and an IPv6 literal", () => {
-  assert.equal(Model.isPublicHost("https://example.com:8080/f"), false)
-  assert.equal(Model.isPublicHost("https://[::1]/f"), false)
-})
-
-test("isPublicHost rejects anything that is not https", () => {
-  assert.equal(Model.isPublicHost("http://example.com/f"), false)
-  assert.equal(Model.isPublicHost("file:///etc/passwd"), false)
-  assert.equal(Model.isPublicHost(""), false)
-  assert.equal(Model.isPublicHost(null), false)
-})
-
-test("isPublicHost still allows the real feed hosts this plugin ships", () => {
-  for (const u of ["https://openai.com/blog/rss.xml",
-                   "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/a.xml",
-                   "https://status.anthropic.com/history.rss"]) {
-    assert.equal(Model.isPublicHost(u), true, u)
+test("every fetched source is a compile-time constant, none is user supplied", () => {
+  assert.ok(Array.isArray(Model.SOURCES))
+  assert.ok(Model.SOURCES.length > 0)
+  for (const s of Model.SOURCES) {
+    assert.ok(typeof s.url === "string" && s.url.startsWith("https://"), s.url)
   }
 })

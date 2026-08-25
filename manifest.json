@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.jeremylongshore.listening-post",
   "name": "Listening Post",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Model releases, pricing changes, and status incidents from 29 curated AI-vendor sources, including community RSS mirrors for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped.",
+  "description": "Model releases, pricing changes, and status incidents from 29 curated AI-vendor sources, including community RSS mirrors for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped. Every source is fixed at build time; the plugin contacts no host you can configure.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Twenty-nine curated sources across the major labs, providers, and AI tools, plus any feed you add yourself.",
+    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Twenty-nine curated sources across the major labs, providers, and AI tools, fixed at build time.",
     "category": "AI",
     "aliases": [
       "listening-post",
