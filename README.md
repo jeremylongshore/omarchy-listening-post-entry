@@ -12,6 +12,8 @@ AI: 3 new                     releases or pricing changes you have not seen
 OpenAI incident               a provider status page has an open incident
 ```
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U5S225PTME)
+
 ## Why this is not another RSS reader
 
 - **The source list is the product.** Twenty-nine curated feeds across every
