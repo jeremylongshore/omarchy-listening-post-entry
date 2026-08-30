@@ -1,0 +1,41 @@
+{
+  "fingerprint": "796c9a353e2ee7acc53728cb359f870526abf23f4173c8b95c374203141a4429",
+  "sourceCommit": "c3d9370095097a2e17edd958f51683546948d44d",
+  "sourceDirty": false,
+  "sourcePackageSha256": "c334e190d66fc0245ab79b252cb227fa3717e968bea8c1833d5fa56efe59f255",
+  "remotePackageSha256": "c334e190d66fc0245ab79b252cb227fa3717e968bea8c1833d5fa56efe59f255",
+  "rig": "intent-ops-buzz/omarchy-rig",
+  "runId": "listening-post-4150821",
+  "rawShellLogSha256": "72a00b83fafaf9a109e3cd54644b9638057b98ca20dadd340be51aa9f5a9a5d4",
+  "fixtureSha256": "3dd0287d6925b87983f85fb3c1bf4c8c0b86a40824f3b1306c2ff37b120c7efe",
+  "curlArgvLogSha256": "733c3c8760b0c5bc2c18fb3fe15c97bf2ae07399864aa100394997d61f1faec4",
+  "packageBoundary": "runtime tree only; receipts, tests, developer scripts, reports, and preview excluded",
+  "evidenceBoundary": "isolated real Omarchy shell and unchanged Service, Model, bar, and panel under a dedicated headless compositor; deterministic scrubbed RSS and Atom through the unchanged bounded curl boundary; complete production poll; live IPC toggle; direct full-frame grim capture with no crop or image post-processing",
+  "fixture": "rig-only four-feed response set plus 25 explicit fetch failures; no production fixture branch",
+  "primaryAction": "live production poll completed and IPC opened all four lanes",
+  "storyEvidence": {
+    "sourceCount": 29,
+    "laneCount": 4,
+    "activeIncidentCount": 1,
+    "releaseCount": 1,
+    "pricingCount": 1,
+    "engineeringCount": 2,
+    "allPrimaryRowsExpected": true
+  },
+  "outputScale": 1.25,
+  "visualInspection": {
+    "status": "approved",
+    "previewSha256": "52c9c31211239ce853e37d179d4db41e882a1485706b93798bc8820992acf38b",
+    "inspector": "jeremylongshore",
+    "inspectedAt": "2026-08-30T01:47:09Z",
+    "checks": [
+      "product value visible at marketplace scale",
+      "no primary content clipped",
+      "plugin-specific visual identity"
+    ]
+  },
+  "previewSha256": "52c9c31211239ce853e37d179d4db41e882a1485706b93798bc8820992acf38b",
+  "dimensions": "1280 x 720",
+  "nonblackCoverage": 0.447635,
+  "capturedAt": "2026-08-30T01:46:50Z"
+}
