@@ -5,7 +5,7 @@
   "version": "1.2.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Listening Post turns 29 curated AI-vendor sources into a release radar for Omarchy. Separate lanes surface model launches, pricing and limit changes, status incidents, and engineering posts; same-week release bursts collapse into a readable row. Providers you use float to the top, new installs start quiet, and the bar vanishes when nothing needs attention. Sources are fixed at build time, fetches are bounded HTTPS-only requests, and no account, token, telemetry, or configurable host is required.",
+  "description": "Listening Post turns 29 curated AI-vendor sources into one release radar, so model launches, pricing changes, status incidents, and engineering posts stop hiding across feeds. The bar hides until something needs attention. Open four keyboard-ready lanes to check ages, follow links, refresh, or mark items read. Same-week releases collapse into one row, and providers you use rise first. Its fixed HTTPS sources refresh every 15 minutes. No account, token, telemetry, article bodies, or custom hosts.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "The bar stays invisible until a model ships, a provider reports an incident, or pricing changes matter. Open Listening Post for four keyboard-walkable lanes, clustered weekly release bursts, source health, readable ages, links, refresh, and mark-read controls. Providers represented in your Omarchy Agents usage rise first without reading their files. Twenty-nine fixed sources are fetched over bounded HTTPS; article bodies, engagement counts, custom hosts, accounts, tokens, and telemetry stay out.",
+    "description": "Listening Post turns 29 curated AI-vendor sources into one release radar, so model launches, pricing changes, status incidents, and engineering posts stop hiding across feeds. The bar hides until something needs attention. Open four keyboard-ready lanes to check ages, follow links, refresh, or mark items read. Same-week releases collapse into one row, and providers you use rise first. Its fixed HTTPS sources refresh every 15 minutes. No account, token, telemetry, article bodies, or custom hosts.",
     "category": "AI",
     "aliases": [
       "listening-post",
