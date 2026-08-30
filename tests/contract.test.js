@@ -31,9 +31,11 @@ test("both authored marketplace descriptions use the complete allowance", () => 
   const manifest = JSON.parse(read("manifest.json"))
   assert.equal(manifest.description.length, 500)
   assert.equal(manifest.barWidget.description.length, 500)
+  assert.equal(manifest.barWidget.description, manifest.description)
   assert.match(manifest.description, /29 curated AI-vendor sources/)
-  assert.match(manifest.description, /no account, token, telemetry/)
-  assert.match(manifest.barWidget.description, /four keyboard-walkable lanes/)
+  assert.match(manifest.description, /four keyboard-ready lanes/)
+  assert.match(manifest.description, /fixed HTTPS sources refresh every 15 minutes/)
+  assert.match(manifest.description, /No account, token, telemetry, article bodies, or custom hosts/)
 })
 
 test("the service creates private state before FileView loading and bounds every external reader", () => {
