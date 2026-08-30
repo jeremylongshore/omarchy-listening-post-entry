@@ -33,7 +33,7 @@ Item {
   // publishing cadence is hours, not minutes; polling harder buys nothing and
   // costs the publishers.
   readonly property int pollIntervalSec: 900
-  readonly property int fetchTimeoutSec: 20
+  readonly property int fetchTimeoutSec: 12
   readonly property int notifyCap: 3
 
   // ---- Settings, read from this plugin's bar-layout entry in shell.json.
@@ -47,6 +47,7 @@ Item {
   property var sourceStatus: []         // per-source ok/error for the panel
   property double generatedAt: 0
   property bool firstRun: true
+  property bool stateDirReady: false
   property bool stateLoaded: false
 
   property var allSources: []           // the curated SOURCES list for this run
@@ -265,6 +266,7 @@ Item {
   // ------------------------------------------------------------ persistence
 
   function persist() {
+    if (!root.stateDirReady || !root.stateLoaded) return
     stateFile.setText(JSON.stringify({
       generatedAt: root.generatedAt,
       firstRun: root.firstRun,
@@ -313,7 +315,12 @@ Item {
 
   Process {
     id: usageListProc
-    command: ["find", root.agentsUsageDir, "-maxdepth", "1", "-name", "*.json", "-printf", "%f\n"]
+    command: ["bash", "-c",
+      "count=0; while IFS= read -r -d '' file; do "
+      + "printf '%s\\n' \"${file##*/}\"; count=$((count + 1)); "
+      + "[ \"$count\" -lt 64 ] || break; "
+      + "done < <(find -- \"$1\" -maxdepth 1 -type f -name '*.json' -print0 2>/dev/null)",
+      "listening-post-usage", root.agentsUsageDir]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -337,15 +344,31 @@ Item {
     onExited: root.sendNextNotification()
   }
 
+  Process {
+    id: stateDirProc
+    command: ["install", "-d", "-m", "700", "--", root.stateDir]
+    onExited: function(code) {
+      root.stateDirReady = code === 0
+      if (!root.stateDirReady) {
+        root.stateLoaded = true
+        root.feedStateChanged()
+      }
+    }
+  }
+
   // ------------------------------------------------------------- file views
 
   FileView {
     id: stateFile
-    path: root.statePath
+    path: root.stateDirReady ? root.statePath : ""
     atomicWrites: true
     printErrors: false
-    onLoaded: root.loadState(text())
-    onLoadFailed: root.loadState("")
+    onLoaded: {
+      if (root.stateDirReady) root.loadState(text())
+    }
+    onLoadFailed: {
+      if (root.stateDirReady) root.loadState("")
+    }
   }
 
   FileView {
@@ -360,4 +383,6 @@ Item {
     repeat: true
     onTriggered: root.poll()
   }
+
+  Component.onCompleted: stateDirProc.running = true
 }

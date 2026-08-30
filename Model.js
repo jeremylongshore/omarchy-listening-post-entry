@@ -242,6 +242,11 @@ function atomLink(block) {
 function safeUrl(u) {
   var s = decodeEntities(String(u || "").trim())
   if (!/^https:\/\/[A-Za-z0-9._~:\/?#@%=&+,-]+$/.test(s)) return ""
+  // Userinfo makes the visible destination ambiguous: in
+  // https://trusted.example@evil.example/path the authority is evil.example.
+  // Feed URLs never need credentials, so reject any @ before path/query/hash.
+  var authority = s.slice(8).split(/[\/?#]/)[0]
+  if (authority.indexOf("@") !== -1) return ""
   return s.length > 500 ? "" : s
 }
 

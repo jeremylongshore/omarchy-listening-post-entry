@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.jeremylongshore.listening-post",
   "name": "Listening Post",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Model releases, pricing changes, and status incidents from 29 curated AI-vendor sources, including community RSS mirrors for the vendors that publish no blog feed. Separate lanes, vendors you run floated to the top, quiet when nothing shipped. Every source is fixed at build time; the plugin contacts no host you can configure.",
+  "description": "Listening Post turns 29 curated AI-vendor sources into a release radar for Omarchy. Separate lanes surface model launches, pricing and limit changes, status incidents, and engineering posts; same-week release bursts collapse into a readable row. Providers you use float to the top, new installs start quiet, and the bar vanishes when nothing needs attention. Sources are fixed at build time, fetches are bounded HTTPS-only requests, and no account, token, telemetry, or configurable host is required.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "The pill only speaks when a model shipped or a provider is down; the panel is a drainable queue with Herald-standard keys. Twenty-nine curated sources across the major labs, providers, and AI tools, fixed at build time.",
+    "description": "The bar stays invisible until a model ships, a provider reports an incident, or pricing changes matter. Open Listening Post for four keyboard-walkable lanes, clustered weekly release bursts, source health, readable ages, links, refresh, and mark-read controls. Providers represented in your Omarchy Agents usage rise first without reading their files. Twenty-nine fixed sources are fetched over bounded HTTPS; article bodies, engagement counts, custom hosts, accounts, tokens, and telemetry stay out.",
     "category": "AI",
     "aliases": [
       "listening-post",

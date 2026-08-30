@@ -62,6 +62,8 @@ test("safeUrl accepts only https and refuses option-shaped values", () => {
   assert.equal(Model.safeUrl("javascript:alert(1)"), "")
   assert.equal(Model.safeUrl("-K https://x"), "")
   assert.equal(Model.safeUrl("https://x/" + "a".repeat(600)), "")
+  assert.equal(Model.safeUrl("https://trusted.example@evil.example/feed"), "")
+  assert.equal(Model.safeUrl("https://user:pass@example.test/feed"), "")
 })
 
 test("safeUrl rejects every shell metacharacter that reaches bash -lc via --exec", () => {

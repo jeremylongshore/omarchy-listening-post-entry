@@ -41,7 +41,9 @@ omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-ent
 
 Then add **Listening Post** to your bar layout (Omarchy menu, Bar, or
 `~/.config/omarchy/shell.json`). The background service starts polling on
-enable; the first poll lands within a minute.
+enable. The first poll begins immediately; completion time depends on how
+quickly the 29 independent publishers respond, with every request capped at
+12 seconds.
 
 ## Remove
 
@@ -174,7 +176,10 @@ to it. No account, no token, no telemetry, nothing sent anywhere.
 npm test
 ```
 
-72 tests over the pure data layer: the RSS and Atom parsers against captured
+The 90-test enforced suite covers the pure data layer, QML contracts,
+accessibility, and release artifacts. It requires at least 95% line, statement,
+and function coverage, 90% branch coverage, a 90% mutation score, and three
+concurrent race passes. Parser tests exercise RSS and Atom against captured
 bodies from all twenty-nine live sources, lane classification, week clustering,
 merge and retention, read-state, notification gating, personalization
 mapping, the feed-list parser, and the state record. Offline by design; the

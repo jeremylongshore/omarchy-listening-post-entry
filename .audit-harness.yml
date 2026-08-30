@@ -1,0 +1,3 @@
+# Listening Post is a QML frontend with an offline JavaScript model.
+classify_pins:
+  - frontend

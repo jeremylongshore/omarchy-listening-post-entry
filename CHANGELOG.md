@@ -12,6 +12,35 @@ Regenerate with `scripts/gen-changelog.sh`.
 
 Nothing yet.
 
+## [1.2.0] - 2026-08-29
+
+### Changed
+
+- Widen the live panel so all four signal lanes remain legible in marketplace
+  previews and on real Omarchy desktops.
+- Replace generic marketplace copy with two exact 500-character descriptions
+  that explain the product, its interaction model, and its privacy boundary.
+- Start each bounded source fetch within the first refresh pass and cap every
+  request at twelve seconds.
+
+### Security
+
+- Reject URLs containing userinfo before opening any feed link.
+- Create the private state directory with mode 0700 before loading or persisting
+  Listening Post state.
+- Bound optional provider personalization to 64 local file names without reading
+  their contents.
+
+### Testing
+
+- Add 90 offline tests with enforced 95% line, statement, and function coverage,
+  90% branch coverage, three repeated concurrent race runs, and a 90% mutation
+  score floor.
+- Add the current C28-C43 fail-closed submission lane, ShellCheck, audit-harness
+  integrity checks, and a real Buzz production-shell E2E render receipt.
+- Require an exact hash-bound human approval of the marketplace preview before
+  the presentation gate can pass.
+
 ## [1.1.0] - 2026-08-25
 
 ### Removed
@@ -67,4 +96,3 @@ Tooling and repository changes with no effect on the shipped plugin.
 - Vendor c40, the panel design gate, and repair the sync that dropped it
 - Vendor rig-render, which loads the plugin into a real shell
 - Add four-lane MiniMax review and backfill the changelog
-
