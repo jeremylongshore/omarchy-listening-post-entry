@@ -176,7 +176,7 @@ to it. No account, no token, no telemetry, nothing sent anywhere.
 npm test
 ```
 
-The 90-test enforced suite covers the pure data layer, QML contracts,
+The 91-test enforced suite covers the pure data layer, QML contracts,
 accessibility, and release artifacts. It requires at least 95% line, statement,
 and function coverage, 90% branch coverage, a 90% mutation score, and three
 concurrent race passes. Parser tests exercise RSS and Atom against captured

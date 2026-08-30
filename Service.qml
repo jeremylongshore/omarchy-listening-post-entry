@@ -52,6 +52,7 @@ Item {
 
   property var allSources: []           // the curated SOURCES list for this run
   property int fetchIndex: -1           // -1 idle; else index into allSources
+  property string fetchOutput: ""       // stdout for the current Process run
   property var freshItems: []           // accumulated across this run
   property var prevGuids: ({})          // guids present before this run
   property bool polling: false
@@ -123,6 +124,7 @@ Item {
       return
     }
     var src = root.allSources[root.fetchIndex]
+    root.fetchOutput = ""
     fetchProc.command = root.curlArgs(src.url)
     fetchProc.running = true
   }
@@ -300,16 +302,17 @@ Item {
   Process {
     id: fetchProc
     stdout: StdioCollector {
+      id: fetchStdout
       waitForEnd: true
-      onStreamFinished: root.onFetched(text, String(text || "").length > 0)
+      onStreamFinished: root.fetchOutput = String(text || "")
     }
     onExited: function(code) {
-      // A non-zero curl exit with no stdout never reaches onStreamFinished
-      // with a body, so treat this as the failure path when nothing collected.
-      if (code !== 0 && root.polling && root.fetchIndex >= 0
-          && root.sourceStatus.length === root.fetchIndex) {
-        root.onFetched("", false)
-      }
+      // Finalize exactly once from Process.onExited. StdioCollector also emits
+      // for empty failed commands; advancing from both signals races the reused
+      // Process into the following source and can walk beyond allSources.
+      if (!root.polling || root.fetchIndex < 0) return
+      var body = String(fetchStdout.text || root.fetchOutput || "")
+      root.onFetched(body, code === 0 && body.length > 0)
     }
   }
 

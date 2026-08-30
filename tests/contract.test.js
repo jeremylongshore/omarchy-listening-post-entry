@@ -48,6 +48,15 @@ test("the service creates private state before FileView loading and bounds every
   assert.match(service, /-maxdepth 1 -type f -name '\*\.json'/)
 })
 
+test("each fetch advances from Process exit exactly once", () => {
+  const service = read("Service.qml")
+  const fetchBlock = service.match(/Process \{\s*id: fetchProc[\s\S]*?\n  \}/)?.[0] || ""
+
+  assert.match(fetchBlock, /onStreamFinished:\s*root\.fetchOutput\s*=/)
+  assert.doesNotMatch(fetchBlock, /onStreamFinished:\s*root\.onFetched/)
+  assert.match(fetchBlock, /onExited:[\s\S]*root\.onFetched\(body, code === 0 && body\.length > 0\)/)
+})
+
 test("curated source fetches remain fixed, HTTPS-only, and redirect-free", () => {
   const service = read("Service.qml")
   assert.match(service, /root\.allSources = Model\.SOURCES/)

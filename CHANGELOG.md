@@ -33,7 +33,7 @@ Nothing yet.
 
 ### Testing
 
-- Add 90 offline tests with enforced 95% line, statement, and function coverage,
+- Add 91 offline tests with enforced 95% line, statement, and function coverage,
   90% branch coverage, three repeated concurrent race runs, and a 90% mutation
   score floor.
 - Add the current C28-C43 fail-closed submission lane, ShellCheck, audit-harness
