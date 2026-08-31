@@ -5,7 +5,7 @@
   "version": "1.2.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Listening Post turns 29 curated AI-vendor sources into one release radar, so model launches, pricing changes, status incidents, and engineering posts stop hiding across feeds. The bar hides until something needs attention. Open four keyboard-ready lanes to check ages, follow links, refresh, or mark items read. Same-week releases collapse into one row, and providers you use rise first. Its fixed HTTPS sources refresh every 15 minutes. No account, token, telemetry, article bodies, or custom hosts.",
+  "description": "Listening Post turns 29 curated AI-vendor feeds into your Omarchy bar radar for model news, pricing changes, status incidents, and engineering posts. Open four keyboard-ready lanes to check item age, follow a link, refresh, or mark an item read. Same-week releases cluster and providers with matching local agent-usage filenames can rise first. Fixed HTTPS sources poll every 15 minutes. Article pages are not fetched or retained. No account, token, telemetry, custom host, or user-supplied feed URL.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "Listening Post turns 29 curated AI-vendor sources into one release radar, so model launches, pricing changes, status incidents, and engineering posts stop hiding across feeds. The bar hides until something needs attention. Open four keyboard-ready lanes to check ages, follow links, refresh, or mark items read. Same-week releases collapse into one row, and providers you use rise first. Its fixed HTTPS sources refresh every 15 minutes. No account, token, telemetry, article bodies, or custom hosts.",
+    "description": "Listening Post turns 29 curated AI-vendor feeds into your Omarchy bar radar for model news, pricing changes, status incidents, and engineering posts. Open four keyboard-ready lanes to check item age, follow a link, refresh, or mark an item read. Same-week releases cluster and providers with matching local agent-usage filenames can rise first. Fixed HTTPS sources poll every 15 minutes. Article pages are not fetched or retained. No account, token, telemetry, custom host, or user-supplied feed URL.",
     "category": "AI",
     "aliases": [
       "listening-post",

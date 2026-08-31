@@ -26,10 +26,10 @@ OpenAI incident               a provider status page has an open incident
   **Pricing and limits**, **Status incidents** (louder, first), and
   **Engineering posts** (shown, never counted, never notified). A vendor's
   same-week release burst clusters into one row.
-- **Ranked by the agents you actually run.** With the first-party Agents
-  plugin installed, Listening Post reads the file *names* in its usage
-  folder (read-only, nothing parsed, degrades to off) and floats those
-  vendors to the top.
+- **Optionally ranked by local agent-usage filenames.** With the first-party
+  Agents plugin installed, Listening Post reads only the file *names* in its
+  usage folder (read-only, nothing parsed, degrades to off) and can float
+  matching vendors to the top.
 - **Quiet by design.** Install starts read. Engineering chatter never
   reaches the pill. Nothing new means no pill at all.
 

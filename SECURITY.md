@@ -2,10 +2,9 @@
 
 ## Threat model
 
-Listening Post renders strings that originate from twenty-nine public web
-feeds plus any feed the user adds themselves. Feed bodies are
-attacker-influenceable content (a compromised blog, a malicious feed
-list); the shell process must never fetch, execute, or mis-render
+Listening Post renders strings that originate from twenty-nine fixed public web
+feeds. Feed bodies are attacker-influenceable content (for example, a
+compromised publisher); the shell process must never execute or mis-render
 anything a feed says.
 
 ## Architecture control
@@ -68,11 +67,8 @@ QML file, `Service.qml`:
 7. Notifications go through `omarchy-notification-send` with sanitized
    text; more than three new items collapse into one summary, so a feed
    cannot storm the notification daemon.
-8. User-added feeds are bounded and host-screened: at most 50 extra
-   sources, and a feed whose host is a literal IP or a private-network
-   suffix (`.local`, `.internal`, `localhost`) is refused, so an
-   attacker-authored source list cannot turn the service into an
-   internal-endpoint prober.
+8. The request set is compiled into `Model.SOURCES`. No custom host or
+   user-supplied feed URL can reach the curl argv, and redirects are disabled.
 9. Writes go through `FileView`'s atomic-write path, so the plugin inherits
    the shell's own write discipline rather than reimplementing it.
 10. There is exactly one owner of the item store (the service singleton), so
@@ -81,15 +77,14 @@ QML file, `Service.qml`:
 
 ## What this plugin reads and writes
 
-- Reads: the twenty-nine curated feed URLs (GET), optional user-added
-  feeds from `extra-sources.json` (https only, public hosts only),
+- Reads: the twenty-nine curated feed URLs (GET),
   `~/.config/omarchy/shell.json` (its own settings entry), and the file *names* under
   `~/.local/state/omarchy/agents/usage/` for personalization (never file
   contents).
 - Writes: only `~/.local/state/omarchy/listening-post/`. Safe to delete at
   any time.
-- No account, no token, no cookies, no telemetry. Nothing is ever sent
-  anywhere; every network call is a GET for a public document.
+- No account, token, cookie, or telemetry data is sent. Every network call is a
+  bounded GET for one fixed public document.
 
 ## Reporting
 

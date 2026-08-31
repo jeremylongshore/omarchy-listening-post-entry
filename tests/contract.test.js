@@ -32,10 +32,12 @@ test("both authored marketplace descriptions use the complete allowance", () => 
   assert.equal(manifest.description.length, 500)
   assert.equal(manifest.barWidget.description.length, 500)
   assert.equal(manifest.barWidget.description, manifest.description)
-  assert.match(manifest.description, /29 curated AI-vendor sources/)
-  assert.match(manifest.description, /four keyboard-ready lanes/)
-  assert.match(manifest.description, /fixed HTTPS sources refresh every 15 minutes/)
-  assert.match(manifest.description, /No account, token, telemetry, article bodies, or custom hosts/)
+  for (const claim of [
+    "29 curated AI-vendor feeds", "four keyboard-ready lanes", "mark an item read",
+    "Same-week releases cluster", "local agent-usage filenames",
+    "Fixed HTTPS sources poll every 15 minutes", "Article pages are not fetched or retained",
+    "No account, token, telemetry, custom host, or user-supplied feed URL"
+  ]) assert.match(manifest.description, new RegExp(claim))
 })
 
 test("the service creates private state before FileView loading and bounds every external reader", () => {
