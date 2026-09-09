@@ -15,6 +15,7 @@ test("the bar control exposes a dynamic named button and pointer activation", ()
 test("the panel exposes focus, close, navigation, activation, deletion, and refresh", () => {
   const qml = read("Panel.qml")
   assert.match(qml, /KeyboardPanel\s*{/)
+  assert.match(qml, /centerOnBar:\s*false/, "the panel must remain anchored under its bar pill")
   assert.match(qml, /focusTarget:\s*keyCatcher/)
   assert.match(qml, /PanelKeyCatcher\s*{/)
   assert.match(qml, /onCloseRequested:\s*root\.close\(\)/)
