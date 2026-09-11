@@ -4,6 +4,7 @@ const fs = require("node:fs")
 const path = require("node:path")
 
 const Model = require("../Model.js")
+const snapshotFixture = require("../packages/perception-contract/fixtures/snapshot-v1.json")
 
 // Fixtures are real feed bodies captured live 2026-08-20 from every curated
 // source, trimmed to their first six items. Tests run against captured
@@ -504,4 +505,53 @@ test("every fetched source is a compile-time constant, none is user supplied", (
   for (const s of Model.SOURCES) {
     assert.ok(typeof s.url === "string" && s.url.startsWith("https://"), s.url)
   }
+})
+
+test("Perception snapshots normalize into the native queue and brief", () => {
+  const parsed = Model.parsePerceptionSnapshot(JSON.stringify(snapshotFixture))
+  assert.equal(parsed.valid, true)
+  assert.equal(parsed.accountName, "Jeremy")
+  assert.equal(parsed.items.length, 3)
+  assert.deepEqual(parsed.items[0], {
+    guid: "signal_claude_status", sourceId: "claude-status", vendor: "claude-status",
+    vendorName: "Claude Status", product: "", lane: "incident", quiet: false,
+    title: "Elevated API errors under investigation", url: "https://status.claude.com/",
+    timeMs: Date.parse("2026-09-10T17:21:00.000Z"), resolved: false, read: false,
+    used: true, relevance: 100
+  })
+  assert.deepEqual(parsed.highlights[0], {
+    signalId: "signal_claude_status",
+    reason: "Active provider incident; operational impact takes precedence."
+  })
+  assert.equal(parsed.sources[2].ok, false)
+  assert.equal(parsed.sources[2].status, "degraded")
+})
+
+test("Perception parser rejects malformed fields instead of partially replacing last-good", () => {
+  assert.deepEqual(Model.parsePerceptionSnapshot("not json"), { valid: false })
+  assert.deepEqual(Model.parsePerceptionSnapshot("x".repeat(Model.MAX_BODY_CHARS + 1)), { valid: false })
+  for (const mutate of [
+    value => { value.schemaVersion = "2.0" },
+    value => { value.signals[0].url = "http://127.0.0.1/private" },
+    value => { value.signals[0].id = "bad/id" },
+    value => { value.signals.push({ ...value.signals[0] }) },
+    value => { value.brief.highlights[0].signalId = "missing" },
+    value => { value.sourceHealth[0].status = "unknown" },
+    value => { value.topics = Array.from({ length: 9 }, (_, i) => ({ id:String(i), name:"x", keywords:[], enabled:true })) }
+  ]) {
+    const value = JSON.parse(JSON.stringify(snapshotFixture))
+    mutate(value)
+    assert.equal(Model.parsePerceptionSnapshot(JSON.stringify(value)).valid, false)
+  }
+})
+
+test("Perception endpoint and device token validation fail closed", () => {
+  assert.equal(Model.perceptionEndpoint("https://api.perception.intentsolutions.io/"), "https://api.perception.intentsolutions.io")
+  for (const endpoint of ["http://api.perception.intentsolutions.io", "https://evil.test", "https://api.perception.intentsolutions.io.evil.test"])
+    assert.equal(Model.perceptionEndpoint(endpoint), "")
+  assert.equal(Model.validDeviceToken("a".repeat(32)), true)
+  assert.equal(Model.validDeviceToken("a".repeat(31)), false)
+  assert.equal(Model.validDeviceToken("token with spaces"), false)
+  assert.equal(Model.validCredentialSetting("~/.config/perception/listening-post.curlrc"), true)
+  assert.equal(Model.validCredentialSetting("/tmp/stolen.curlrc"), false)
 })

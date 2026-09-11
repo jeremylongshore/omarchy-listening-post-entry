@@ -2,10 +2,11 @@
 
 ## Threat model
 
-Listening Post renders strings that originate from twenty-nine fixed public web
-feeds. Feed bodies are attacker-influenceable content (for example, a
-compromised publisher); the shell process must never execute or mis-render
-anything a feed says.
+Listening Post renders bounded Perception API snapshots and, before pairing,
+strings from twenty-nine fixed public feeds. Both are attacker-influenceable
+network content; the shell process must never execute or mis-render them. The
+device bearer token must not enter process listings, logs, links, notifications,
+or the persisted public snapshot state.
 
 ## Architecture control
 
@@ -14,8 +15,9 @@ beyond `curl`, `find`, `xdg-open`, and `omarchy-notification-send`, all of
 which a stock Omarchy install already ships. All I/O lives in one auditable
 QML file, `Service.qml`:
 
-- **Fetch**: one `curl -fsS --proto =https --max-time 20 --max-filesize
-  2000000 -- <url>` GET per source. `--proto =https` pins the scheme,
+- **Fetch**: paired mode uses the canonical Perception origin; unpaired migration
+  mode uses one `curl -fsS --proto =https --max-time 12 --max-filesize
+  2000000 -- <url>` GET per fixed source. `--proto =https` pins the scheme,
   `--` closes option parsing before the URL, and every URL that can reach
   the argv has already passed `Model.safeUrl` (https-only, no whitespace,
   no quotes, length-capped, never dash-prefixed).
@@ -24,7 +26,11 @@ QML file, `Service.qml`:
   reader can never observe a torn document. The service singleton is the
   single owner and single writer of the item store.
 - **Mark-read and refresh** are direct in-process calls into that single
-  owner, so there is no cross-process write race that could lose a keystroke.
+  owner. Remote reads enter a durable bounded queue and are sent to Perception.
+- **Credential transport**: `connect-perception.sh` reads the token without echo
+  and writes a mode-0600 curl config inside `~/.config/perception/` (mode 0700).
+  QML never reads its contents; process argv contains only the fixed file path.
+  The token is not part of `shell.json` or `state.json`.
 
 ## Input containment
 
@@ -74,17 +80,27 @@ QML file, `Service.qml`:
 10. There is exactly one owner of the item store (the service singleton), so
     the cross-process read-modify-write race a separate poller CLI creates
     cannot happen: a mark-read is never reverted by a concurrent poll.
+11. `Model.parsePerceptionSnapshot` mirrors contract v1 and rejects the entire
+    response unless dates, IDs, links, lanes, scores, topic bounds, brief
+    references, and source health are valid. Rejection retains last-good data.
+12. The configurable API origin fails closed unless it is exactly
+    `https://api.perception.intentsolutions.io`, preventing a settings value from
+    becoming a custom-host or SSRF path.
 
 ## What this plugin reads and writes
 
-- Reads: the twenty-nine curated feed URLs (GET),
-  `~/.config/omarchy/shell.json` (its own settings entry), and the file *names* under
+- Reads: the canonical Perception API when paired; otherwise the twenty-nine
+  curated feed URLs. It also reads `~/.config/omarchy/shell.json` (its own
+  settings entry, containing only the managed credential path) and the file *names* under
   `~/.local/state/omarchy/agents/usage/` for personalization (never file
   contents).
-- Writes: only `~/.local/state/omarchy/listening-post/`. Safe to delete at
-  any time.
-- No account, token, cookie, or telemetry data is sent. Every network call is a
-  bounded GET for one fixed public document.
+- Writes at runtime: only `~/.local/state/omarchy/listening-post/`. The explicit
+  connector additionally writes `~/.config/perception/listening-post.curlrc`.
+  Removing that credential disconnects the plugin; create a replacement device
+  in Perception to reconnect.
+- Paired requests send the device bearer token only to the canonical API and may
+  update account read state. The plugin sends no browser cookie and collects no
+  telemetry.
 
 ## Reporting
 

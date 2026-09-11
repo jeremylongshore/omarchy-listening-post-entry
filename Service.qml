@@ -26,6 +26,9 @@ Item {
   readonly property string stateDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/listening-post"
   readonly property string statePath: stateDir + "/state.json"
+  readonly property string configHome:
+    Quickshell.env("XDG_CONFIG_HOME") || home + "/.config"
+  readonly property string credentialPath: configHome + "/perception/listening-post.curlrc"
   readonly property string agentsUsageDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/agents/usage"
 
@@ -41,6 +44,8 @@ Item {
   //      same way the poller CLI used to.
   property string notificationsMode: "On"
   property string personalizationMode: "On"
+  property string apiEndpointSetting: "https://api.perception.intentsolutions.io"
+  property string deviceTokenFileSetting: "~/.config/perception/listening-post.curlrc"
 
   // ---- Poll state.
   property var storedItems: []          // last-good merged items
@@ -53,9 +58,17 @@ Item {
   property var allSources: []           // the curated SOURCES list for this run
   property int fetchIndex: -1           // -1 idle; else index into allSources
   property string fetchOutput: ""       // stdout for the current Process run
+  property string readOutput: ""
   property var freshItems: []           // accumulated across this run
   property var prevGuids: ({})          // guids present before this run
   property bool polling: false
+  property bool remoteActivated: false   // sticky after the first valid API field
+  property string connectionState: "local"
+  property double staleAfter: 0
+  property string accountName: ""
+  property var briefHighlights: []
+  property var topics: []
+  property var pendingReadGuids: []
 
   // Named feedStateChanged, not stateChanged: the root is an Item, which already
   // owns a `state` property and therefore a built-in stateChanged() signal.
@@ -89,6 +102,10 @@ Item {
         if (!e || e.id !== root.moduleId) continue
         root.notificationsMode = e.notifications === "Off" ? "Off" : "On"
         root.personalizationMode = e.personalization === "Off" ? "Off" : "On"
+        root.apiEndpointSetting = String(e.perceptionEndpoint
+          || "https://api.perception.intentsolutions.io")
+        root.deviceTokenFileSetting = String(e.deviceTokenFile
+          || "~/.config/perception/listening-post.curlrc")
         return
       }
     }
@@ -107,7 +124,24 @@ Item {
     if (root.polling) return
     if (!root.stateLoaded) return
     root.readSettings()
+    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
+    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) {
+      if (root.remoteActivated) {
+        root.connectionState = "unpaired"
+        root.feedStateChanged()
+      } else root.pollLocal()
+      return
+    }
     root.polling = true
+    root.connectionState = root.remoteActivated ? "refreshing" : "checking"
+    credentialCheckProc.command = ["test", "-f", root.credentialPath]
+    credentialCheckProc.running = true
+    root.feedStateChanged()
+  }
+
+  function pollLocal() {
+    root.polling = true
+    root.connectionState = "local"
     root.freshItems = []
     root.sourceStatus = []
     var seen = ({})
@@ -116,6 +150,73 @@ Item {
     root.allSources = Model.SOURCES
     root.fetchIndex = 0
     root.fetchCurrent()
+  }
+
+  function pollPerception(endpoint) {
+    root.polling = true
+    root.fetchOutput = ""
+    root.connectionState = root.remoteActivated ? "refreshing" : "connecting"
+    root.startPerceptionFetch()
+    root.feedStateChanged()
+  }
+
+  function startPerceptionFetch() {
+    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
+    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) {
+      root.finishPerceptionFailure("unpaired")
+      return
+    }
+    apiFetchProc.command = ["curl", "--config", root.credentialPath,
+      "-sS", "--proto", "=https", "--max-time", String(root.fetchTimeoutSec),
+      "--max-filesize", String(Model.MAX_BODY_CHARS), "--output", "-",
+      "--write-out", "\n%{http_code}", "--", endpoint + "/v1/snapshot?windowHours=168"]
+    apiFetchProc.running = true
+  }
+
+  function onPerceptionFetched(output, processOk) {
+    var text = String(output || "")
+    var match = /\n([0-9]{3})$/.exec(text)
+    var status = match ? Number(match[1]) : 0
+    var body = match ? text.slice(0, match.index) : ""
+    if (!processOk || status !== 200) {
+      root.finishPerceptionFailure(status === 401 ? "unpaired"
+        : status === 402 ? "entitlement" : "offline")
+      return
+    }
+    var parsed = Model.parsePerceptionSnapshot(body)
+    if (!parsed.valid) {
+      root.finishPerceptionFailure("invalid")
+      return
+    }
+    var wasRemote = root.remoteActivated
+    var prior = ({})
+    for (var i = 0; i < root.storedItems.length; i++) prior[root.storedItems[i].guid] = true
+    var pending = ({})
+    for (var p = 0; p < root.pendingReadGuids.length; p++) pending[root.pendingReadGuids[p]] = true
+    for (var j = 0; j < parsed.items.length; j++) {
+      if (pending[parsed.items[j].guid]) parsed.items[j].read = true
+    }
+    root.storedItems = parsed.items
+    root.sourceStatus = parsed.sources
+    root.generatedAt = parsed.generatedAt
+    root.staleAfter = parsed.staleAfter
+    root.accountName = parsed.accountName
+    root.briefHighlights = parsed.highlights
+    root.topics = parsed.topics
+    root.remoteActivated = true
+    root.connectionState = Date.now() > parsed.staleAfter ? "stale" : "connected"
+    root.firstRun = false
+    root.polling = false
+    if (wasRemote && root.notificationsMode === "On")
+      root.notifyNew(Model.newNotifiables(prior, root.storedItems, false))
+    root.persist()
+    root.syncNextRead()
+  }
+
+  function finishPerceptionFailure(state) {
+    root.connectionState = state
+    root.polling = false
+    root.feedStateChanged()
   }
 
   function fetchCurrent() {
@@ -254,15 +355,56 @@ Item {
         changed = true
       }
     }
+    if (root.remoteActivated) root.queueRemoteReads(guids)
     if (changed) root.persist()
   }
 
   function markAllRead() {
     var changed = false
+    var guids = []
     for (var i = 0; i < root.storedItems.length; i++) {
-      if (!root.storedItems[i].read) { root.storedItems[i].read = true; changed = true }
+      if (!root.storedItems[i].read) {
+        root.storedItems[i].read = true
+        guids.push(root.storedItems[i].guid)
+        changed = true
+      }
     }
+    if (root.remoteActivated) root.queueRemoteReads(guids)
     if (changed) root.persist()
+  }
+
+  function queueRemoteReads(guids) {
+    var queued = ({})
+    for (var p = 0; p < root.pendingReadGuids.length; p++) queued[root.pendingReadGuids[p]] = true
+    var next = root.pendingReadGuids.slice(0)
+    for (var g = 0; g < guids.length; g++) {
+      var id = String(guids[g] || "")
+      if (/^[A-Za-z0-9_-]{1,160}$/.test(id) && !queued[id]) {
+        queued[id] = true
+        next.push(id)
+      }
+    }
+    root.pendingReadGuids = next
+    root.persist()
+    root.syncNextRead()
+  }
+
+  function syncNextRead() {
+    if (readProc.running || root.pendingReadGuids.length === 0) return
+    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
+    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) return
+    var id = root.pendingReadGuids[0]
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(id)) {
+      root.pendingReadGuids = root.pendingReadGuids.slice(1)
+      root.syncNextRead()
+      return
+    }
+    readProc.command = ["curl", "--config", root.credentialPath,
+      "-sS", "--proto", "=https", "--max-time", String(root.fetchTimeoutSec),
+      "--output", "/dev/null", "--write-out", "%{http_code}",
+      "-X", "PUT", "--", endpoint + "/v1/signals/" + id + "/read"]
+    root.readOutput = ""
+    readProc.running = true
   }
 
   // ------------------------------------------------------------ persistence
@@ -272,6 +414,13 @@ Item {
     stateFile.setText(JSON.stringify({
       generatedAt: root.generatedAt,
       firstRun: root.firstRun,
+      mode: root.remoteActivated ? "perception" : "local",
+      staleAfter: root.staleAfter,
+      accountName: root.accountName,
+      connectionState: root.connectionState,
+      briefHighlights: root.briefHighlights,
+      topics: root.topics,
+      pendingReadGuids: root.pendingReadGuids,
       sources: root.sourceStatus,
       items: root.storedItems
     }))
@@ -289,6 +438,27 @@ Item {
       var data
       try { data = JSON.parse(String(raw || "")) } catch (e) { data = null }
       root.firstRun = data && data.firstRun === true ? true : parsed.items.length === 0
+      if (data && data.mode === "perception") {
+        root.remoteActivated = true
+        root.staleAfter = Number(data.staleAfter) || 0
+        root.accountName = Model.clean(data.accountName, 80)
+        root.connectionState = "last-good"
+        root.topics = Array.isArray(data.topics) ? data.topics.slice(0, 8) : []
+        var itemIds = ({})
+        for (var q = 0; q < parsed.items.length; q++) itemIds[parsed.items[q].guid] = true
+        var highlights = []
+        var rawHighlights = Array.isArray(data.briefHighlights) ? data.briefHighlights : []
+        for (var h = 0; h < rawHighlights.length && highlights.length < 5; h++) {
+          var hi = rawHighlights[h]
+          if (hi && itemIds[hi.signalId] && typeof hi.reason === "string" && hi.reason.trim())
+            highlights.push({ signalId: String(hi.signalId), reason: Model.clean(hi.reason, 240) })
+        }
+        root.briefHighlights = highlights
+        var pending = Array.isArray(data.pendingReadGuids) ? data.pendingReadGuids : []
+        root.pendingReadGuids = pending.filter(function(id) {
+          return /^[A-Za-z0-9_-]{1,160}$/.test(String(id || ""))
+        }).slice(0, Model.MAX_ITEMS)
+      }
     }
     root.stateLoaded = true
     root.feedStateChanged()
@@ -313,6 +483,47 @@ Item {
       if (!root.polling || root.fetchIndex < 0) return
       var body = String(fetchStdout.text || root.fetchOutput || "")
       root.onFetched(body, code === 0 && body.length > 0)
+    }
+  }
+
+  Process {
+    id: credentialCheckProc
+    onExited: function(code) {
+      if (code === 0) root.pollPerception(Model.perceptionEndpoint(root.apiEndpointSetting))
+      else if (root.remoteActivated) root.finishPerceptionFailure("unpaired")
+      else root.pollLocal()
+    }
+  }
+
+  Process {
+    id: apiFetchProc
+    stdout: StdioCollector {
+      id: apiFetchStdout
+      waitForEnd: true
+      onStreamFinished: root.fetchOutput = String(text || "")
+    }
+    onExited: function(code) {
+      root.onPerceptionFetched(String(apiFetchStdout.text || root.fetchOutput || ""), code === 0)
+    }
+  }
+
+  Process {
+    id: readProc
+    stdout: StdioCollector {
+      id: readStdout
+      waitForEnd: true
+      onStreamFinished: root.readOutput = String(text || "")
+    }
+    onExited: function(code) {
+      var status = Number(String(readStdout.text || root.readOutput || ""))
+      // 204 synced; 404 means the bounded server retention already removed
+      // the signal, so it is terminal rather than a head-of-line blocker.
+      if (code === 0 && (status === 204 || status === 404)
+          && root.pendingReadGuids.length > 0) {
+        root.pendingReadGuids = root.pendingReadGuids.slice(1)
+        root.persist()
+        root.syncNextRead()
+      }
     }
   }
 

@@ -41,7 +41,7 @@ jobs:
     with:
       variant: docker
       srv-path: /srv/perception-src
-      health-check-url: https://api.waitstate.intentsolutions.io/healthz
+      health-check-url: https://api.perception.intentsolutions.io/healthz
       vps-tailnet-ip: 100.88.144.55
       vps-public-ip: 167.86.106.29
       vps-host: intentsolutions

@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { PerceptionDatabase } from "./database.js";
+import { accountEntitlement } from "./entitlements.js";
 
 export function hashDeviceToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
@@ -18,6 +19,7 @@ export function authenticateDevice(database: PerceptionDatabase, token: string):
   const expected = Buffer.from(row.token_hash, "hex");
   const actual = Buffer.from(digest, "hex");
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
+  if (!accountEntitlement(database, row.account_id)?.entitled) return null;
   database.prepare("UPDATE device_tokens SET last_seen_at = ? WHERE id = ?").run(new Date().toISOString(), row.id);
   return { deviceId: row.id, accountId: row.account_id };
 }

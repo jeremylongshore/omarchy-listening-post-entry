@@ -7,11 +7,23 @@ services:
     environment:
       PORT: 8790
       DATABASE_PATH: /data/perception.db
-      WEB_ORIGIN: https://waitstate.intentsolutions.io
+      WEB_ORIGIN: https://perception.intentsolutions.io
+      API_ORIGIN: https://api.perception.intentsolutions.io
       LOG_LEVEL: info
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      GITHUB_CALLBACK_URL: https://api.waitstate.intentsolutions.io/v1/auth/github/callback
+      LEMONSQUEEZY_WEBHOOK_SECRET: ${LEMONSQUEEZY_WEBHOOK_SECRET:-}
+      LEMONSQUEEZY_STORE_ID: ${LEMONSQUEEZY_STORE_ID:-}
+      LEMONSQUEEZY_VARIANT_IDS: ${LEMONSQUEEZY_VARIANT_IDS:-}
+      LEMONSQUEEZY_CHECKOUT_URL: ${LEMONSQUEEZY_CHECKOUT_URL:-}
+      LEMONSQUEEZY_ALLOW_TEST_MODE: ${LEMONSQUEEZY_ALLOW_TEST_MODE:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-Perception <perception@intentsolutions.io>}
+      INGESTION_ENABLED: ${INGESTION_ENABLED:-true}
+      INGESTION_INTERVAL_MS: ${INGESTION_INTERVAL_MS:-900000}
+      INGESTION_KEY: ${INGESTION_KEY:-}
     ports:
       - "127.0.0.1:8790:8790"
     volumes:

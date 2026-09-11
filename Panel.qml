@@ -52,6 +52,21 @@ Panel {
     return root.service ? root.service.sourceStatus : []
   }
 
+  readonly property var briefHighlights: {
+    root.revision
+    return root.service ? root.service.briefHighlights : []
+  }
+
+  readonly property bool remoteActivated: {
+    root.revision
+    return root.service ? root.service.remoteActivated === true : false
+  }
+
+  readonly property string connectionState: {
+    root.revision
+    return root.service ? root.service.connectionState : "local"
+  }
+
   readonly property double generatedAt: {
     root.revision
     return root.service ? root.service.generatedAt : 0
@@ -86,17 +101,36 @@ Panel {
       { lane: "engineering", header: "ENGINEERING POSTS", max: engineeringRowsMax }
     ]
     var sel = 0
+    if (root.briefHighlights.length > 0) {
+      var byId = ({})
+      for (var b = 0; b < items.length; b++) byId[items[b].guid] = items[b]
+      rows.push({ type: "header", text: "PERCEPTION BRIEF", lane: "brief",
+        guid: "", guids: [], title: "", url: "", label: "", vendorName: "",
+        reason: "", timeMs: 0, read: true, resolved: true, used: false, count: 0, sel: -1 })
+      for (var h = 0; h < root.briefHighlights.length; h++) {
+        var highlight = root.briefHighlights[h]
+        var briefItem = byId[highlight.signalId]
+        if (!briefItem) continue
+        rows.push({ type: "row", text: "", lane: "brief", guid: briefItem.guid,
+          guids: [briefItem.guid], title: briefItem.title, url: briefItem.url,
+          label: (h + 1 < 10 ? "0" : "") + (h + 1), vendorName: briefItem.vendorName,
+          reason: highlight.reason, timeMs: briefItem.timeMs, read: briefItem.read,
+          resolved: briefItem.resolved, used: false, count: 1, sel: sel })
+        sel++
+      }
+    }
     for (var l = 0; l < lanes.length; l++) {
       var laneRows = Model.laneRows(items, lanes[l].lane, lanes[l].max)
       if (laneRows.length === 0) continue
       rows.push({ type: "header", text: lanes[l].header, lane: lanes[l].lane,
         guid: "", guids: [], title: "", url: "", label: "", vendorName: "",
-        timeMs: 0, read: true, resolved: true, used: false, count: 0, sel: -1 })
+        reason: "", timeMs: 0, read: true, resolved: true, used: false, count: 0, sel: -1 })
       for (var r = 0; r < laneRows.length; r++) {
         var row = laneRows[r]
         rows.push({ type: "row", text: "", lane: row.lane, guid: row.guid,
           guids: row.guids, title: row.title, url: row.url,
           label: row.label, vendorName: row.vendorName, timeMs: row.timeMs,
+          reason: "",
           read: row.read, resolved: row.resolved, used: row.used,
           count: row.count, sel: sel })
         sel++
@@ -145,6 +179,20 @@ Panel {
     // read. Draining the rest of a "(+N more this week)" cluster is an
     // explicit act (x), never a side effect of opening the top item.
     if (root.service) root.service.markRead([row.guid])
+  }
+
+  function openSelectedInPerception() {
+    var row = selectedRow()
+    if (!row || !/^[A-Za-z0-9_-]{1,160}$/.test(String(row.guid || ""))) return
+    if (openProc.running) return
+    openProc.command = ["xdg-open", "https://perception.intentsolutions.io/?signal=" + row.guid]
+    openProc.running = true
+  }
+
+  function openPerception() {
+    if (openProc.running) return
+    openProc.command = ["xdg-open", "https://perception.intentsolutions.io/"]
+    openProc.running = true
   }
 
   function markSelectedRead() {
@@ -245,6 +293,8 @@ Panel {
         else if (t === "o") root.openSelected()
         else if (t === "a") root.markSelectedRead()
         else if (t === "c") root.markAllRead()
+        else if (t === "w") root.openSelectedInPerception()
+        else if (t === "p") root.openPerception()
       }
 
       Flickable {
@@ -294,6 +344,16 @@ Panel {
                   }
                   var age = Model.ageText(root.generatedAt, root.nowMs)
                   var total = root.sources.length
+                  if (root.remoteActivated) {
+                    var state = root.connectionState === "connected" ? "live"
+                      : root.connectionState === "refreshing" ? "refreshing"
+                      : root.connectionState === "stale" ? "last good · stale"
+                      : root.connectionState === "unpaired" ? "run connector to reconnect"
+                      : root.connectionState === "entitlement" ? "subscription needs attention"
+                      : "last good · " + root.connectionState
+                    return "Perception · " + state + " · " + okCount + "/" + total + " sources"
+                      + (age ? " · " + age : "")
+                  }
                   return okCount + "/" + total + " sources"
                     + (age ? " checked " + age : "")
                     + (okCount < total && firstBad ? " · " + firstBad + " failing" : "")
@@ -322,10 +382,11 @@ Panel {
               id: rowItem
               required property var modelData
               readonly property bool isHeader: modelData.type === "header"
+              readonly property bool isBrief: modelData.lane === "brief"
               readonly property bool isSelected: !isHeader && modelData.sel === root.selIdx
               readonly property bool isHot: modelData.lane === "incident" && modelData.resolved === false
               width: contentColumn.width
-              height: isHeader ? Style.space(26) : Style.space(24)
+              height: isHeader ? Style.space(26) : isBrief ? Style.space(42) : Style.space(24)
 
               PanelSectionHeader {
                 visible: rowItem.isHeader
@@ -364,6 +425,7 @@ Panel {
                 anchors.right: ageLabel.left
                 anchors.rightMargin: Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenterOffset: rowItem.isBrief ? -Style.space(6) : 0
                 spacing: Style.space(8)
 
                 Text {
@@ -410,6 +472,22 @@ Panel {
               }
 
               Text {
+                visible: rowItem.isBrief
+                anchors.left: parent.left
+                anchors.leftMargin: Style.space(48)
+                anchors.right: ageLabel.left
+                anchors.rightMargin: Style.space(8)
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Style.space(4)
+                text: rowItem.isBrief ? rowItem.modelData.reason : ""
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+
+              Text {
                 id: ageLabel
                 visible: !rowItem.isHeader
                 anchors.right: parent.right
@@ -450,7 +528,7 @@ Panel {
             Text {
               anchors.left: parent.left
               anchors.leftMargin: Style.space(16)
-              text: "j/k move · enter open · x read · c clear · r refresh"
+              text: "j/k move · enter source · w web · x read · c clear · r refresh · p Perception"
               textFormat: Text.PlainText
               width: parent.width - Style.space(32)
               wrapMode: Text.WordWrap
@@ -462,7 +540,9 @@ Panel {
             Text {
               anchors.left: parent.left
               anchors.leftMargin: Style.space(16)
-              text: "Curated titles only. No article bodies, no engagement counts."
+              text: root.remoteActivated
+                ? "Perception ranks the field. Listening Post keeps the last good snapshot offline."
+                : "Local migration mode · run connect-perception.sh to pair your account."
               textFormat: Text.PlainText
               width: parent.width - Style.space(32)
               wrapMode: Text.WordWrap

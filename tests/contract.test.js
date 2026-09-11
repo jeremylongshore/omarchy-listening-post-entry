@@ -27,17 +27,37 @@ test("manifest entry points exist and all module identities agree", () => {
   }
 })
 
-test("both authored marketplace descriptions use the complete allowance", () => {
+test("both authored marketplace descriptions tell the Perception companion story within the allowance", () => {
   const manifest = JSON.parse(read("manifest.json"))
-  assert.equal(manifest.description.length, 500)
-  assert.equal(manifest.barWidget.description.length, 500)
+  assert.ok(manifest.description.length > 400 && manifest.description.length <= 500)
+  assert.ok(manifest.barWidget.description.length > 400 && manifest.barWidget.description.length <= 500)
   assert.equal(manifest.barWidget.description, manifest.description)
   for (const claim of [
-    "29 curated AI-vendor feeds", "four keyboard-ready lanes", "mark an item read",
-    "Same-week releases cluster", "local agent-usage filenames",
-    "Fixed HTTPS sources poll every 15 minutes", "Article pages are not fetched or retained",
-    "No account, token, telemetry, custom host, or user-supplied feed URL"
+    "Perception signal room", "five-item daily brief", "device token",
+    "out of process arguments and logs", "last good field", "syncs read state",
+    "29 curated HTTPS feeds", "migration fallback", "No article bodies or telemetry"
   ]) assert.match(manifest.description, new RegExp(claim))
+})
+
+test("Perception credentials stay outside argv and durable public state", () => {
+  const service = read("Service.qml")
+  const connector = read("connect-perception.sh")
+  assert.doesNotMatch(service, /Authorization: Bearer|property string deviceToken:/)
+  assert.match(service, /\["curl", "--config", root\.credentialPath/)
+  assert.match(connector, /read -r -s device_token/)
+  assert.match(connector, /install -d -m 700/)
+  assert.match(connector, /chmod 600/)
+  assert.match(connector, /header = "Authorization: Bearer %s"/)
+  const persisted = service.match(/stateFile\.setText\(JSON\.stringify\(\{[\s\S]*?\}\)\)/)?.[0] || ""
+  assert.doesNotMatch(persisted, /deviceToken|Authorization/)
+  assert.match(service, /if \(root\.remoteActivated\)[\s\S]*root\.connectionState = "unpaired"/)
+})
+
+test("the manifest exposes only the managed credential path, never a token field", () => {
+  const manifest = JSON.parse(read("manifest.json"))
+  assert.equal(manifest.barWidget.defaults.deviceTokenFile, "~/.config/perception/listening-post.curlrc")
+  assert.equal(manifest.barWidget.defaults.deviceToken, undefined)
+  assert.ok(manifest.barWidget.schema.some((field) => field.key === "deviceTokenFile" && field.type === "string"))
 })
 
 test("the service creates private state before FileView loading and bounds every external reader", () => {

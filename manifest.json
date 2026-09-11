@@ -5,7 +5,7 @@
   "version": "1.2.0",
   "author": "Jeremy Longshore",
   "license": "MIT",
-  "description": "Listening Post turns 29 curated AI-vendor feeds into your Omarchy bar radar for model news, pricing changes, status incidents, and engineering posts. Open four keyboard-ready lanes to check item age, follow a link, refresh, or mark an item read. Same-week releases cluster and providers with matching local agent-usage filenames can rise first. Fixed HTTPS sources poll every 15 minutes. Article pages are not fetched or retained. No account, token, telemetry, custom host, or user-supplied feed URL.",
+  "description": "Listening Post brings your Perception signal room into the Omarchy bar: ranked AI releases, pricing changes, incidents, engineering notes, and a five-item daily brief. Pair it with a single device token from perception.intentsolutions.io; your token stays out of process arguments and logs. The plugin keeps its last good field through outages and syncs read state to your account. Without a token, the 29 curated HTTPS feeds remain available as a migration fallback. No article bodies or telemetry.",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Listening Post",
-    "description": "Listening Post turns 29 curated AI-vendor feeds into your Omarchy bar radar for model news, pricing changes, status incidents, and engineering posts. Open four keyboard-ready lanes to check item age, follow a link, refresh, or mark an item read. Same-week releases cluster and providers with matching local agent-usage filenames can rise first. Fixed HTTPS sources poll every 15 minutes. Article pages are not fetched or retained. No account, token, telemetry, custom host, or user-supplied feed URL.",
+    "description": "Listening Post brings your Perception signal room into the Omarchy bar: ranked AI releases, pricing changes, incidents, engineering notes, and a five-item daily brief. Pair it with a single device token from perception.intentsolutions.io; your token stays out of process arguments and logs. The plugin keeps its last good field through outages and syncs read state to your account. Without a token, the 29 curated HTTPS feeds remain available as a migration fallback. No article bodies or telemetry.",
     "category": "AI",
     "aliases": [
       "listening-post",
@@ -29,7 +29,9 @@
     "allowMultiple": false,
     "defaults": {
       "notifications": "On",
-      "personalization": "On"
+      "personalization": "On",
+      "perceptionEndpoint": "https://api.perception.intentsolutions.io",
+      "deviceTokenFile": "~/.config/perception/listening-post.curlrc"
     },
     "schema": [
       {
@@ -53,6 +55,20 @@
         ],
         "defaultValue": "On",
         "description": "Reads the file names in the Agents plugin usage folder (read-only) so vendors you actually run float to the top of each lane."
+      },
+      {
+        "key": "perceptionEndpoint",
+        "type": "string",
+        "label": "Perception API",
+        "defaultValue": "https://api.perception.intentsolutions.io",
+        "description": "Canonical Perception API endpoint. Other origins fail closed."
+      },
+      {
+        "key": "deviceTokenFile",
+        "type": "string",
+        "label": "Perception credential file",
+        "defaultValue": "~/.config/perception/listening-post.curlrc",
+        "description": "Managed by connect-perception.sh. Other paths fail closed so secrets never enter QML settings."
       }
     ]
   }

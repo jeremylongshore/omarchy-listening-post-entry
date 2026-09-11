@@ -10,7 +10,28 @@
     "staleAfter": { "type": "string", "format": "date-time" },
     "account": { "type": "object", "required": ["id", "displayName"], "additionalProperties": false },
     "topics": { "type": "array", "maxItems": 8 },
-    "signals": { "type": "array", "maxItems": 400 },
+    "signals": {
+      "type": "array",
+      "maxItems": 400,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "url", "source", "lane", "relevance", "resolved", "quiet", "matchedTopicIds", "publishedAt", "read"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9_-]+$" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "source": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "lane": { "enum": ["incident", "release", "pricing", "engineering"] },
+          "relevance": { "type": "number", "minimum": 0, "maximum": 100 },
+          "resolved": { "type": "boolean" },
+          "quiet": { "type": "boolean" },
+          "matchedTopicIds": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "read": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
     "brief": { "type": "object" },
     "sourceHealth": { "type": "array" }
   },

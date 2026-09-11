@@ -27,3 +27,21 @@ test("enforces topic resource bounds", async () => {
   assert.equal(result.valid, false);
   assert.match(result.errors.join("\n"), /at most 8/);
 });
+
+test("requires incident-resolution and quiet-attention metadata", async () => {
+  const snapshot = await fixture();
+  delete snapshot.signals[0].resolved;
+  delete snapshot.signals[1].quiet;
+  const result = validateSnapshot(snapshot);
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join("\n"), /signals\[0\]/);
+  assert.match(result.errors.join("\n"), /signals\[1\]/);
+});
+
+test("requires signal ids that are safe for native deep links", async () => {
+  const snapshot = await fixture();
+  snapshot.signals[0].id = "signal/unsafe";
+  const result = validateSnapshot(snapshot);
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join("\n"), /signals\[0\]/);
+});

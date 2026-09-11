@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "private": true,
   "license": "MIT",
-  "description": "Listening Post widget for the Omarchy bar - node is used ONLY to run the offline unit suite; the shipped plugin requires no node runtime",
+  "description": "Perception paid web signal room, Fastify API, shared contract, and node-free Listening Post companion for Omarchy",
   "scripts": {
     "test": "npm run test:plugin && npm run test:contract",
     "test:plugin": "c8 --all --include=Model.js --check-coverage --lines 95 --functions 95 --branches 90 --statements 95 node --test tests/*.test.js",

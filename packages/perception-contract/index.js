@@ -6,6 +6,7 @@ const HEALTH = new Set(["healthy", "degraded", "unavailable"]);
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const isIsoDate = (value) => typeof value === "string" && Number.isFinite(Date.parse(value));
 const isBoundedString = (value, maximum) => typeof value === "string" && value.trim().length > 0 && value.length <= maximum;
+const isSafeId = (value, maximum = 160) => isBoundedString(value, maximum) && /^[A-Za-z0-9_-]+$/.test(value);
 
 function isSafeHttps(value) {
   if (typeof value !== "string" || value.length > 2048) return false;
@@ -45,10 +46,11 @@ export function validateSnapshot(value) {
     errors.push("signals must contain at most 400 entries");
   } else {
     value.signals.forEach((signal, index) => {
-      const valid = isRecord(signal) && isBoundedString(signal.id, 160)
+      const valid = isRecord(signal) && isSafeId(signal.id, 160)
         && isBoundedString(signal.title, 240) && isSafeHttps(signal.url)
         && isBoundedString(signal.source, 80) && LANES.has(signal.lane)
         && Number.isFinite(signal.relevance) && signal.relevance >= 0 && signal.relevance <= 100
+        && typeof signal.resolved === "boolean" && typeof signal.quiet === "boolean"
         && Array.isArray(signal.matchedTopicIds) && signal.matchedTopicIds.every((id) => isBoundedString(id, 128))
         && (signal.publishedAt === null || isIsoDate(signal.publishedAt)) && typeof signal.read === "boolean";
       if (!valid) errors.push(`signals[${index}] is invalid`);

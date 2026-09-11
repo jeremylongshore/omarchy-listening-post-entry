@@ -6,19 +6,33 @@ import rateLimit from "@fastify/rate-limit";
 import type { PerceptionDatabase } from "./database.js";
 import { authenticateDevice, extractBearer, hashDeviceToken } from "./auth.js";
 import {
-  authenticateBrowser, consumeOAuthState, createBrowserSession, createOAuthState,
-  OAUTH_COOKIE, opaqueToken, revokeBrowserSession, SESSION_COOKIE, upsertGitHubAccount,
-  type GitHubOAuthClient,
+  authenticateBrowser, consumeMagicLink, createBrowserSession, createMagicLink,
+  hashOpaqueToken, opaqueToken, revokeBrowserSession, SESSION_COOKIE, type MagicLinkSender,
 } from "./browser-auth.js";
+import { accountEntitlement, processSubscriptionWebhook, validEmail, verifyLemonSignature, type LemonSqueezyConfig } from "./entitlements.js";
 import { buildSnapshot } from "./snapshot.js";
+import { secureKeyMatches, scoreAccountSignals, type IngestionService } from "./ingestion.js";
+import { deliverPendingCustomerMessages, type CustomerMessageSender } from "./customer-messages.js";
+import { isProductEventName, recordProductEvent } from "./product-events.js";
 
-export type AppConfig = { webOrigin:string; secureCookies?:boolean; githubOAuth?:GitHubOAuthClient };
+export type AppConfig = {
+  webOrigin:string; apiOrigin?:string; secureCookies?:boolean; checkoutUrl?:string;
+  magicLinkSender?:MagicLinkSender; lemonSqueezy?:LemonSqueezyConfig;
+  customerMessageSender?:CustomerMessageSender;
+  ingestionService?:IngestionService; ingestionKey?:string;
+};
 type TopicInput = { id?:unknown; name?:unknown; keywords?:unknown; enabled?:unknown };
 
 export async function createApp(database:PerceptionDatabase, config:AppConfig | string) {
   const options:AppConfig = typeof config === "string" ? { webOrigin:config, secureCookies:false } : config;
   const secureCookies = options.secureCookies ?? true;
   const app = Fastify({ logger:false, bodyLimit:64 * 1024, trustProxy:true });
+  app.removeContentTypeParser("application/json");
+  app.addContentTypeParser("application/json", { parseAs:"buffer" }, (request, body, done) => {
+    if (request.url === "/v1/billing/webhook") return done(null, body);
+    try { done(null, JSON.parse(body.toString("utf8"))); }
+    catch (error) { done(error as Error, undefined); }
+  });
   await app.register(cookie);
   await app.register(cors, {
     origin:options.webOrigin, methods:["GET","POST","PUT","DELETE"],
@@ -32,38 +46,76 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
   });
 
   const browserIdentity = (request:FastifyRequest) => authenticateBrowser(database, request.cookies[SESSION_COOKIE]);
-  const requireBrowser = (request:FastifyRequest, reply:FastifyReply) => {
+  const requireSession = (request:FastifyRequest, reply:FastifyReply) => {
     const identity = browserIdentity(request);
     if (!identity) reply.code(401).send({ error:"unauthorized" });
+    return identity;
+  };
+  const requireBrowser = (request:FastifyRequest, reply:FastifyReply) => {
+    const identity = requireSession(request, reply);
+    if (!identity) return null;
+    if (!accountEntitlement(database, identity.accountId)?.entitled) {
+      reply.code(402).send({ error:"entitlement_required", checkoutUrl:options.checkoutUrl ?? null });
+      return null;
+    }
     return identity;
   };
 
   app.get("/healthz", async () => ({ status:"ok", service:"perception-api", contractVersion:"1.0" }));
 
-  app.get("/v1/auth/github/start", { config:{ rateLimit:{ max:20, timeWindow:"1 minute" } } }, async (_request, reply) => {
-    if (!options.githubOAuth) return reply.code(503).send({ error:"github_oauth_unavailable" });
-    const state = createOAuthState(database);
-    reply.setCookie(OAUTH_COOKIE, state, cookieOptions(secureCookies, 10 * 60));
-    return reply.redirect(options.githubOAuth.authorizeUrl(state));
+  app.post("/v1/events", { config:{ rateLimit:{ max:60, timeWindow:"1 minute" } } }, async (request, reply) => {
+    const body = request.body;
+    if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 || !isProductEventName((body as { name?:unknown }).name) || (body as { name:string }).name === "purchase_entitled") {
+      return reply.code(400).send({ error:"invalid_product_event" });
+    }
+    const identity = browserIdentity(request);
+    recordProductEvent(database, (body as { name:Parameters<typeof recordProductEvent>[1] }).name, identity?.accountId ?? null);
+    reply.header("Cache-Control", "no-store");
+    return reply.code(202).send({ accepted:true });
   });
 
-  app.get("/v1/auth/github/callback", { config:{ rateLimit:{ max:20, timeWindow:"1 minute" } } }, async (request, reply) => {
-    const query = request.query as { code?:string; state?:string; error?:string };
-    if (!options.githubOAuth || query.error || !query.code || !query.state || !consumeOAuthState(database, query.state, request.cookies[OAUTH_COOKIE])) {
-      reply.clearCookie(OAUTH_COOKIE, { path:"/" });
-      return reply.redirect(`${options.webOrigin}/?auth=failed`);
+  app.post("/v1/ingestion", { config:{ rateLimit:{ max:4, timeWindow:"15 minutes" } } }, async (request, reply) => {
+    if (!options.ingestionService || !options.ingestionKey) return reply.code(503).send({ error:"ingestion_unavailable" });
+    if (!secureKeyMatches(options.ingestionKey, headerValue(request.headers["x-ingestion-key"]))) return reply.code(401).send({ error:"unauthorized" });
+    const result = await options.ingestionService.run("manual");
+    reply.header("Cache-Control", "no-store");
+    return result;
+  });
+
+  app.post("/v1/billing/webhook", { config:{ rateLimit:{ max:60, timeWindow:"1 minute" } } }, async (request, reply) => {
+    const rawBody = request.body;
+    if (!options.lemonSqueezy || !Buffer.isBuffer(rawBody)) return reply.code(503).send({ error:"billing_webhook_unavailable" });
+    const signature = headerValue(request.headers["x-signature"]);
+    if (!verifyLemonSignature(rawBody, signature, options.lemonSqueezy.webhookSecret)) return reply.code(401).send({ error:"invalid_signature" });
+    const result = processSubscriptionWebhook(database, rawBody, headerValue(request.headers["x-event-name"]), options.lemonSqueezy);
+    if (options.customerMessageSender) await deliverPendingCustomerMessages(database, options.customerMessageSender);
+    return reply.code(200).send({ received:true, duplicate:result.duplicate });
+  });
+
+  app.post("/v1/auth/magic-link", { config:{ rateLimit:{ max:5, timeWindow:"15 minutes" } } }, async (request, reply) => {
+    if (!options.magicLinkSender) return reply.code(503).send({ error:"auth_unavailable" });
+    const email = (request.body as { email?:unknown } | null)?.email;
+    if (validEmail(email)) {
+      const token = createMagicLink(database, email);
+      if (token) {
+        const url = `${options.webOrigin}/#magic=${encodeURIComponent(token)}`;
+        try { await options.magicLinkSender.send({ email:email.trim().toLocaleLowerCase("en-US"), url }); }
+        catch { database.prepare("DELETE FROM magic_links WHERE token_hash=?").run(hashOpaqueToken(token)); }
+      }
     }
-    try {
-      const identity = await options.githubOAuth.exchange(query.code);
-      const accountId = upsertGitHubAccount(database, identity);
-      const session = createBrowserSession(database, accountId);
-      reply.clearCookie(OAUTH_COOKIE, { path:"/" });
-      reply.setCookie(SESSION_COOKIE, session, cookieOptions(secureCookies, 30 * 24 * 60 * 60));
-      return reply.redirect(`${options.webOrigin}/?auth=complete`);
-    } catch {
-      reply.clearCookie(OAUTH_COOKIE, { path:"/" });
-      return reply.redirect(`${options.webOrigin}/?auth=failed`);
-    }
+    reply.header("Cache-Control", "no-store");
+    return reply.code(202).send({ status:"accepted", checkoutUrl:options.checkoutUrl ?? null });
+  });
+
+  app.post("/v1/auth/magic-link/consume", { config:{ rateLimit:{ max:20, timeWindow:"1 minute" } } }, async (request, reply) => {
+    if (request.headers.origin !== options.webOrigin) return reply.code(403).send({ error:"origin_forbidden" });
+    const token = (request.body as { token?:unknown } | null)?.token;
+    const identity = typeof token === "string" ? consumeMagicLink(database, token) : null;
+    if (!identity) return reply.code(401).send({ error:"invalid_magic_link" });
+    const session = createBrowserSession(database, identity.accountId);
+    reply.setCookie(SESSION_COOKIE, session, cookieOptions(secureCookies, 30 * 24 * 60 * 60));
+    reply.header("Cache-Control", "no-store");
+    return reply.code(204).send();
   });
 
   app.post("/v1/auth/logout", async (request, reply) => {
@@ -73,11 +125,12 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
   });
 
   app.get("/v1/account", async (request, reply) => {
-    const identity = requireBrowser(request, reply); if (!identity) return;
+    const identity = requireSession(request, reply); if (!identity) return;
     reply.header("Cache-Control", "private, no-store");
-    const row = database.prepare(`SELECT a.id,a.display_name,g.login,g.avatar_url FROM accounts a
-      LEFT JOIN github_identities g ON g.account_id=a.id WHERE a.id=?`).get(identity.accountId) as { id:string; display_name:string; login:string | null; avatar_url:string | null };
-    return { id:row.id, displayName:row.display_name, githubLogin:row.login, avatarUrl:row.avatar_url };
+    const row = database.prepare(`SELECT a.id,a.display_name,e.email FROM accounts a
+      JOIN email_identities e ON e.account_id=a.id WHERE a.id=?`).get(identity.accountId) as { id:string; display_name:string; email:string };
+    const entitlement = accountEntitlement(database, identity.accountId);
+    return { id:row.id, displayName:row.display_name, email:row.email, entitlement };
   });
 
   app.get("/v1/topics", async (request, reply) => {
@@ -96,6 +149,7 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
       for (const topic of parsed) insert.run(topic.id, identity.accountId, topic.name, JSON.stringify(topic.keywords), topic.enabled ? 1 : 0);
     });
     replace();
+    scoreAccountSignals(database, identity.accountId);
     return { topics:listTopics(database, identity.accountId) };
   });
 
@@ -128,21 +182,30 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
   });
 
   app.put("/v1/signals/:signalId/read", async (request, reply) => {
-    const identity = requireBrowser(request, reply); if (!identity) return;
+    const token = extractBearer(request.headers.authorization);
+    const deviceIdentity = token ? authenticateDevice(database, token) : null;
+    const browser = deviceIdentity ? null : requireBrowser(request, reply);
+    const accountId = deviceIdentity?.accountId ?? browser?.accountId;
+    if (!accountId) return;
     const { signalId } = request.params as { signalId:string };
     const signal = database.prepare("SELECT id FROM signals WHERE id=?").get(signalId);
     if (!signal) return reply.code(404).send({ error:"signal_not_found" });
-    database.prepare("INSERT INTO read_state VALUES (?,?,?) ON CONFLICT(account_id,signal_id) DO UPDATE SET read_at=excluded.read_at").run(identity.accountId, signalId, new Date().toISOString());
+    database.prepare("INSERT INTO read_state VALUES (?,?,?) ON CONFLICT(account_id,signal_id) DO UPDATE SET read_at=excluded.read_at").run(accountId, signalId, new Date().toISOString());
     return reply.code(204).send();
   });
 
   app.get("/v1/snapshot", { config:{ rateLimit:{ max:30, timeWindow:"1 minute" } } }, async (request, reply) => {
+    const rawWindow = (request.query as { windowHours?:unknown }).windowHours;
+    const windowHours = rawWindow === undefined ? 24 : Number(rawWindow);
+    if (!Number.isSafeInteger(windowHours) || windowHours < 1 || windowHours > 168) return reply.code(400).send({ error:"invalid_window" });
     const token = extractBearer(request.headers.authorization);
     const deviceIdentity = token ? authenticateDevice(database, token) : null;
-    const accountId = deviceIdentity?.accountId ?? browserIdentity(request)?.accountId;
+    const sessionIdentity = deviceIdentity ? null : browserIdentity(request);
+    const accountId = deviceIdentity?.accountId ?? sessionIdentity?.accountId;
     if (!accountId) return reply.code(401).send({ error:"unauthorized" });
+    if (!deviceIdentity && !accountEntitlement(database, accountId)?.entitled) return reply.code(402).send({ error:"entitlement_required", checkoutUrl:options.checkoutUrl ?? null });
     reply.header("Cache-Control", "private, no-store");
-    return buildSnapshot(database, accountId);
+    return buildSnapshot(database, accountId, new Date(), windowHours);
   });
   return app;
 }
@@ -150,6 +213,8 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
 function cookieOptions(secure:boolean, maxAge:number) {
   return { httpOnly:true, secure, sameSite:"lax" as const, path:"/", maxAge };
 }
+
+function headerValue(value:string | string[] | undefined):string | undefined { return Array.isArray(value) ? value[0] : value; }
 
 function listTopics(database:PerceptionDatabase, accountId:string) {
   const rows = database.prepare("SELECT id,name,keywords_json,enabled FROM topics WHERE account_id=? ORDER BY name").all(accountId) as Array<{ id:string; name:string; keywords_json:string; enabled:number }>;

@@ -2,7 +2,7 @@ export type SignalLane = "incident" | "release" | "pricing" | "engineering";
 export interface PerceptionTopic { id: string; name: string; keywords: string[]; enabled: boolean; }
 export interface PerceptionSignal {
   id: string; title: string; url: string; source: string; lane: SignalLane;
-  relevance: number; matchedTopicIds: string[]; publishedAt: string | null; read: boolean;
+  relevance: number; resolved: boolean; quiet: boolean; matchedTopicIds: string[]; publishedAt: string | null; read: boolean;
 }
 export interface PerceptionSnapshot {
   schemaVersion: "1.0";
