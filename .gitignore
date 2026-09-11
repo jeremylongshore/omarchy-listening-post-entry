@@ -8,6 +8,14 @@ render-check.png
 *.tmp
 *.swp
 .DS_Store
+/web/dist/
+/web/*.tsbuildinfo
+/web/.env*
+!/web/.env.example
+/api/dist/
+/api/data/
+/api/.env*
+!/api/.env.example
 
 # Beads / Dolt files (added by bd init)
 .dolt/

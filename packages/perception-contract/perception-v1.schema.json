@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://perception.intentsolutions.io/contracts/snapshot-v1.json",
+  "title": "Perception Snapshot v1",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "staleAfter", "account", "topics", "signals", "brief", "sourceHealth"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "staleAfter": { "type": "string", "format": "date-time" },
+    "account": { "type": "object", "required": ["id", "displayName"], "additionalProperties": false },
+    "topics": { "type": "array", "maxItems": 8 },
+    "signals": { "type": "array", "maxItems": 400 },
+    "brief": { "type": "object" },
+    "sourceHealth": { "type": "array" }
+  },
+  "additionalProperties": false
+}
