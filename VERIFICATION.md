@@ -4,7 +4,7 @@ What has actually been proven, how, and what remains.
 
 ## Unit suite (dev box + CI)
 
-**104 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
+**112 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
 layer: the RSS and Atom parsers against captured bodies from all twenty-nine
 live sources, format detection anchored to the document root, lane
 classification, ISO-week clustering by source with product labels, the
@@ -13,7 +13,9 @@ notification gating, personalization mapping, the state
 record, strict Perception contract parsing, and native deep links. Security regressions are pinned: `safeUrl` rejecting every shell
 metacharacter, and `parseFeed` returning in under a second on a 2 MB
 unterminated-CDATA body, arbitrary API origins failing closed, and device tokens
-remaining outside argv and `state.json`. The API suite separately proves
+remaining outside argv and `state.json`. Descriptor-path regressions additionally
+exercise symlink, FIFO, oversize, mode, identity-swap, and parent-swap attacks
+against credential, state, and settings operations. The API suite separately proves
 the full purchase-email account and entitled-device lifecycle.
 
 ## Integrated Perception product (2026-09-13)
@@ -21,12 +23,12 @@ the full purchase-email account and entitled-device lifecycle.
 The final local tree passes `npm run test:product` and
 `npm run build:product`:
 
-- **104 plugin tests** pass with 100% statement, line, and function coverage
+- **112 plugin tests** pass with 100% statement, line, and function coverage
   and 95.56% branch coverage for `Model.js`.
 - **7 shared-contract tests** pass, including strict native-safe signal IDs,
   HTTPS links, unknown-field rejection, exact resource bounds, ordered time
   windows, and brief-reference integrity.
-- **8 web tests and 65 API tests** pass, for **184 tests across the complete
+- **8 web tests and 65 API tests** pass, for **192 tests across the complete
   product**. The API total includes one continuous
   customer journey: a signed Lemon Squeezy subscription webhook grants the
   purchase email, a one-time magic link creates the browser session, the
@@ -142,7 +144,8 @@ with a stub that exits 127** before launching the shell:
 The QML service run against the real feeds: **29/29 sources ok, 324 items**
 classified across the four lanes; the first-run baseline leaves the pill
 quiet; a second poll preserves read flags; mark-read and mark-all-read take
-effect synchronously in the service's store and persist through `FileView`.
+effect synchronously in the service's store and persist through the locked,
+descriptor-bound atomic helper.
 State file weighs ~100 KB, an order of magnitude under the 2 MB parse bound.
 
 ## Four-reviewer panel (2026-08-20, pre-submission)
@@ -216,7 +219,7 @@ plugin. What they caught and this repo then fixed:
 
 ## Honest boundary
 
-The current QML package is proven by 104 plugin tests, strict contract fixtures,
+The current QML package is proven by 112 plugin tests, strict contract fixtures,
 the real Omarchy validator, Qt lint, and a live isolated compositor render of
 the local 29-source migration path. A live compositor journey against a
 deployed Perception account, including offline recovery, is not yet proven.

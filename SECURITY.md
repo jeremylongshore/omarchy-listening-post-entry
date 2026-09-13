@@ -11,10 +11,10 @@ or the persisted public snapshot state.
 ## Architecture control
 
 The long-running plugin has no Node or Python service. Polling I/O lives in the
-auditable `Service.qml` and uses `curl`, `find`, `xdg-open`, and
-`omarchy-notification-send`. The optional one-time `connect-perception.sh`
-setup command additionally invokes the shipped Perl credential helper for
-race-safe private-file publication; neither setup process remains running.
+auditable `Service.qml`. A short-lived absolute-system-Perl helper performs
+descriptor-bound settings, state, credential, and authenticated curl work;
+local public-feed curl, `find`, `xdg-open`, and `omarchy-notification-send`
+remain direct argv processes. The helper exits after every operation.
 
 - **Fetch**: paired mode uses the canonical Perception origin; unpaired migration
   mode uses one `curl -fsS --proto =https --max-time 12 --max-filesize
@@ -22,19 +22,23 @@ race-safe private-file publication; neither setup process remains running.
   `--` closes option parsing before the URL, and every URL that can reach
   the argv has already passed `Model.safeUrl` (https-only, no whitespace,
   no quotes, length-capped, never dash-prefixed).
-- **State**: one JSON file under `~/.local/state/omarchy/listening-post/`,
-  written through Quickshell's `FileView` with `atomicWrites: true`, so a
-  reader can never observe a torn document. The service singleton is the
-  single owner and single writer of the item store.
+- **State and settings**: the helper traverses parent directories with held
+  no-follow descriptors, bounds reads, rejects non-regular or replaced entries,
+  and requires private state ownership and mode. State publication holds an
+  exclusive no-follow lock, writes a mode-0600 O_EXCL temporary descriptor,
+  verifies identity, fsyncs the file, renames within the pinned directory, and
+  fsyncs the directory. A reader cannot observe a torn document.
 - **Mark-read and refresh** are direct in-process calls into that single
   owner. Remote reads enter a durable bounded queue and are sent to Perception.
 - **Credential transport**: `connect-perception.sh` reads a short-lived pairing
   code without echo and submits it on standard input. The API response flows on
   standard input to `bin/listening-post-secure-state`, which publishes the
   returned token as a mode-0600 curl config inside `~/.config/perception/`
-  (mode 0700). QML never reads its contents; process argv contains only the
-  fixed file path. Neither the code nor token enters `shell.json` or
-  `state.json`.
+  (mode 0700). QML never reads its contents. For authenticated API calls, the
+  helper opens and validates that exact descriptor and sends the fixed bearer
+  header to `/usr/bin/curl` on standard input with `--header @-`; process argv
+  contains no token or credential pathname. Neither the code nor token enters
+  `shell.json` or `state.json`.
 
 ## Input containment
 
@@ -79,8 +83,10 @@ race-safe private-file publication; neither setup process remains running.
    cannot storm the notification daemon.
 8. The request set is compiled into `Model.SOURCES`. No custom host or
    user-supplied feed URL can reach the curl argv, and redirects are disabled.
-9. Writes go through `FileView`'s atomic-write path, so the plugin inherits
-   the shell's own write discipline rather than reimplementing it.
+9. Hostile-path regression tests cover symlinked, FIFO, oversized, public-mode,
+   malformed, same-UID entry-race, and parent-swap cases for credential and
+   state paths. They require bounded completion, unchanged victims, and
+   fail-closed reads.
 10. There is exactly one owner of the item store (the service singleton), so
     the cross-process read-modify-write race a separate poller CLI creates
     cannot happen: a mark-read is never reverted by a concurrent poll.

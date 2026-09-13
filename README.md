@@ -156,35 +156,33 @@ nothing and costs the publishers.
 
 ```
 Service.qml   account snapshot + local migration poller, no Node/Python daemon
-        |  curl --config ~/.config/perception/listening-post.curlrc
+        |  short-lived descriptor helper -> curl header on stdin
         |  Model.js validates contract v1 on Quickshell's JS engine
         v
-~/.local/state/omarchy/listening-post/state.json   FileView atomic write
+~/.local/state/omarchy/listening-post/state.json   descriptor-bound atomic write
         ^
         |  last-good render + queued read sync
 BarWidget.qml + Panel.qml (render + keys)
 ```
 
-**No Node.js or Python service.** A stock Omarchy install has no Node executable
-on the graphical session PATH, so polling and rendering stay inside Quickshell
-and use the `curl` already present on Omarchy. The optional one-time pairing
-command uses POSIX shell plus Perl for race-safe, mode-0600 credential
-publication; both must be present when running `connect-perception.sh`, but
-neither remains running afterward.
+**No Node.js or Python service.** Polling and rendering stay inside Quickshell.
+A short-lived absolute-system-Perl helper opens settings, state, locks, and
+credentials with descriptor-bound no-follow operations, then invokes the stock
+`curl` for authenticated requests. The optional pairing command uses the same
+helper for mode-0600 credential publication. Nothing remains running afterward.
 
-`Service.qml` owns the item store: it fetches, merges, persists (via
-`FileView`, the API the first-party clipboard and agents plugins use), and
-notifies. The panel renders that store and calls straight into the service, so
+`Service.qml` owns the item store: it fetches, merges, persists through the
+bounded helper, and notifies. The panel renders that store and calls straight into the service, so
 marking an item read takes effect immediately instead of round-tripping
 through a subprocess. Parsing, classification, merging, and sanitizing live in
 `Model.js`, pure ES5 functions loaded identically by Quickshell and by the
 offline unit suite.
 
 When paired, the plugin contacts only `api.perception.intentsolutions.io` for
-snapshot reads and read-state writes. The bearer token is read by curl from a
-mode-0600 config inside the mode-0700 Perception config directory; it is never
-loaded into QML or put in `shell.json`, process arguments, notifications, links,
-logs, or `state.json`. API endpoints
+snapshot reads and read-state writes. The helper reads the bearer token from a
+mode-0600 config inside the mode-0700 Perception config directory and passes its
+HTTP header to curl on standard input. It is never loaded into QML or put in
+`shell.json`, process arguments, notifications, links, logs, or `state.json`. API endpoints
 from settings are accepted only when they equal the canonical origin.
 
 In unpaired migration mode, network hosts contacted are the curated feed hosts (`openai.com`,
@@ -213,8 +211,8 @@ npm run audit
 shellcheck --severity=warning scripts/*.sh e2e/*.sh .githooks/pre-push
 ```
 
-The product lane runs 104 plugin tests, 7 shared-contract tests, 8 web tests, and
-65 API tests (184 total), then builds both product surfaces. The plugin lane requires at
+The product lane runs 112 plugin tests, 7 shared-contract tests, 8 web tests, and
+65 API tests (192 total), then builds both product surfaces. The plugin lane requires at
 least 95% line, statement, and function coverage, 90% branch coverage, a 90%
 mutation score, and three concurrent race passes. Parser tests exercise RSS and
 Atom against captured bodies from all twenty-nine live sources, lane

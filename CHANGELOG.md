@@ -60,7 +60,12 @@ Regenerate with `scripts/gen-changelog.sh`.
   structured production logs; add database readiness and SMTP startup checks.
 - Keep the bearer token out of `shell.json` and the QML object graph. An
   interactive no-echo connector writes a mode-0600 curl config inside a
-  mode-0700 directory; curl receives only its path in process arguments.
+  mode-0700 directory. A short-lived descriptor-bound helper reads it and sends
+  the bearer header to curl on standard input, never argv or logs.
+- Move runtime state and shell-settings reads behind the same descriptor-bound
+  helper, with bounded no-follow reads, locked atomic state writes, identity
+  checks, and hostile symlink, FIFO, size, mode, entry-race, and parent-race
+  regression coverage.
 - Accept only the canonical Perception API origin and strictly validate the
   shared bounded contract, including unknown-field rejection and exact resource
   limits, before replacing last-good data.

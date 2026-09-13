@@ -1,63 +1,91 @@
 #!/usr/bin/perl
-# Descriptor-bound credential publication for Listening Post. The interactive
-# shell connector owns prompting; this helper alone owns persistent writes.
+# Descriptor-bound state, settings, and credential boundary for Listening Post.
+# QML owns presentation and parsing. This short-lived helper owns every mutable
+# pathname and sends credentials to curl through stdin, never argv or stdout.
 use strict;
 use warnings;
 
+use Errno qw(ENOENT);
 use Fcntl qw(:DEFAULT :flock :mode);
 use File::Spec;
 use IO::Handle;
+use JSON::PP qw(decode_json encode_json);
 
 umask 0077;
-my $FINAL = 'listening-post.curlrc';
-my $LOCK = '.listening-post.lock';
-my $MAX_INPUT = 300;
+my $MODULE = 'io.github.jeremylongshore.listening-post';
+my $API = 'https://api.perception.intentsolutions.io';
+my $CREDENTIAL = 'listening-post.curlrc';
+my $STATE = 'state.json';
+my $MAX_CREDENTIAL_BYTES = 400;
+my $MAX_SETTINGS_BYTES = 256 * 1024;
+my $MAX_STATE_BYTES = 2_000_000;
 
-sub open_config_chain {
-    my $home = $ENV{HOME} // '';
-    my $base = length($ENV{XDG_CONFIG_HOME} // '')
-        ? $ENV{XDG_CONFIG_HOME}
-        : File::Spec->catdir($home, '.config');
-    die "config root must be absolute\n" unless File::Spec->file_name_is_absolute($base);
-    my $full = File::Spec->catdir($base, 'perception');
-    my @parts = grep { length($_) } File::Spec->splitdir($full);
-    die "unsafe config path\n" if grep { $_ eq '.' || $_ eq '..' } @parts;
+sub absolute_parts {
+    my ($path) = @_;
+    die "path root must be absolute\n"
+        unless File::Spec->file_name_is_absolute($path);
+    my @parts = grep { length($_) } File::Spec->splitdir($path);
+    die "unsafe path component\n" if grep { $_ eq '.' || $_ eq '..' } @parts;
+    return @parts;
+}
 
+sub open_dir_chain {
+    my ($path, $create, $private) = @_;
+    my @parts = absolute_parts($path);
     my $current;
     sysopen($current, '/', O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
         or die "cannot pin filesystem root\n";
     my @chain = ($current);
     for my $part (@parts) {
-        chdir($current) or die "cannot traverse config path\n";
+        chdir($current) or die "cannot traverse directory chain\n";
         my $next;
-        unless (sysopen($next, $part, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)) {
-            mkdir($part, 0700);
-            sysopen($next, $part, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
-                or die "unsafe config path component\n";
+        unless (sysopen($next, $part,
+            O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_NONBLOCK)) {
+            die "directory chain is unavailable\n" unless $create && $! == ENOENT;
+            mkdir($part, 0700) or die "cannot create directory component\n";
+            sysopen($next, $part,
+                O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_NONBLOCK)
+                or die "unsafe directory component\n";
         }
         my @st = stat($next);
-        die "unsafe config path component\n" unless @st && S_ISDIR($st[2]);
+        die "unsafe directory component\n"
+            unless @st && S_ISDIR($st[2]) && ($st[4] == $< || $st[4] == 0);
         push @chain, $next;
         $current = $next;
     }
-    my @final_dir = stat($current);
-    die "unsafe config directory owner\n"
-        unless @final_dir && S_ISDIR($final_dir[2]) && $final_dir[4] == $<;
-    chmod(0700, $current) or die "cannot privatize config directory\n";
-    chdir($current) or die "cannot retain config directory\n";
+    my @final = stat($current);
+    die "unsafe final directory owner\n"
+        unless @final && S_ISDIR($final[2]) && $final[4] == $<;
+    chmod(0700, $current) or die "cannot privatize final directory\n"
+        if $private;
+    chdir($current) or die "cannot retain directory descriptor\n";
     return (\@chain, $current);
 }
 
-sub lock_state {
-    my $fh;
-    sysopen($fh, $LOCK, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600)
-        or die "cannot open credential lock\n";
-    my @st = stat($fh);
-    die "unsafe credential lock\n"
-        unless @st && S_ISREG($st[2]) && $st[4] == $<;
-    chmod(0600, $fh) or die "cannot privatize credential lock\n";
-    flock($fh, LOCK_EX) or die "cannot lock credentials\n";
-    return $fh;
+sub config_root {
+    my $home = $ENV{HOME} // '';
+    return length($ENV{XDG_CONFIG_HOME} // '')
+        ? $ENV{XDG_CONFIG_HOME}
+        : File::Spec->catdir($home, '.config');
+}
+
+sub state_root {
+    my $home = $ENV{HOME} // '';
+    return length($ENV{XDG_STATE_HOME} // '')
+        ? $ENV{XDG_STATE_HOME}
+        : File::Spec->catdir($home, '.local', 'state');
+}
+
+sub open_credential_dir {
+    return open_dir_chain(File::Spec->catdir(config_root(), 'perception'), 1, 1);
+}
+
+sub open_state_dir {
+    return open_dir_chain(File::Spec->catdir(state_root(), 'omarchy', 'listening-post'), 1, 1);
+}
+
+sub open_settings_dir {
+    return open_dir_chain(File::Spec->catdir(config_root(), 'omarchy'), 0, 0);
 }
 
 sub same_object {
@@ -66,64 +94,221 @@ sub same_object {
         && $left->[1] == $right->[1] && S_ISREG($left->[2]) && S_ISREG($right->[2]);
 }
 
-sub read_input {
+sub lock_state {
+    my ($name) = @_;
+    my $fh;
+    sysopen($fh, $name, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600)
+        or die "cannot open state lock\n";
+    my @opened = stat($fh);
+    die "unsafe state lock\n"
+        unless @opened && S_ISREG($opened[2]) && $opened[4] == $<;
+    chmod(0600, $fh) or die "cannot privatize state lock\n";
+    flock($fh, LOCK_EX) or die "cannot lock state\n";
+    my @named = lstat($name);
+    die "state lock identity changed\n" unless same_object(\@opened, \@named);
+    return $fh;
+}
+
+sub read_named {
+    my ($name, $maximum, $private) = @_;
+    my $fh;
+    unless (sysopen($fh, $name, O_RDONLY | O_NONBLOCK | O_NOFOLLOW)) {
+        return (undef, $! == ENOENT ? 'missing' : 'unsafe');
+    }
+    my @opened = stat($fh);
+    return (undef, 'unsafe') unless @opened && S_ISREG($opened[2])
+        && $opened[4] == $< && $opened[7] <= $maximum
+        && (!$private || ($opened[2] & 077) == 0);
     my $raw = '';
-    while (length($raw) <= $MAX_INPUT) {
-        my $n = sysread(STDIN, my $chunk, 128);
-        last unless defined($n) && $n > 0;
+    while (length($raw) <= $maximum) {
+        my $count = sysread($fh, my $chunk, 4096);
+        return (undef, 'read-error') unless defined($count);
+        last if $count == 0;
         $raw .= $chunk;
     }
-    die "credential input exceeded bound\n" if length($raw) > $MAX_INPUT;
-    $raw =~ s/\r?\n\z//;
-    die "invalid token\n" unless $raw =~ /\A[A-Za-z0-9_-]{32,256}\z/;
-    return sprintf "header = \"Authorization: Bearer %s\"\n", $raw;
+    return (undef, 'oversized') if length($raw) > $maximum;
+    my @named = lstat($name);
+    return (undef, 'replaced') unless same_object(\@opened, \@named);
+    close($fh) or return (undef, 'read-error');
+    return ($raw, 'ok');
+}
+
+sub read_input {
+    my ($maximum, $label) = @_;
+    my $raw = '';
+    while (length($raw) <= $maximum) {
+        my $count = sysread(STDIN, my $chunk, 4096);
+        die "$label input read failed\n" unless defined($count);
+        last if $count == 0;
+        $raw .= $chunk;
+        last if $raw =~ /\n/;
+    }
+    die "$label input exceeded bound\n" if length($raw) > $maximum;
+    if ($raw =~ /\n/) {
+        die "$label input has trailing data\n" unless $raw =~ /\A([^\n]*)\n\z/;
+        $raw = $1;
+        $raw =~ s/\r\z//;
+    }
+    return $raw;
 }
 
 sub open_temp {
+    my ($prefix) = @_;
     for (1 .. 64) {
-        my $name = sprintf('.listening-post.%d.%08x%08x', $$,
+        my $name = sprintf('.%s.%d.%08x%08x', $prefix, $$,
             int(rand(0xffffffff)), int(rand(0xffffffff)));
         my $fh;
-        if (sysopen($fh, $name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600)) {
-            chmod(0600, $fh) or die "cannot privatize credential temp\n";
+        if (sysopen($fh, $name,
+            O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600)) {
+            chmod(0600, $fh) or die "cannot privatize temporary entry\n";
             return ($name, $fh);
         }
     }
-    die "cannot create credential temp\n";
+    die "cannot create temporary entry\n";
 }
 
 sub publish {
-    my ($payload, $dir_fh) = @_;
-    my ($temp, $fh) = open_temp();
+    my ($payload, $target, $prefix, $dir_fh) = @_;
+    my ($temp, $fh) = open_temp($prefix);
     my @opened = stat($fh);
     my $published = 0;
     my $ok = eval {
         my $offset = 0;
         while ($offset < length($payload)) {
-            my $n = syswrite($fh, substr($payload, $offset));
-            die "credential write failed\n" unless defined($n) && $n > 0;
-            $offset += $n;
+            my $count = syswrite($fh, substr($payload, $offset));
+            die "state write failed\n" unless defined($count) && $count > 0;
+            $offset += $count;
         }
-        $fh->sync or die "credential fsync failed\n";
+        $fh->sync or die "state fsync failed\n";
         my @named = lstat($temp);
-        die "credential temp identity changed\n" unless same_object(\@opened, \@named);
-        rename($temp, $FINAL) or die "credential replace failed\n";
+        die "temporary entry identity changed\n" unless same_object(\@opened, \@named);
+        rename($temp, $target) or die "state replace failed\n";
         $published = 1;
-        my @final = lstat($FINAL);
-        die "credential publication identity changed\n" unless same_object(\@opened, \@final);
-        $dir_fh->sync or die "credential directory fsync failed\n";
-        close($fh) or die "credential close failed\n";
+        my @final = lstat($target);
+        die "published entry identity changed\n" unless same_object(\@opened, \@final);
+        $dir_fh->sync or die "directory fsync failed\n";
+        close($fh) or die "state close failed\n";
+        $fh = undef;
         1;
     };
     return if $ok;
-    my $error = $@ || "credential publication failed\n";
-    close($fh);
+    my $error = $@ || "state publication failed\n";
+    close($fh) if $fh;
     unlink($temp) unless $published;
     die $error;
 }
 
-die "usage: listening-post-secure-state --write\n"
-    unless @ARGV == 1 && $ARGV[0] eq '--write';
-my ($chain, $dir_fh) = open_config_chain();
-my $lock_fh = lock_state();
-publish(read_input(), $dir_fh);
+sub read_credential_token {
+    my ($chain, $dir_fh) = open_credential_dir();
+    my $lock_fh = lock_state('.listening-post.lock');
+    my ($raw, $state) = read_named($CREDENTIAL, $MAX_CREDENTIAL_BYTES, 1);
+    exit 3 if $state eq 'missing';
+    die "credential entry is unsafe\n" unless $state eq 'ok';
+    die "credential entry is malformed\n"
+        unless $raw =~ /\Aheader = "Authorization: Bearer ([A-Za-z0-9_-]{32,256})"\n\z/;
+    return $1;
+}
+
+sub run_curl {
+    my ($token, @args) = @_;
+    pipe(my $reader, my $writer) or die "cannot create credential pipe\n";
+    my $pid = fork();
+    die "cannot create curl process\n" unless defined($pid);
+    if ($pid == 0) {
+        close($writer);
+        open(STDIN, '<&', $reader) or exit 70;
+        close($reader);
+        exec('/usr/bin/curl', '--header', '@-', @args);
+        exit 70;
+    }
+    close($reader);
+    my $header = "Authorization: Bearer $token\n";
+    my $offset = 0;
+    while ($offset < length($header)) {
+        my $count = syswrite($writer, substr($header, $offset));
+        die "credential pipe write failed\n" unless defined($count) && $count > 0;
+        $offset += $count;
+    }
+    close($writer) or die "credential pipe close failed\n";
+    waitpid($pid, 0);
+    exit(($? & 127) ? 70 : ($? >> 8));
+}
+
+sub write_credential {
+    my $raw = read_input(300, 'credential');
+    die "invalid token\n" unless $raw =~ /\A[A-Za-z0-9_-]{32,256}\z/;
+    my ($chain, $dir_fh) = open_credential_dir();
+    my $lock_fh = lock_state('.listening-post.lock');
+    publish("header = \"Authorization: Bearer $raw\"\n",
+        $CREDENTIAL, 'listening-post', $dir_fh);
+}
+
+sub read_state {
+    my ($chain, $dir_fh) = open_state_dir();
+    my $lock_fh = lock_state('.state.lock');
+    my ($raw, $state) = read_named($STATE, $MAX_STATE_BYTES, 1);
+    exit 3 if $state eq 'missing';
+    die "state entry is unsafe\n" unless $state eq 'ok';
+    my $value = eval { decode_json($raw) };
+    die "state entry is not a JSON object\n" unless ref($value) eq 'HASH';
+    print $raw;
+}
+
+sub write_state {
+    my $raw = read_input($MAX_STATE_BYTES, 'state');
+    my $value = eval { decode_json($raw) };
+    die "state input is not a JSON object\n" unless ref($value) eq 'HASH';
+    my ($chain, $dir_fh) = open_state_dir();
+    my $lock_fh = lock_state('.state.lock');
+    publish($raw, $STATE, 'state', $dir_fh);
+}
+
+sub read_settings {
+    my ($chain, $dir_fh) = open_settings_dir();
+    my ($raw, $state) = read_named('shell.json', $MAX_SETTINGS_BYTES, 0);
+    exit 3 if $state eq 'missing';
+    die "shell settings are unsafe\n" unless $state eq 'ok';
+    my $value = eval { decode_json($raw) };
+    die "shell settings are malformed\n" unless ref($value) eq 'HASH';
+    my $layout = ref($value->{bar}) eq 'HASH' && ref($value->{bar}{layout}) eq 'HASH'
+        ? $value->{bar}{layout} : {};
+    my $entry;
+    for my $zone (qw(left center right)) {
+        next unless ref($layout->{$zone}) eq 'ARRAY';
+        for my $candidate (@{$layout->{$zone}}) {
+            if (ref($candidate) eq 'HASH' && ($candidate->{id} // '') eq $MODULE) {
+                $entry = $candidate;
+                last;
+            }
+        }
+        last if $entry;
+    }
+    $entry ||= {};
+    print encode_json({
+        notifications => ($entry->{notifications} // '') eq 'Off' ? 'Off' : 'On',
+        personalization => ($entry->{personalization} // '') eq 'Off' ? 'Off' : 'On',
+        perceptionEndpoint => '' . ($entry->{perceptionEndpoint} // $API),
+        deviceTokenFile => '' . ($entry->{deviceTokenFile} // '~/.config/perception/listening-post.curlrc'),
+    });
+}
+
+my $op = shift(@ARGV) // '';
+if ($op eq '--write' && !@ARGV) { write_credential(); exit 0; }
+if ($op eq '--check-credential' && !@ARGV) { read_credential_token(); exit 0; }
+if ($op eq '--read-state' && !@ARGV) { read_state(); exit 0; }
+if ($op eq '--write-state' && !@ARGV) { write_state(); exit 0; }
+if ($op eq '--read-settings' && !@ARGV) { read_settings(); exit 0; }
+if ($op eq '--snapshot' && !@ARGV) {
+    my $token = read_credential_token();
+    run_curl($token, '--silent', '--show-error', '--proto', '=https',
+        '--max-time', '12', '--max-filesize', '2000000', '--output', '-',
+        '--write-out', "\n%{http_code}", '--', "$API/v1/snapshot?windowHours=168");
+}
+if ($op eq '--mark-read' && @ARGV == 1 && $ARGV[0] =~ /\A[A-Za-z0-9_-]{1,160}\z/) {
+    my $id = $ARGV[0];
+    my $token = read_credential_token();
+    run_curl($token, '--silent', '--show-error', '--proto', '=https',
+        '--max-time', '12', '--output', '/dev/null', '--write-out', '%{http_code}',
+        '--request', 'PUT', '--', "$API/v1/signals/$id/read");
+}
+die "usage: listening-post-secure-state --write|--check-credential|--read-state|--write-state|--read-settings|--snapshot|--mark-read ID\n";

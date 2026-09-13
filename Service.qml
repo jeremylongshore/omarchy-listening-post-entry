@@ -6,13 +6,11 @@ import "Model.js" as Model
 // Listening Post background service: owns the entire poll cycle in QML, with
 // no Node or Python daemon. A stock Omarchy install has no node (Omarchy installs
 // it through mise, whose shims are not on the graphical session PATH), so the
-// only things this background service may depend on are Quickshell itself and the
-// coreutils/curl every Omarchy box already has. This mirrors the
-// marketplace-proven MLB Booth and Pit Wall pattern: curl through a QML
-// Process, parsing in Model.js on Quickshell's own JS engine, persistence
-// through FileView (the same API the first-party clipboard and agents plugins
-// use to write their state). The explicit one-time pairing command is outside
-// this graphical runtime boundary and uses its documented credential helper.
+// only things this background service may depend on are Quickshell itself and
+// the stock curl, coreutils, and absolute-system-Perl boundary every Omarchy box
+// provides. QML and Model.js still own polling and parsing. A short-lived Perl
+// helper owns descriptor-bound state, settings, credentials, and authenticated
+// curl execution; it is never a daemon and secrets never enter QML or argv.
 //
 // Fetch is sequential and one source at a time: 29 concurrent curls would
 // spike the shell process, and feed publishing cadence is hours, so there is
@@ -24,12 +22,8 @@ Item {
   property var manifest: null
 
   readonly property string home: Quickshell.env("HOME") || ""
-  readonly property string stateDir:
-    (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/listening-post"
-  readonly property string statePath: stateDir + "/state.json"
-  readonly property string configHome:
-    Quickshell.env("XDG_CONFIG_HOME") || home + "/.config"
-  readonly property string credentialPath: configHome + "/perception/listening-post.curlrc"
+  readonly property string secureStatePath:
+    Qt.resolvedUrl("bin/listening-post-secure-state").toString().replace("file://", "")
   readonly property string agentsUsageDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/agents/usage"
 
@@ -40,9 +34,8 @@ Item {
   readonly property int fetchTimeoutSec: 12
   readonly property int notifyCap: 3
 
-  // ---- Settings, read from this plugin's bar-layout entry in shell.json.
-  //      The service is not a bar widget, so it reads the file directly the
-  //      same way the poller CLI used to.
+  // ---- Settings, sanitized from this plugin's bar-layout entry in shell.json
+  //      by the same descriptor-bound helper that owns runtime state.
   property string notificationsMode: "On"
   property string personalizationMode: "On"
   property string apiEndpointSetting: "https://api.perception.intentsolutions.io"
@@ -53,8 +46,11 @@ Item {
   property var sourceStatus: []         // per-source ok/error for the panel
   property double generatedAt: 0
   property bool firstRun: true
-  property bool stateDirReady: false
   property bool stateLoaded: false
+  property string stateReadRaw: ""
+  property string stateWriteRaw: ""
+  property string queuedStateRaw: ""
+  property string settingsRaw: ""
 
   property var allSources: []           // the curated SOURCES list for this run
   property int fetchIndex: -1           // -1 idle; else index into allSources
@@ -91,25 +87,16 @@ Item {
       "--", url]
   }
 
-  function readSettings() {
+  function applySettings(raw) {
     var conf
-    try { conf = JSON.parse(shellConfigFile.text() || "") } catch (e) { return }
-    if (!conf || !conf.bar || !conf.bar.layout) return
-    var zones = ["left", "center", "right"]
-    for (var z = 0; z < zones.length; z++) {
-      var list = conf.bar.layout[zones[z]] || []
-      for (var i = 0; i < list.length; i++) {
-        var e = list[i]
-        if (!e || e.id !== root.moduleId) continue
-        root.notificationsMode = e.notifications === "Off" ? "Off" : "On"
-        root.personalizationMode = e.personalization === "Off" ? "Off" : "On"
-        root.apiEndpointSetting = String(e.perceptionEndpoint
-          || "https://api.perception.intentsolutions.io")
-        root.deviceTokenFileSetting = String(e.deviceTokenFile
-          || "~/.config/perception/listening-post.curlrc")
-        return
-      }
-    }
+    try { conf = JSON.parse(String(raw || "")) } catch (e) { return }
+    if (!conf || typeof conf !== "object") return
+    root.notificationsMode = conf.notifications === "Off" ? "Off" : "On"
+    root.personalizationMode = conf.personalization === "Off" ? "Off" : "On"
+    root.apiEndpointSetting = String(conf.perceptionEndpoint
+      || "https://api.perception.intentsolutions.io")
+    root.deviceTokenFileSetting = String(conf.deviceTokenFile
+      || "~/.config/perception/listening-post.curlrc")
   }
 
   readonly property string moduleId: "io.github.jeremylongshore.listening-post"
@@ -124,7 +111,12 @@ Item {
   function poll() {
     if (root.polling) return
     if (!root.stateLoaded) return
-    root.readSettings()
+    if (settingsProc.running) return
+    root.settingsRaw = ""
+    settingsProc.running = true
+  }
+
+  function pollAfterSettings() {
     var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
     if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) {
       if (root.remoteActivated) {
@@ -135,8 +127,9 @@ Item {
     }
     root.polling = true
     root.connectionState = root.remoteActivated ? "refreshing" : "checking"
-    credentialCheckProc.command = ["test", "-f", root.credentialPath]
-    credentialCheckProc.running = true
+    root.fetchOutput = ""
+    apiFetchProc.command = [root.secureStatePath, "--snapshot"]
+    apiFetchProc.running = true
     root.feedStateChanged()
   }
 
@@ -151,27 +144,6 @@ Item {
     root.allSources = Model.SOURCES
     root.fetchIndex = 0
     root.fetchCurrent()
-  }
-
-  function pollPerception(endpoint) {
-    root.polling = true
-    root.fetchOutput = ""
-    root.connectionState = root.remoteActivated ? "refreshing" : "connecting"
-    root.startPerceptionFetch()
-    root.feedStateChanged()
-  }
-
-  function startPerceptionFetch() {
-    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
-    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) {
-      root.finishPerceptionFailure("unpaired")
-      return
-    }
-    apiFetchProc.command = ["curl", "--config", root.credentialPath,
-      "-sS", "--proto", "=https", "--max-time", String(root.fetchTimeoutSec),
-      "--max-filesize", String(Model.MAX_BODY_CHARS), "--output", "-",
-      "--write-out", "\n%{http_code}", "--", endpoint + "/v1/snapshot?windowHours=168"]
-    apiFetchProc.running = true
   }
 
   function onPerceptionFetched(output, processOk) {
@@ -400,10 +372,7 @@ Item {
       root.syncNextRead()
       return
     }
-    readProc.command = ["curl", "--config", root.credentialPath,
-      "-sS", "--proto", "=https", "--max-time", String(root.fetchTimeoutSec),
-      "--output", "/dev/null", "--write-out", "%{http_code}",
-      "-X", "PUT", "--", endpoint + "/v1/signals/" + id + "/read"]
+    readProc.command = [root.secureStatePath, "--mark-read", id]
     root.readOutput = ""
     readProc.running = true
   }
@@ -411,8 +380,8 @@ Item {
   // ------------------------------------------------------------ persistence
 
   function persist() {
-    if (!root.stateDirReady || !root.stateLoaded) return
-    stateFile.setText(JSON.stringify({
+    if (!root.stateLoaded) return
+    var raw = JSON.stringify({
       generatedAt: root.generatedAt,
       firstRun: root.firstRun,
       mode: root.remoteActivated ? "perception" : "local",
@@ -424,8 +393,15 @@ Item {
       pendingReadGuids: root.pendingReadGuids,
       sources: root.sourceStatus,
       items: root.storedItems
-    }))
+    })
+    if (stateWriter.running) root.queuedStateRaw = raw
+    else root.startStateWrite(raw)
     root.feedStateChanged()
+  }
+
+  function startStateWrite(raw) {
+    root.stateWriteRaw = String(raw || "")
+    stateWriter.running = true
   }
 
   function loadState(raw) {
@@ -488,15 +464,6 @@ Item {
   }
 
   Process {
-    id: credentialCheckProc
-    onExited: function(code) {
-      if (code === 0) root.pollPerception(Model.perceptionEndpoint(root.apiEndpointSetting))
-      else if (root.remoteActivated) root.finishPerceptionFailure("unpaired")
-      else root.pollLocal()
-    }
-  }
-
-  Process {
     id: apiFetchProc
     stdout: StdioCollector {
       id: apiFetchStdout
@@ -504,7 +471,30 @@ Item {
       onStreamFinished: root.fetchOutput = String(text || "")
     }
     onExited: function(code) {
+      if (code === 3 && !root.remoteActivated) {
+        root.polling = false
+        root.pollLocal()
+        return
+      }
+      if (code === 3) {
+        root.finishPerceptionFailure("unpaired")
+        return
+      }
       root.onPerceptionFetched(String(apiFetchStdout.text || root.fetchOutput || ""), code === 0)
+    }
+  }
+
+  Process {
+    id: settingsProc
+    command: [root.secureStatePath, "--read-settings"]
+    stdout: StdioCollector {
+      id: settingsStdout
+      waitForEnd: true
+      onStreamFinished: root.settingsRaw = String(text || "")
+    }
+    onExited: function(code) {
+      if (code === 0) root.applySettings(String(settingsStdout.text || root.settingsRaw || ""))
+      root.pollAfterSettings()
     }
   }
 
@@ -560,36 +550,34 @@ Item {
   }
 
   Process {
-    id: stateDirProc
-    command: ["install", "-d", "-m", "700", "--", root.stateDir]
+    id: stateReader
+    command: [root.secureStatePath, "--read-state"]
+    stdout: StdioCollector {
+      id: stateReadStdout
+      waitForEnd: true
+      onStreamFinished: root.stateReadRaw = String(text || "")
+    }
     onExited: function(code) {
-      root.stateDirReady = code === 0
-      if (!root.stateDirReady) {
-        root.stateLoaded = true
-        root.feedStateChanged()
+      root.loadState(code === 0
+        ? String(stateReadStdout.text || root.stateReadRaw || "") : "")
+    }
+  }
+
+  Process {
+    id: stateWriter
+    command: [root.secureStatePath, "--write-state"]
+    stdinEnabled: true
+    onStarted: {
+      write(root.stateWriteRaw + "\n")
+      root.stateWriteRaw = ""
+    }
+    onExited: function(code) {
+      if (root.queuedStateRaw.length > 0) {
+        var next = root.queuedStateRaw
+        root.queuedStateRaw = ""
+        Qt.callLater(function() { root.startStateWrite(next) })
       }
     }
-  }
-
-  // ------------------------------------------------------------- file views
-
-  FileView {
-    id: stateFile
-    path: root.stateDirReady ? root.statePath : ""
-    atomicWrites: true
-    printErrors: false
-    onLoaded: {
-      if (root.stateDirReady) root.loadState(text())
-    }
-    onLoadFailed: {
-      if (root.stateDirReady) root.loadState("")
-    }
-  }
-
-  FileView {
-    id: shellConfigFile
-    path: (Quickshell.env("XDG_CONFIG_HOME") || root.home + "/.config") + "/omarchy/shell.json"
-    printErrors: false
   }
 
   Timer {
@@ -599,5 +587,5 @@ Item {
     onTriggered: root.poll()
   }
 
-  Component.onCompleted: stateDirProc.running = true
+  Component.onCompleted: stateReader.running = true
 }

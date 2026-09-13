@@ -63,11 +63,11 @@ is fine; one that implies verification it did not do is not.
 
 ## House rules that will otherwise surprise you
 
-- **No graphical runtime dependency.** A stock Omarchy install has no Node,
-  Python, or Ruby on the graphical session PATH, so QML must not shell out to
-  one for polling. Quickshell plus `curl` is the runtime stack. A one-time setup
-  helper may use a separately documented installed tool such as Perl, but it
-  must fail closed when absent and must never become a background dependency.
+- **No graphical daemon dependency.** A stock Omarchy install has no Node,
+  Python, or Ruby on the graphical session PATH. Quickshell plus stock system
+  tools is the runtime stack. The shipped short-lived helper may use the
+  separately documented absolute `/usr/bin/perl`, but it must fail closed when
+  absent and must never become a background process.
 - **Untrusted text is bounded.** Anything from a network response or another
   program renders as `Text.PlainText`, with a width constraint *and* an `elide`
   or `wrapMode`. Either alone is a no-op.
