@@ -102,7 +102,7 @@ export function scoreAccountSignals(database:PerceptionDatabase, accountId:strin
 async function fetchFeed(fetcher:FeedFetcher, source:CuratedSource, controller:AbortController):Promise<string> {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const response = await fetcher(source.url, { signal:controller.signal, redirect:"error", headers:{ Accept:"application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9", "User-Agent":"perception/0.1 (+https://perception.intentsolutions.io)" } });
+    const response = await fetcher(source.url, { signal:controller.signal, redirect:"error", headers:{ Accept:"application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9", "User-Agent":"perception/0.1 (+https://oma.intentsolutions.io/perception/)" } });
     if (!response.ok || !response.body) throw new Error("feed_fetch_failed");
     const declared = Number(response.headers.get("content-length"));
     if (Number.isFinite(declared) && declared > MAX_FEED_BYTES) throw new Error("feed_too_large");

@@ -6,39 +6,46 @@ export type SmtpConfig = {
   host:string; port:number; secure:boolean; user:string; password:string; from:string;
 };
 
-export function createSmtpMailer(config:SmtpConfig, webOrigin:string):{ magicLinkSender:MagicLinkSender; customerMessageSender:CustomerMessageSender } {
+export function createSmtpMailer(config:SmtpConfig, webAppUrl:string):{ magicLinkSender:MagicLinkSender; customerMessageSender:CustomerMessageSender; verify:() => Promise<void> } {
   const transport = nodemailer.createTransport({
     host:config.host, port:config.port, secure:config.secure,
     auth:{ user:config.user, pass:config.password },
+    connectionTimeout:10_000, greetingTimeout:10_000, socketTimeout:20_000,
   });
   const magicLinkSender:MagicLinkSender = {
     async send({ email, url }) {
-      await transport.sendMail({
+      const result = await transport.sendMail({
         from:config.from,
         to:email,
         subject:"Open your Perception signal room",
         text:`Use this private link to open Perception:\n\n${url}\n\nIt expires in 15 minutes and works once. If you did not request it, you can ignore this email.`,
         html:`<div style="font-family:ui-sans-serif,system-ui,sans-serif;max-width:560px;margin:auto;color:#171914"><p style="font-size:12px;letter-spacing:.14em;text-transform:uppercase">Perception</p><h1 style="font-family:Georgia,serif;font-weight:500">Your signal room is ready.</h1><p>Use this private link to sign in. It expires in 15 minutes and works once.</p><p style="margin:28px 0"><a href="${escapeHtml(url)}" style="background:#171914;color:#fff;padding:12px 18px;text-decoration:none;border-radius:3px">Open Perception</a></p><p style="color:#65685f;font-size:13px">If you did not request this email, you can ignore it.</p></div>`,
       });
+      if (result.rejected.length) throw new Error("smtp_recipient_rejected");
     },
   };
   const customerMessageSender:CustomerMessageSender = {
     async sendCustomerMessage(message) {
-      const rendered = renderCustomerMessage(message, webOrigin);
-      await transport.sendMail({ from:config.from, to:message.email, ...rendered });
+      const rendered = renderCustomerMessage(message, webAppUrl);
+      const result = await transport.sendMail({
+        from:config.from, to:message.email, ...rendered,
+        messageId:`<${message.id}@intentsolutions.io>`,
+        headers:{ "X-Entity-Ref-ID":message.id },
+      });
+      if (result.rejected.length) throw new Error("smtp_recipient_rejected");
     },
   };
-  return { magicLinkSender, customerMessageSender };
+  return { magicLinkSender, customerMessageSender, verify:async () => { await transport.verify(); } };
 }
 
 export function createSmtpMagicLinkSender(config:SmtpConfig):MagicLinkSender {
-  return createSmtpMailer(config, "https://perception.intentsolutions.io").magicLinkSender;
+  return createSmtpMailer(config, "https://oma.intentsolutions.io/perception/").magicLinkSender;
 }
 
-export function renderCustomerMessage(message:CustomerMessage, webOrigin:string):{ subject:string; text:string; html:string } {
+export function renderCustomerMessage(message:CustomerMessage, webAppUrl:string):{ subject:string; text:string; html:string } {
   const firstName = message.name?.trim().split(/\s+/)[0] || null;
   const hello = firstName ? `Hi ${firstName},` : "Hello,";
-  const roomUrl = `${webOrigin}/?room=1`;
+  const roomUrl = new URL("?room=1", webAppUrl).toString();
   const portalAction = message.portalUrl ? `\n\nManage billing: ${message.portalUrl}` : "";
   const ends = message.endsAt ? formatDate(message.endsAt) : null;
   const variants = {
@@ -73,7 +80,9 @@ export function renderCustomerMessage(message:CustomerMessage, webOrigin:string)
   } as const;
   const content = variants[message.kind];
   const text = `${hello}\n\n${content.heading}\n\n${content.body}\n\n${content.action}: ${content.url}\n\n${content.tail}${message.kind === "billing_attention" ? portalAction : ""}\n\n— Perception\nQuiet by design.`;
-  const html = `<div style="background:#0c141b;color:#e8edf0;padding:32px 18px;font-family:ui-sans-serif,system-ui,sans-serif"><div style="max-width:580px;margin:auto"><p style="color:#efa84a;font:600 12px ui-monospace,monospace;letter-spacing:.14em">PERCEPTION</p><p style="color:#a7b5bd">${escapeHtml(hello)}</p><h1 style="font-family:Georgia,serif;font-size:38px;line-height:1.05;font-weight:500">${escapeHtml(content.heading)}</h1><p style="color:#b0bdc4;line-height:1.7">${escapeHtml(content.body)}</p><p style="margin:30px 0"><a href="${escapeHtml(content.url)}" style="display:inline-block;background:#efa84a;color:#10161a;padding:14px 18px;text-decoration:none;font:600 12px ui-monospace,monospace">${escapeHtml(content.action)}</a></p><p style="color:#8999a4;line-height:1.65;font-size:13px">${escapeHtml(content.tail)}</p><p style="border-top:1px solid #26343d;margin-top:34px;padding-top:18px;color:#71838d;font-size:11px">Perception · Quiet by design.<br><a href="${escapeHtml(webOrigin)}/?page=support" style="color:#efa84a">Support</a> · <a href="${escapeHtml(webOrigin)}/?page=privacy" style="color:#efa84a">Privacy</a></p></div></div>`;
+  const supportUrl = new URL("?page=support", webAppUrl).toString();
+  const privacyUrl = new URL("?page=privacy", webAppUrl).toString();
+  const html = `<div style="background:#0c141b;color:#e8edf0;padding:32px 18px;font-family:ui-sans-serif,system-ui,sans-serif"><div style="max-width:580px;margin:auto"><p style="color:#efa84a;font:600 12px ui-monospace,monospace;letter-spacing:.14em">PERCEPTION</p><p style="color:#a7b5bd">${escapeHtml(hello)}</p><h1 style="font-family:Georgia,serif;font-size:38px;line-height:1.05;font-weight:500">${escapeHtml(content.heading)}</h1><p style="color:#b0bdc4;line-height:1.7">${escapeHtml(content.body)}</p><p style="margin:30px 0"><a href="${escapeHtml(content.url)}" style="display:inline-block;background:#efa84a;color:#10161a;padding:14px 18px;text-decoration:none;font:600 12px ui-monospace,monospace">${escapeHtml(content.action)}</a></p><p style="color:#8999a4;line-height:1.65;font-size:13px">${escapeHtml(content.tail)}</p><p style="border-top:1px solid #26343d;margin-top:34px;padding-top:18px;color:#71838d;font-size:11px">Perception · Quiet by design.<br><a href="${escapeHtml(supportUrl)}" style="color:#efa84a">Support</a> · <a href="${escapeHtml(privacyUrl)}" style="color:#efa84a">Privacy</a></p></div></div>`;
   return { subject:content.subject, text, html };
 }
 

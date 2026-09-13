@@ -27,7 +27,7 @@ There is also a free Omarchy companion called Listening Post. It carries the act
 
 Perception is the paid web product. Listening Post is free and MIT licensed. The purchase email is the account, sign-in links work once, and paired-device credentials are revocable.
 
-The working product: https://perception.intentsolutions.io
+The working product: https://oma.intentsolutions.io/perception/
 
 The companion and source: https://github.com/jeremylongshore/omarchy-listening-post-entry
 

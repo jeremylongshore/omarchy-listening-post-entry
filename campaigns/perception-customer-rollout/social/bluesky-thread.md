@@ -23,7 +23,7 @@ Listening Post is the free MIT Omarchy companion. Perception does the deep work 
 
 ## Post 4
 
-Perception: https://perception.intentsolutions.io
+Perception: https://oma.intentsolutions.io/perception/
 
 Listening Post source: https://github.com/jeremylongshore/omarchy-listening-post-entry
 

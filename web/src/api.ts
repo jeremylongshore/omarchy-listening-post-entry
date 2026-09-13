@@ -3,6 +3,7 @@ import demoSnapshot from "../../packages/perception-contract/fixtures/snapshot-v
 
 export type Device = { id:string; label:string; createdAt:string; lastSeenAt:string | null };
 export type CreatedDevice = { device:Device; token:string };
+export type PairingCode = { id:string; code:string; expiresAt:string };
 export type Account = {
   id:string; displayName:string; email:string;
   entitlement:{ status:string; entitled:boolean; customerPortalUrl:string | null; renewsAt:string | null; endsAt:string | null } | null;
@@ -55,6 +56,10 @@ export async function loadDevices():Promise<Device[]> {
 
 export async function createDevice(label:string):Promise<CreatedDevice> {
   return request("/v1/devices", { method:"POST", body:JSON.stringify({ label }) }) as Promise<CreatedDevice>;
+}
+
+export async function createPairingCode(label:string):Promise<PairingCode> {
+  return request("/v1/pairing-codes", { method:"POST", body:JSON.stringify({ label }) }) as Promise<PairingCode>;
 }
 
 export async function revokeDevice(deviceId:string):Promise<void> {

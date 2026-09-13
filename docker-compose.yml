@@ -7,20 +7,23 @@ services:
     environment:
       PORT: 8790
       DATABASE_PATH: /data/perception.db
-      WEB_ORIGIN: https://perception.intentsolutions.io
+      WEB_ORIGIN: https://oma.intentsolutions.io
+      WEB_APP_URL: https://oma.intentsolutions.io/perception/
       API_ORIGIN: https://api.perception.intentsolutions.io
       LOG_LEVEL: info
       LEMONSQUEEZY_WEBHOOK_SECRET: ${LEMONSQUEEZY_WEBHOOK_SECRET:-}
+      LEMONSQUEEZY_API_KEY: ${LEMONSQUEEZY_API_KEY:-}
       LEMONSQUEEZY_STORE_ID: ${LEMONSQUEEZY_STORE_ID:-}
       LEMONSQUEEZY_VARIANT_IDS: ${LEMONSQUEEZY_VARIANT_IDS:-}
       LEMONSQUEEZY_CHECKOUT_URL: ${LEMONSQUEEZY_CHECKOUT_URL:-}
       LEMONSQUEEZY_ALLOW_TEST_MODE: ${LEMONSQUEEZY_ALLOW_TEST_MODE:-false}
+      BILLING_RECONCILIATION_INTERVAL_MS: ${BILLING_RECONCILIATION_INTERVAL_MS:-21600000}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_SECURE: ${SMTP_SECURE:-true}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-Perception <perception@intentsolutions.io>}
+      SMTP_FROM: ${SMTP_FROM:-Perception <support@intentsolutions.io>}
       INGESTION_ENABLED: ${INGESTION_ENABLED:-true}
       INGESTION_INTERVAL_MS: ${INGESTION_INTERVAL_MS:-900000}
       INGESTION_KEY: ${INGESTION_KEY:-}

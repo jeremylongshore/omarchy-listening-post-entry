@@ -5,9 +5,11 @@ const production = {
   NODE_ENV:"production",
   PORT:"8790",
   DATABASE_PATH:"/data/perception.db",
-  WEB_ORIGIN:"https://perception.intentsolutions.io",
+  WEB_ORIGIN:"https://oma.intentsolutions.io",
+  WEB_APP_URL:"https://oma.intentsolutions.io/perception/",
   API_ORIGIN:"https://api.perception.intentsolutions.io",
   LEMONSQUEEZY_WEBHOOK_SECRET:"w".repeat(32),
+  LEMONSQUEEZY_API_KEY:"l".repeat(32),
   LEMONSQUEEZY_STORE_ID:"10",
   LEMONSQUEEZY_VARIANT_IDS:"30,31",
   LEMONSQUEEZY_CHECKOUT_URL:"https://store.example.test/buy/perception",
@@ -17,7 +19,7 @@ const production = {
   SMTP_SECURE:"true",
   SMTP_USER:"perception@example.test",
   SMTP_PASSWORD:"mail-secret",
-  SMTP_FROM:"Perception <perception@example.test>",
+  SMTP_FROM:"Perception <support@intentsolutions.io>",
   INGESTION_ENABLED:"true",
   INGESTION_INTERVAL_MS:"900000",
   INGESTION_KEY:"i".repeat(32),
@@ -28,9 +30,11 @@ describe("production configuration", () => {
     const config = loadRuntimeConfig(production);
     expect(config).toMatchObject({
       production:true, port:8790, databasePath:"/data/perception.db",
-      webOrigin:"https://perception.intentsolutions.io",
+      webOrigin:"https://oma.intentsolutions.io",
+      webAppUrl:"https://oma.intentsolutions.io/perception/",
       apiOrigin:"https://api.perception.intentsolutions.io",
       checkoutUrl:"https://store.example.test/buy/perception",
+      billingReconciliationIntervalMs:21600000,
       ingestionEnabled:true, ingestionIntervalMs:900000,
       smtp:{ host:"smtp.example.test", port:465, secure:true, user:"perception@example.test" },
     });
@@ -40,32 +44,37 @@ describe("production configuration", () => {
 
   it("fails closed when paid login and ingestion configuration is absent", () => {
     expect(() => loadRuntimeConfig({ NODE_ENV:"production" })).toThrow(/LEMONSQUEEZY_WEBHOOK_SECRET/);
+    expect(() => loadRuntimeConfig({ ...production, LEMONSQUEEZY_API_KEY:"" })).toThrow(/LEMONSQUEEZY_API_KEY/);
     expect(() => loadRuntimeConfig({ NODE_ENV:"production" })).toThrow(/SMTP_HOST/);
     expect(() => loadRuntimeConfig({ NODE_ENV:"production" })).toThrow(/INGESTION_KEY/);
   });
 
   it.each([
     ["WEB_ORIGIN", "https://attacker.example"],
+    ["WEB_APP_URL", "https://oma.intentsolutions.io/wrong/"],
     ["API_ORIGIN", "http://api.perception.intentsolutions.io"],
     ["DATABASE_PATH", "./relative.db"],
     ["LEMONSQUEEZY_WEBHOOK_SECRET", "short"],
+    ["LEMONSQUEEZY_API_KEY", "short"],
     ["LEMONSQUEEZY_STORE_ID", "0"],
     ["LEMONSQUEEZY_VARIANT_IDS", "30,invalid"],
     ["LEMONSQUEEZY_CHECKOUT_URL", "http://store.example.test/buy"],
     ["LEMONSQUEEZY_ALLOW_TEST_MODE", "true"],
+    ["BILLING_RECONCILIATION_INTERVAL_MS", "1000"],
     ["INGESTION_ENABLED", "false"],
     ["INGESTION_KEY", "short"],
     ["INGESTION_INTERVAL_MS", "1000"],
     ["SMTP_PORT", "70000"],
     ["SMTP_FROM", "Perception\r\nBcc: victim@example.test"],
+    ["SMTP_FROM", "Perception <wrong@intentsolutions.io>"],
   ])("rejects unsafe production %s", (name, value) => {
     expect(() => loadRuntimeConfig({ ...production, [name]:value })).toThrow(name);
   });
 
   it("keeps local development usable without paid-service credentials", () => {
     expect(loadRuntimeConfig({})).toMatchObject({
-      production:false, port:8790, webOrigin:"http://127.0.0.1:4173",
-      apiOrigin:"http://127.0.0.1:8790", lemonSqueezy:undefined, smtp:undefined,
+      production:false, port:8790, webOrigin:"http://127.0.0.1:4173", webAppUrl:"http://127.0.0.1:4173/",
+      apiOrigin:"http://127.0.0.1:8790", lemonSqueezy:undefined, lemonSqueezyApiKey:undefined, smtp:undefined,
     });
   });
 

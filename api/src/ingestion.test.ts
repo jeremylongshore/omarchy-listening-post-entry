@@ -118,7 +118,7 @@ describe("curated ingestion", () => {
   it("protects on-demand ingestion with a timing-safe operator key", async () => {
     database = openDatabase(":memory:"); seedAccount(database);
     const service = new IngestionService(database, async () => response(feed([{ title:"Release Agent", url:"https://example.test/release", date:"2026-09-11T11:00:00.000Z" }])), [sources[1]]);
-    app = await createApp(database, { webOrigin:"https://perception.intentsolutions.io", ingestionService:service, ingestionKey:"operator-key-with-entropy" });
+    app = await createApp(database, { webOrigin:"https://oma.intentsolutions.io", ingestionService:service, ingestionKey:"operator-key-with-entropy" });
     expect((await app.inject({ method:"POST", url:"/v1/ingestion" })).statusCode).toBe(401);
     expect((await app.inject({ method:"POST", url:"/v1/ingestion", headers:{ "x-ingestion-key":"wrong" } })).statusCode).toBe(401);
     const allowed = await app.inject({ method:"POST", url:"/v1/ingestion", headers:{ "x-ingestion-key":"operator-key-with-entropy" } });

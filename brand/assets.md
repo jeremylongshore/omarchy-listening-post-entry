@@ -5,7 +5,7 @@
 
 - Product name: Perception
 - Native companion: Listening Post
-- Launch domain: `perception.intentsolutions.io`
+- Canonical product route: `https://oma.intentsolutions.io/perception/`
 - Existing plugin artwork: `assets/banner.svg`, `preview.png`
 - Web visual signature: live signal ribbon
 

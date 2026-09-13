@@ -3,7 +3,7 @@
 Perception is the primary web product. Listening Post is its compact Omarchy client. The old `perception/` repository is read-only reference; this repository owns both deliverables and their shared contract.
 
 ```text
-perception.intentsolutions.io (GitHub Pages)
+oma.intentsolutions.io/perception/ (shared GitHub Pages site)
   └─ Perception React web app
        ├─ account, topics, signals, briefs, source health
        └─ browser session + device management
@@ -65,13 +65,14 @@ The durable execution graph lives in Beads under epic `lp-lt2`. Foundation and c
 
 ## Deployment boundaries
 
-- `web/` builds a static Vite artifact and preserves `web/public/CNAME` for `perception.intentsolutions.io`.
+- `web/` builds a static Vite artifact with base `/perception/`. The shared `intent-solutions-io/omarchy-plugins` portfolio owns the `oma.intentsolutions.io` CNAME and publishes the artifact under `site/perception/`; this repository must not claim that shared custom domain with its own CNAME.
 - `api/` builds a Docker image from the repository root so the shared contract is included. Production data mounts at `/data/perception.db`.
 - The API listens on loopback port `8790` (port `8787` is already allocated to the Mandy sidecar); production exposure is through the governed VPS/Caddy deployment lane at `api.perception.intentsolutions.io`.
 - Repository variables select the public API URL, Lemon Squeezy checkout URL, and demo behavior. Webhook signing secrets, SMTP credentials, device tokens, VPS access, and DNS credentials are deployment secrets and never enter source control.
 - The VPS operator provisions `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_IDS`, `LEMONSQUEEZY_CHECKOUT_URL`, `SMTP_*`, and `INGESTION_KEY` in `/srv/perception-src/.env`; the reusable deploy workflow does not carry product credentials through GitHub Actions.
 - Production configuration is fail-closed: the API refuses to listen when the canonical origins, paid catalog, webhook signing secret, checkout URL, SMTP delivery, persistent database path, or ingestion controls are missing or unsafe. A bare `/healthz` therefore cannot mask a product with broken login or billing configuration.
-- Lemon Squeezy must send `subscription_created` and `subscription_updated` to `https://api.perception.intentsolutions.io/v1/billing/webhook`. Access follows Lemon Squeezy's subscription lifecycle: every recognized state remains entitled except `expired`; a cancelled subscription is also denied locally once its recorded `ends_at` grace period passes.
+- Lemon Squeezy must send `subscription_created`, `subscription_updated`, `order_refunded`, and `subscription_payment_refunded` to `https://api.perception.intentsolutions.io/v1/billing/webhook`. Access follows a fail-closed lifecycle policy: `on_trial`, `active`, `paused`, and `past_due` remain entitled; `unpaid` and `expired` are denied; a cancelled subscription is denied once its recorded `ends_at` grace period passes. Full initial-order and renewal-invoice refunds create an explicit local revocation while partial refunds are recorded without revoking access.
+- The API performs a store-scoped reconciliation at startup before listening and every six hours afterward. Reconciliation is paginated, bounded, timeout-protected, and uses the same idempotent entitlement processor as webhooks.
 
 Production setup, privacy handling, backup and recovery, credential containment,
 smoke checks, and rollback are defined in `docs/PERCEPTION-OPERATIONS.md`.

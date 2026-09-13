@@ -36,14 +36,15 @@ jobs:
       - run: docker build -f api/Dockerfile -t perception-api:gate .
 
   deploy:
+    if: vars.PERCEPTION_API_DEPLOY_ENABLED == 'true'
     needs: test
     uses: jeremylongshore/.github/.github/workflows/vps-deploy.yml@53d6be37d6c046818157b954acb33667ac095dd8
     with:
       variant: docker
       srv-path: /srv/perception-src
       health-check-url: https://api.perception.intentsolutions.io/healthz
-      vps-tailnet-ip: 100.88.144.55
-      vps-public-ip: 167.86.106.29
+      vps-tailnet-ip: ${{ vars.PERCEPTION_VPS_TAILNET_IP }}
+      vps-public-ip: ${{ vars.PERCEPTION_VPS_PUBLIC_IP }}
       vps-host: intentsolutions
       vps-user: intentsolutions
       smoke-validation: '.status == "ok" and .contractVersion == "1.0"'

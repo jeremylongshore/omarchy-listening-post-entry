@@ -185,13 +185,13 @@ Panel {
     var row = selectedRow()
     if (!row || !/^[A-Za-z0-9_-]{1,160}$/.test(String(row.guid || ""))) return
     if (openProc.running) return
-    openProc.command = ["xdg-open", "https://perception.intentsolutions.io/?signal=" + row.guid]
+    openProc.command = ["xdg-open", "https://oma.intentsolutions.io/perception/?signal=" + row.guid]
     openProc.running = true
   }
 
   function openPerception() {
     if (openProc.running) return
-    openProc.command = ["xdg-open", "https://perception.intentsolutions.io/"]
+    openProc.command = ["xdg-open", "https://oma.intentsolutions.io/perception/"]
     openProc.running = true
   }
 

@@ -21,10 +21,10 @@ describe("privacy-conscious product events", () => {
   });
 
   it("accepts only client-safe names and no arbitrary properties", async () => {
-    const app = await createApp(database, { webOrigin:"https://perception.intentsolutions.io" });
-    const accepted = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ name:"landing_view" } });
-    const extra = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ name:"landing_view", email:"buyer@example.com" } });
-    const serverOnly = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ name:"purchase_entitled" } });
+    const app = await createApp(database, { webOrigin:"https://oma.intentsolutions.io" });
+    const accepted = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ name:"landing_view" } });
+    const extra = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ name:"landing_view", email:"buyer@example.com" } });
+    const serverOnly = await app.inject({ method:"POST", url:"/v1/events", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ name:"purchase_entitled" } });
     expect(accepted.statusCode).toBe(202);
     expect(extra.statusCode).toBe(400);
     expect(serverOnly.statusCode).toBe(400);

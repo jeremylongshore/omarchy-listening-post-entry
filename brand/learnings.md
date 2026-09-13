@@ -6,7 +6,7 @@
 ## What Works
 
 - For the Perception launch surface, use The Beacon Wakes as the Intent Solutions visual anchor: field paper, forest ink, square geometry, route orange, signal teal, and marker yellow.
-- The preferred conversion rhythm is the concise HustleStats sequence: decisive promise, concrete feature proof, honest offer, and a final action. Adapt the structure to Perception; do not copy product-specific text or assets.
+- The preferred conversion rhythm is concise: decisive promise, concrete feature proof, honest offer, and a final action. Adapt the structure to Perception; do not copy product-specific text or assets.
 
 ## What Did Not Work
 

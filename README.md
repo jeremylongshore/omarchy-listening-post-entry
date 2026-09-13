@@ -3,7 +3,7 @@
 # Listening Post
 
 The Omarchy companion for **Perception**, the private web signal room at
-`perception.intentsolutions.io`. Listening Post carries the same ranked field,
+[`oma.intentsolutions.io/perception/`](https://oma.intentsolutions.io/perception/). Listening Post carries the same ranked field,
 five-item brief, and read state into the bar. The pill only speaks when a model
 shipped, the bill changed, or a provider is down.
 
@@ -155,7 +155,7 @@ nothing and costs the publishers.
 ## Architecture
 
 ```
-Service.qml   account snapshot + local migration poller, no external runtime
+Service.qml   account snapshot + local migration poller, no Node/Python daemon
         |  curl --config ~/.config/perception/listening-post.curlrc
         |  Model.js validates contract v1 on Quickshell's JS engine
         v
@@ -165,11 +165,12 @@ Service.qml   account snapshot + local migration poller, no external runtime
 BarWidget.qml + Panel.qml (render + keys)
 ```
 
-**No Node.js, no Python, no external runtime.** A stock Omarchy install has no
-node on the graphical session PATH (Omarchy installs it through mise, whose
-shims are not exported to the session), so this plugin depends on nothing but
-Quickshell and the `curl` every Omarchy box already ships. That is the same
-pattern the marketplace-validated MLB Booth and Pit Wall widgets use.
+**No Node.js or Python service.** A stock Omarchy install has no Node executable
+on the graphical session PATH, so polling and rendering stay inside Quickshell
+and use the `curl` already present on Omarchy. The optional one-time pairing
+command uses POSIX shell plus Perl for race-safe, mode-0600 credential
+publication; both must be present when running `connect-perception.sh`, but
+neither remains running afterward.
 
 `Service.qml` owns the item store: it fetches, merges, persists (via
 `FileView`, the API the first-party clipboard and agents plugins use), and
@@ -199,13 +200,21 @@ to it. No telemetry is collected in either mode.
 ```bash
 npm run test:product
 npm run build:product
+```
+
+The root CI workflow runs the following exact validation commands when the
+change-scope classifier selects the full lane:
+
+```bash
+npm test
 npm run test:race
 npm run test:mutation
 npm run audit
+shellcheck --severity=warning scripts/*.sh e2e/*.sh .githooks/pre-push
 ```
 
-The product lane runs 96 plugin tests, 5 shared-contract tests, 7 web tests, and
-53 API tests, then builds both production surfaces. The plugin lane requires at
+The product lane runs 104 plugin tests, 7 shared-contract tests, 8 web tests, and
+65 API tests (184 total), then builds both product surfaces. The plugin lane requires at
 least 95% line, statement, and function coverage, 90% branch coverage, a 90%
 mutation score, and three concurrent race passes. Parser tests exercise RSS and
 Atom against captured bodies from all twenty-nine live sources, lane

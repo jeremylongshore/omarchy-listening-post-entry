@@ -21,6 +21,12 @@ Regenerate with `scripts/gen-changelog.sh`.
   authentication dependencies.
 - Connect Listening Post to a paid Perception account with a revocable device
   token and render its ranked signals, source health, and five-item brief.
+- Exchange ten-minute, single-use pairing codes for hash-only device tokens so
+  the reusable credential never appears in browser copy, shell history, or
+  process arguments.
+- Reconcile the configured Lemon Squeezy store before production startup and
+  every six hours, with bounded pagination, timeouts, run receipts, and the same
+  idempotent processor used for signed webhooks.
 - Open safe source links or a selected signal's canonical Perception deep link,
   and sync local read actions back to the account.
 
@@ -28,6 +34,11 @@ Regenerate with `scripts/gen-changelog.sh`.
 
 - Treat Perception as the primary web product and Listening Post as its free,
   compact Omarchy interface. Wait State remains a separate plugin.
+- Move the canonical product route to `https://oma.intentsolutions.io/perception/`
+  under the shared OMA portfolio and retire the standalone web hostname.
+- Publish the real React product experience at the canonical route while
+  keeping checkout, demo state, and production analytics fail closed until the
+  paid provider configuration is approved.
 - Keep the original 29-source poller as unpaired migration behavior. After the
   first valid Perception response, retain only the last-good account field
   through offline, authentication, entitlement, and malformed-response states.
@@ -38,13 +49,21 @@ Regenerate with `scripts/gen-changelog.sh`.
   and exchange through an origin-checked POST so mail-scanner GETs cannot consume
   a login or place its token in an HTTP request URL.
 - Fail production startup before database open or listen when paid catalog,
-  webhook signing, SMTP, checkout, persistent storage, canonical origins, or
-  ingestion controls are missing or unsafe.
+  webhook signing, reconciliation authority, SMTP, checkout, persistent
+  storage, canonical origins, or ingestion controls are missing or unsafe.
+- Verify and idempotently apply initial-order and renewal-invoice full refunds,
+  preserve access for partial refunds, and keep a separate valid subscription
+  usable when another subscription for the same email has been refunded.
+- Retain access during `past_due` payment retries but deny `unpaid` access once
+  provider recovery attempts are exhausted, while preserving billing recovery.
+- Redact authentication, webhook, cookie, and ingestion credentials from
+  structured production logs; add database readiness and SMTP startup checks.
 - Keep the bearer token out of `shell.json` and the QML object graph. An
   interactive no-echo connector writes a mode-0600 curl config inside a
   mode-0700 directory; curl receives only its path in process arguments.
 - Accept only the canonical Perception API origin and strictly validate the
-  shared bounded contract before replacing last-good data.
+  shared bounded contract, including unknown-field rejection and exact resource
+  limits, before replacing last-good data.
 
 ### Testing
 
@@ -52,6 +71,9 @@ Regenerate with `scripts/gen-changelog.sh`.
   browser authentication coverage, production configuration validation, desktop
   and mobile browser checks, an exact-tree non-root Docker smoke test, and an
   isolated-volume database restore rehearsal.
+- Add pre-launch schema migration, provider timeout/restart recovery, refund
+  replay, single-use pairing, incorrect callback/hostname, and public OMA
+  subpath refresh coverage.
 
 ## [1.2.0] - 2026-08-29
 

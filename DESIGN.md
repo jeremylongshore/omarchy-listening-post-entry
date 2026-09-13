@@ -120,7 +120,7 @@ Perception joins two deliberately different environments into one coherent produ
 
 The private signal room remains a dark, dense operational workspace. Newsreader supplies editorial judgment across both surfaces, Manrope makes explanation humane, and DM Mono proves state and provenance. The source-backed field window is the hinge between them: public material and private information grammar in one precise artifact.
 
-HustleStats informed the public conversion sequence only. It is not visual authority: do not import its identity, motifs, styling, or brand vocabulary into Perception.
+A proven product page informed the public conversion sequence only. It is not visual authority: do not import another product's identity, motifs, styling, or brand vocabulary into Perception.
 
 **Key Characteristics:**
 
@@ -281,5 +281,5 @@ Privacy, terms, and acceptable-use pages stay on Field Paper and place a promine
 - **Don't** use Route Orange Action as small text on Field Paper or rely on color alone to communicate state.
 - **Don't** turn the interface into a continuous feed or fill a quiet state with synthetic activity.
 - **Don't** replace source-backed editorial hierarchy with generic dashboard density.
-- **Don't** import HustleStats visual identity; its influence ends at conversion sequence.
+- **Don't** import another product's visual identity; external influence ends at conversion sequence.
 - **Don't** obscure the distinction between Perception, the optional Listening Post companion, and the Intent Solutions parent brand.

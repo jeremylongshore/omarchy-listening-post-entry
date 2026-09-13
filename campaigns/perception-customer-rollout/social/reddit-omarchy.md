@@ -36,7 +36,7 @@ The plugin can still operate locally before pairing. Once it receives a valid Pe
 
 Project/source: https://github.com/jeremylongshore/omarchy-listening-post-entry
 
-Product: https://perception.intentsolutions.io
+Product: https://oma.intentsolutions.io/perception/
 
 The most useful feedback would be concrete: what source or kind of change is actually worth putting in an Omarchy bar, and what should remain silent?
 

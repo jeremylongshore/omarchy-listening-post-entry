@@ -4,14 +4,15 @@ import Quickshell.Io
 import "Model.js" as Model
 
 // Listening Post background service: owns the entire poll cycle in QML, with
-// NO external runtime. A stock Omarchy install has no node (Omarchy installs
+// no Node or Python daemon. A stock Omarchy install has no node (Omarchy installs
 // it through mise, whose shims are not on the graphical session PATH), so the
-// only things this plugin may depend on are Quickshell itself and the
+// only things this background service may depend on are Quickshell itself and the
 // coreutils/curl every Omarchy box already has. This mirrors the
 // marketplace-proven MLB Booth and Pit Wall pattern: curl through a QML
 // Process, parsing in Model.js on Quickshell's own JS engine, persistence
 // through FileView (the same API the first-party clipboard and agents plugins
-// use to write their state).
+// use to write their state). The explicit one-time pairing command is outside
+// this graphical runtime boundary and uses its documented credential helper.
 //
 // Fetch is sequential and one source at a time: 29 concurrent curls would
 // spike the shell process, and feed publishing cadence is hours, so there is

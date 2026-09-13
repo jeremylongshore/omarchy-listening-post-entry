@@ -11,7 +11,7 @@ platforms: [github, linkedin, bluesky, reddit, email]
 - Mechanism: Perception watches, ranks, explains, and preserves sources; Listening Post carries the actionable edge into Omarchy.
 - Concrete proof: 29 implemented sources, four signal lanes, source health, topic ranking, finite brief, passwordless purchase-email access, revocable device pairing, free MIT companion.
 - Contrarian take: “Nothing new” is successful output.
-- Customer action: Visit `https://perception.intentsolutions.io`, inspect the working field, then buy through the configured Lemon Squeezy checkout.
+- Customer action: Visit `https://oma.intentsolutions.io/perception/`, inspect the working field, then buy through the configured Lemon Squeezy checkout.
 - Developer action: Install or inspect Listening Post at `https://github.com/jeremylongshore/omarchy-listening-post-entry`.
 - Claims excluded: Customer counts, conversion, revenue, testimonials, unverified latency, “all AI news,” and manufactured launch scarcity.
 

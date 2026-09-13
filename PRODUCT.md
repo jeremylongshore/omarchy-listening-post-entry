@@ -33,13 +33,17 @@ Umbrella promise: **Perception watches the web. Listening Post taps your shoulde
 ## Capabilities and Constraints
 
 - Perception is the paid customer product; Listening Post is the free companion and discovery surface.
-- Lemon Squeezy subscription state is the entitlement authority. Recognized non-expired states retain access; cancelled access ends after the paid-through date.
+- Lemon Squeezy subscription state is the entitlement authority. `past_due`
+  retains access during payment retries, `unpaid` and `expired` deny access,
+  and cancelled access ends after the paid-through date.
 - Browser sessions and device tokens recheck current entitlement.
 - Magic links are one-time, expire after 15 minutes, and are removed from the browser URL before exchange.
 - Device tokens are shown once, stored hash-only by the API, revocable by the customer, and limited per account.
 - Firebase and GitHub OAuth are not product authentication dependencies.
-- The web app deploys at `perception.intentsolutions.io`; the API deploys at `api.perception.intentsolutions.io`.
-- Production price, billing interval, refund window, legal entity wording, support mailbox, and final Lemon Squeezy checkout URL are deployment-owned open decisions. Customer copy must not fabricate them.
+- The canonical web app is `https://oma.intentsolutions.io/perception/`; the API remains a separate service at `https://api.perception.intentsolutions.io`.
+- The retired `perception.intentsolutions.io` hostname is not a product authority and must not appear in customer links. The shared OMA site owns the web route; this repository owns its source bundle.
+- The verified operator is `IntentSolutions.io LLC`, a Delaware limited liability company. The verified support route is `support@intentsolutions.io`.
+- Cancellation stops renewal and access continues through the paid-through `ends_at` value. Exact price, currency, interval, trial, refund eligibility, governing law, final checkout URL, and Lemon Squeezy catalog IDs remain approval/configuration inputs and customer copy must fail closed until they are approved.
 - Wait State is a different plugin and is not part of this product.
 
 ## Brand Commitments
@@ -57,6 +61,17 @@ Umbrella promise: **Perception watches the web. Listening Post taps your shoulde
 - Automated web, API, contract, QML, security, container, and recovery evidence is recorded in `VERIFICATION.md`.
 - The source catalog is implemented in `api/src/sources.ts`.
 - There are no customer testimonials, revenue figures, conversion benchmarks, press quotes, or production-traffic metrics on hand. Marketing must not invent them.
+
+## Commercial Launch Recommendation
+
+This is the researched launch recommendation, not binding customer terms until the owner approves it and the exact Lemon Squeezy variant exists:
+
+- `USD 9 per month`, billed monthly, with no free trial.
+- A 14-day refund window for the first payment, subject to Lemon Squeezy's merchant-of-record process.
+- Cancellation at any time, effective at the end of the paid period.
+- Alabama governing law is the operational recommendation because the company is principally operated there, but counsel must resolve Alabama versus Delaware before the terms are marked approved.
+
+The monthly price deliberately sits near specialist reader products without pretending Perception is an enterprise intelligence platform. Public comparison points checked on 2026-09-12 were Readwise Reader at $12.99 monthly or $119.88 annually, Inoreader Pro at $9.99 monthly or $7.50 per month billed annually, Ground News Premium at $39.99 annually, and Feedly Market Intelligence at $1,600 per month billed annually. Source links and the resulting approval gate are recorded in `docs/PERCEPTION-ROLLOUT.md`.
 
 ## Product Principles
 

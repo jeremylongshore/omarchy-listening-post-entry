@@ -20,10 +20,15 @@ describe("Perception API", () => {
     database.prepare("INSERT INTO account_signal_scores VALUES (?,?,?,?)").run("acct_test", "signal_1", 92, "Matches Agent infrastructure.");
     database.prepare("INSERT INTO signal_topics VALUES (?,?)").run("signal_1", "topic_agents");
     database.prepare("INSERT INTO source_health VALUES (?,?,?,?)").run("example", "Example", "healthy", new Date().toISOString());
-    app = await createApp(database, "https://perception.intentsolutions.io");
+    app = await createApp(database, "https://oma.intentsolutions.io");
   });
   afterEach(async () => { await app.close(); database.close(); });
-  it("serves an unauthenticated health contract", async () => { const response = await app.inject({ method:"GET", url:"/healthz" }); expect(response.statusCode).toBe(200); expect(response.json()).toMatchObject({ status:"ok", contractVersion:"1.0" }); });
+  it("serves unauthenticated liveness and database-readiness contracts", async () => {
+    const health = await app.inject({ method:"GET", url:"/healthz" });
+    expect(health.statusCode).toBe(200); expect(health.json()).toMatchObject({ status:"ok", contractVersion:"1.0" });
+    const ready = await app.inject({ method:"GET", url:"/readyz" });
+    expect(ready.statusCode).toBe(200); expect(ready.json()).toMatchObject({ status:"ready", contractVersion:"1.0" });
+  });
   it("rejects missing and malformed device tokens", async () => { expect((await app.inject({ method:"GET", url:"/v1/snapshot" })).statusCode).toBe(401); expect((await app.inject({ method:"GET", url:"/v1/snapshot", headers:{ authorization:"Bearer short" } })).statusCode).toBe(401); });
   it("returns a contract-valid private snapshot to an active device", async () => { const response = await app.inject({ method:"GET", url:"/v1/snapshot", headers:{ authorization:`Bearer ${token}` } }); expect(response.statusCode).toBe(200); expect(response.headers["cache-control"]).toBe("private, no-store"); expect(response.json()).toMatchObject({ schemaVersion:"1.0", account:{ id:"acct_test" } }); });
   it("shares read state from an entitled device with the account snapshot", async () => {

@@ -10,10 +10,11 @@ or the persisted public snapshot state.
 
 ## Architecture control
 
-The plugin has no external runtime: no node, no python, no helper binary
-beyond `curl`, `find`, `xdg-open`, and `omarchy-notification-send`, all of
-which a stock Omarchy install already ships. All I/O lives in one auditable
-QML file, `Service.qml`:
+The long-running plugin has no Node or Python service. Polling I/O lives in the
+auditable `Service.qml` and uses `curl`, `find`, `xdg-open`, and
+`omarchy-notification-send`. The optional one-time `connect-perception.sh`
+setup command additionally invokes the shipped Perl credential helper for
+race-safe private-file publication; neither setup process remains running.
 
 - **Fetch**: paired mode uses the canonical Perception origin; unpaired migration
   mode uses one `curl -fsS --proto =https --max-time 12 --max-filesize
@@ -27,10 +28,13 @@ QML file, `Service.qml`:
   single owner and single writer of the item store.
 - **Mark-read and refresh** are direct in-process calls into that single
   owner. Remote reads enter a durable bounded queue and are sent to Perception.
-- **Credential transport**: `connect-perception.sh` reads the token without echo
-  and writes a mode-0600 curl config inside `~/.config/perception/` (mode 0700).
-  QML never reads its contents; process argv contains only the fixed file path.
-  The token is not part of `shell.json` or `state.json`.
+- **Credential transport**: `connect-perception.sh` reads a short-lived pairing
+  code without echo and submits it on standard input. The API response flows on
+  standard input to `bin/listening-post-secure-state`, which publishes the
+  returned token as a mode-0600 curl config inside `~/.config/perception/`
+  (mode 0700). QML never reads its contents; process argv contains only the
+  fixed file path. Neither the code nor token enters `shell.json` or
+  `state.json`.
 
 ## Input containment
 
@@ -82,7 +86,8 @@ QML file, `Service.qml`:
     cannot happen: a mark-read is never reverted by a concurrent poll.
 11. `Model.parsePerceptionSnapshot` mirrors contract v1 and rejects the entire
     response unless dates, IDs, links, lanes, scores, topic bounds, brief
-    references, and source health are valid. Rejection retains last-good data.
+    references, source health, and strict object fields are valid. Rejection
+    retains last-good data.
 12. The configurable API origin fails closed unless it is exactly
     `https://api.perception.intentsolutions.io`, preventing a settings value from
     becoming a custom-host or SSRF path.

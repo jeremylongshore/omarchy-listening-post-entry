@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PerceptionSignal, PerceptionSnapshot } from "@listening-post/perception-contract";
-import { ApiError, consumeMagicLink, createDevice, isDemoMode, loadAccount, loadDevices, loadSnapshot, logout, magicTokenFromHash, markSignalRead, requestMagicLink, revokeDevice, saveTopics, type Account, type Device } from "./api";
+import { ApiError, consumeMagicLink, createPairingCode, isDemoMode, loadAccount, loadDevices, loadSnapshot, logout, magicTokenFromHash, markSignalRead, requestMagicLink, revokeDevice, saveTopics, type Account, type Device, type PairingCode } from "./api";
 import { PublicExperience } from "./PublicExperience";
 import { activationState, closeOnboarding, onboardingWasClosed } from "./onboarding";
 import { trackProductEvent } from "./product-events";
@@ -52,7 +52,7 @@ function SignalRoom() {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_URL || null);
   const [devices, setDevices] = useState<Device[]>([]);
-  const [newDeviceToken, setNewDeviceToken] = useState<string | null>(null);
+  const [newPairing, setNewPairing] = useState<PairingCode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [topicEditorOpen, setTopicEditorOpen] = useState(false);
   const [topicName, setTopicName] = useState("");
@@ -128,16 +128,15 @@ function SignalRoom() {
   async function pairDevice() {
     setNotice(null);
     try {
-      const created = await createDevice("Omarchy workstation");
-      setDevices((current) => [created.device, ...current]);
-      setNewDeviceToken(created.token); setTokenCopied(false);
+      const created = await createPairingCode("Omarchy workstation");
+      setNewPairing(created); setTokenCopied(false);
       trackProductEvent("device_credential_created");
     } catch (reason) { setNotice(reason instanceof Error ? reason.message : "Device pairing failed."); }
   }
 
   async function copyToken() {
-    if (!newDeviceToken) return;
-    try { await navigator.clipboard.writeText(newDeviceToken); setTokenCopied(true); }
+    if (!newPairing) return;
+    try { await navigator.clipboard.writeText(newPairing.code); setTokenCopied(true); }
     catch { setNotice("Your browser could not copy the token. Select it manually, then paste it into the hidden connector prompt."); }
   }
 
@@ -146,7 +145,7 @@ function SignalRoom() {
   }
 
   async function signOut() {
-    try { await logout(); window.location.assign("/"); }
+    try { await logout(); window.location.assign(import.meta.env.BASE_URL); }
     catch (reason) { setNotice(reason instanceof Error ? reason.message : "Perception could not sign out."); }
   }
 
@@ -207,7 +206,7 @@ function SignalRoom() {
     <div className="app-shell">
       <header className="masthead">
         <a className="wordmark" href="#top" aria-label="Perception home"><span>PER</span>CEPTION</a>
-        <div className="masthead-status"><span className={isStale ? "idle-dot" : "pulse"} /> {demo ? "Demo field" : isStale ? "Last good field" : "Priority field"} <b>{snapshot?.signals.length ?? "—"}</b></div>
+        <div className="masthead-status"><span className={isStale ? "idle-dot" : "pulse"} /> {demo ? "Demo field" : isStale ? "Last good field" : "Priority field"} <b>{snapshot?.signals.length ?? "--"}</b></div>
         <span className="avatar" aria-label={demo ? "Demo account" : "Signed-in account"}>{snapshot?.account.displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() ?? account?.displayName.slice(0, 2).toUpperCase() ?? "P"}</span>
       </header>
       <aside className="rail" aria-label="Primary navigation">
@@ -248,7 +247,7 @@ function SignalRoom() {
         {snapshot && view === "signals" ? <><section className="page-intro"><div><h1>What changed<br />while you worked.</h1></div><div className="intro-note"><b>{snapshot.account.displayName},</b> your watchlist found {snapshot.signals.filter((signal) => !signal.read).length} unread signals across {snapshot.topics.filter((topic) => topic.enabled).length} active topics.</div></section>{isStale ? <div className="stale-note" role="status">Showing the last good field from {relativeTime(snapshot.generatedAt)}. Perception will replace it after a successful refresh.</div> : null}<section className="section-head"><h2>Priority field</h2><span>Ranked by operational impact + your topics</span></section>{snapshot.signals.length ? <div className="signal-list">{snapshot.signals.map((signal) => <SignalRow key={signal.id} signal={signal} onOpen={() => readSignal(signal.id)} />)}</div> : <div className="quiet-state"><b>The field is quiet.</b><span>No current signals crossed your topic threshold.</span></div>}<section className="source-health" aria-label="Source health"><h2>Source health</h2>{snapshot.sourceHealth.map((source) => <div key={source.id}><span className={source.status === "healthy" ? "pulse" : "idle-dot"} /><b>{source.name}</b><small>{source.status} · checked {relativeTime(source.checkedAt)}</small></div>)}</section></> : null}
         {snapshot && view === "brief" ? <section className="brief-view"><header className="view-title"><h1>The brief</h1><p>Last 24 hours · {briefSignals.length} linked highlights</p></header>{briefSignals.map(({ signal, reason }, index) => <article key={signal.id} className="brief-item"><b>{String(index + 1).padStart(2, "0")}</b><div><SignalRow signal={signal} onOpen={() => readSignal(signal.id)} /><p>{reason}</p></div></article>)}</section> : null}
         {snapshot && view === "topics" ? <section className="topics-view"><header className="view-title"><h1>Topics</h1><p>Your attention policy · {snapshot.topics.length} of 8 configured</p></header><div className="topic-grid">{snapshot.topics.map((topic) => <article key={topic.id}><span>{topic.enabled ? "Watching" : "Paused"}</span><h2>{topic.name}</h2><p>{topic.keywords.join(" · ")}</p>{demo ? <small>Editing is unavailable in the demo snapshot.</small> : <div className="topic-actions"><button className="topic-action" onClick={() => void toggleTopic(topic.id)}>{topic.enabled ? "Pause" : "Watch"}</button><button className="topic-action danger-action" onClick={() => void removeTopic(topic.id)}>Remove</button></div>}</article>)}{topicEditorOpen ? <form className="topic-editor" onSubmit={(event) => void addTopic(event)}><label>Topic name<input maxLength={40} value={topicName} onChange={(event) => setTopicName(event.target.value)} required /></label><label>Keywords <small>Comma-separated, up to eight</small><input value={topicKeywords} onChange={(event) => setTopicKeywords(event.target.value)} /></label><div><button type="submit">Save topic</button><button type="button" onClick={() => setTopicEditorOpen(false)}>Cancel</button></div></form> : <button className="new-topic" disabled={demo || snapshot.topics.length >= 8} onClick={() => setTopicEditorOpen(true)}>Add a topic <small>{demo ? "Unavailable in demo mode" : snapshot.topics.length >= 8 ? "Eight-topic limit reached" : "Define the signals worth watching"}</small></button>}</div></section> : null}
-        {snapshot && view === "connect" ? <section className="connect-view"><header className="view-title"><h1>Bring the signal to Omarchy.</h1><p>Desktop bridge · Contract v{snapshot.schemaVersion}</p></header><p>Listening Post receives this same priority field and keeps the last good snapshot when Perception is unavailable.</p><ol className="pairing-steps"><li><b>Install the free companion</b><code>omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-entry --enable</code></li><li><b>Create a private device credential</b><span>One credential belongs to one workstation. Revoke it here if the machine or token leaves your control.</span></li><li><b>Run the connector, then refresh the bar</b><code>~/.config/omarchy/plugins/io.github.jeremylongshore.listening-post/connect-perception.sh</code></li></ol>{newDeviceToken ? <div className="token-reveal" role="status"><b>Copy this token now</b><code>{newDeviceToken}</code><small>Perception stores only its hash. This token will not be shown again.</small><button onClick={() => void copyToken()}>{tokenCopied ? "Copied" : "Copy token"}</button><small>Run the connector above and paste the token at its hidden prompt. Then refresh Listening Post from the bar or press r.</small><button className="token-finish" onClick={() => setNewDeviceToken(null)}>I finished connecting</button></div> : null}{devices.map((device) => <div className="device-card" key={device.id}><div><span className="pulse" /><b>{device.label}</b><small>{device.lastSeenAt ? `Last seen ${relativeTime(device.lastSeenAt)}` : "Created, but not seen by the API yet"}</small></div><button onClick={() => void removeDevice(device.id)}>Revoke</button></div>)}{devices.length === 0 && !newDeviceToken ? <div className="device-card"><div><span className="idle-dot" /><b>No device paired</b><small>{demo ? "Pairing is unavailable in the demo snapshot." : "Create a credential for one Omarchy workstation."}</small></div><button disabled={demo} onClick={() => void pairDevice()}>Create device credential</button></div> : null}{devices.length > 0 && !demo ? <button className="secondary-action" onClick={() => void pairDevice()}>Pair another device</button> : null}</section> : null}
+        {snapshot && view === "connect" ? <section className="connect-view"><header className="view-title"><h1>Bring the signal to Omarchy.</h1><p>Desktop bridge · Contract v{snapshot.schemaVersion}</p></header><p>Listening Post receives this same priority field and keeps the last good snapshot when Perception is unavailable.</p><ol className="pairing-steps"><li><b>Install the free companion</b><code>omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-entry --enable</code></li><li><b>Create a one-time pairing code</b><span>The code expires in ten minutes. The connector exchanges it for one revocable credential belonging to one workstation.</span></li><li><b>Run the connector, then refresh the bar</b><code>~/.config/omarchy/plugins/io.github.jeremylongshore.listening-post/connect-perception.sh</code></li></ol>{newPairing ? <div className="token-reveal" role="status"><b>Copy this pairing code now</b><code>{newPairing.code}</code><small>It expires at {new Date(newPairing.expiresAt).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })} and works once.</small><button onClick={() => void copyToken()}>{tokenCopied ? "Copied" : "Copy code"}</button><small>Run the connector above and paste the code at its hidden prompt. The connector keeps the resulting device token out of history and process arguments.</small><button className="token-finish" onClick={() => { setNewPairing(null); void loadDevices().then(setDevices).catch(() => undefined); }}>I finished connecting</button></div> : null}{devices.map((device) => <div className="device-card" key={device.id}><div><span className="pulse" /><b>{device.label}</b><small>{device.lastSeenAt ? `Last seen ${relativeTime(device.lastSeenAt)}` : "Paired, but has not fetched from the API yet"}</small></div><button onClick={() => void removeDevice(device.id)}>Revoke</button></div>)}{devices.length === 0 && !newPairing ? <div className="device-card"><div><span className="idle-dot" /><b>No device paired</b><small>{demo ? "Pairing is unavailable in the demo snapshot." : "Create a pairing code for one Omarchy workstation."}</small></div><button disabled={demo} onClick={() => void pairDevice()}>Create pairing code</button></div> : null}{devices.length > 0 && !demo ? <button className="secondary-action" onClick={() => void pairDevice()}>Pair another device</button> : null}</section> : null}
         {snapshot && view === "account" ? <section className="account-view"><header className="view-title"><h1>Your account</h1><p>Access and recovery</p></header><div className="account-record"><div><span>Purchase email</span><b>{account?.email ?? "Loading account…"}</b></div><div><span>Access</span><b>{account?.entitlement?.entitled ? "Active" : account?.entitlement?.status ?? "Checking"}</b></div><div><span>Paired devices</span><b>{devices.length} of 8</b></div></div><div className="account-actions">{account?.entitlement?.customerPortalUrl ? <a href={account.entitlement.customerPortalUrl}>Manage billing and cancellation</a> : <span>Customer portal link is not available yet.</span>}<a href="?page=support">Get support</a><a href="?page=privacy">Privacy</a><a href="?page=terms">Terms</a><a href="?page=acceptable-use">Acceptable use</a><button onClick={() => void signOut()}>Sign out of this browser</button></div>{!onboardingOpen ? <button className="secondary-action" onClick={() => setOnboardingOpen(true)}>Show first-field guide</button> : null}</section> : null}
       </main>
     </div>

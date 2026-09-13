@@ -21,6 +21,16 @@ export function openDatabase(path: string): PerceptionDatabase {
       last_seen_at TEXT,
       revoked_at TEXT
     );
+    CREATE TABLE IF NOT EXISTS pairing_codes (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      label TEXT NOT NULL CHECK(length(label) BETWEEN 1 AND 80),
+      code_hash TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      consumed_at TEXT,
+      device_id TEXT REFERENCES device_tokens(id) ON DELETE SET NULL
+    );
     CREATE TABLE IF NOT EXISTS email_identities (
       email TEXT PRIMARY KEY,
       account_id TEXT NOT NULL UNIQUE REFERENCES accounts(id) ON DELETE CASCADE,
@@ -46,6 +56,7 @@ export function openDatabase(path: string): PerceptionDatabase {
       subscription_id TEXT PRIMARY KEY,
       email TEXT NOT NULL,
       customer_id TEXT NOT NULL,
+      order_id TEXT,
       store_id INTEGER NOT NULL,
       product_id INTEGER NOT NULL,
       variant_id INTEGER NOT NULL,
@@ -65,6 +76,12 @@ export function openDatabase(path: string): PerceptionDatabase {
       received_at TEXT NOT NULL,
       outcome TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS billing_revocations (
+      subscription_id TEXT PRIMARY KEY REFERENCES billing_entitlements(subscription_id) ON DELETE CASCADE,
+      reason TEXT NOT NULL CHECK(reason IN ('full_refund')),
+      upstream_updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS customer_messages (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL,
@@ -73,8 +90,10 @@ export function openDatabase(path: string): PerceptionDatabase {
       created_at TEXT NOT NULL,
       sent_at TEXT,
       claimed_at TEXT,
+      next_attempt_at TEXT,
       attempts INTEGER NOT NULL DEFAULT 0 CHECK(attempts >= 0),
-      last_error TEXT
+      last_error TEXT,
+      updated_at TEXT
     );
     CREATE TABLE IF NOT EXISTS product_events (
       id TEXT PRIMARY KEY,
@@ -150,7 +169,20 @@ export function openDatabase(path: string): PerceptionDatabase {
       items_parsed INTEGER NOT NULL,
       signals_stored INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS billing_reconciliation_runs (
+      id TEXT PRIMARY KEY,
+      trigger TEXT NOT NULL CHECK(trigger IN ('startup','scheduled','manual')),
+      started_at TEXT NOT NULL,
+      finished_at TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('success','failed')),
+      subscriptions_seen INTEGER NOT NULL,
+      refunds_seen INTEGER NOT NULL DEFAULT 0,
+      events_applied INTEGER NOT NULL,
+      error_code TEXT
+    );
     CREATE INDEX IF NOT EXISTS idx_devices_hash ON device_tokens(token_hash) WHERE revoked_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_pairing_codes_hash ON pairing_codes(code_hash);
+    CREATE INDEX IF NOT EXISTS idx_pairing_codes_expiry ON pairing_codes(expires_at);
     CREATE INDEX IF NOT EXISTS idx_sessions_hash ON browser_sessions(token_hash);
     CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON browser_sessions(expires_at);
     CREATE INDEX IF NOT EXISTS idx_magic_links_hash ON magic_links(token_hash);
@@ -162,6 +194,17 @@ export function openDatabase(path: string): PerceptionDatabase {
     CREATE INDEX IF NOT EXISTS idx_signals_published ON signals(published_at DESC);
     CREATE INDEX IF NOT EXISTS idx_scores_account ON account_signal_scores(account_id,relevance DESC);
     CREATE INDEX IF NOT EXISTS idx_ingestion_runs_finished ON ingestion_runs(finished_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_billing_reconciliation_finished ON billing_reconciliation_runs(finished_at DESC);
   `);
+  ensureColumn(database, "customer_messages", "next_attempt_at", "TEXT");
+  ensureColumn(database, "customer_messages", "updated_at", "TEXT");
+  ensureColumn(database, "billing_entitlements", "order_id", "TEXT");
+  ensureColumn(database, "billing_reconciliation_runs", "refunds_seen", "INTEGER NOT NULL DEFAULT 0");
+  database.prepare("UPDATE customer_messages SET updated_at=COALESCE(updated_at,created_at)").run();
   return database;
+}
+
+function ensureColumn(database:PerceptionDatabase, table:string, column:string, definition:string):void {
+  const columns = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name:string }>;
+  if (!columns.some((item) => item.name === column)) database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }

@@ -27,13 +27,13 @@ test("manifest entry points exist and all module identities agree", () => {
   }
 })
 
-test("both authored marketplace descriptions tell the Perception companion story within the allowance", () => {
+test("both authored marketplace descriptions use the full allowance and tell the Perception companion story", () => {
   const manifest = JSON.parse(read("manifest.json"))
-  assert.ok(manifest.description.length > 400 && manifest.description.length <= 500)
-  assert.ok(manifest.barWidget.description.length > 400 && manifest.barWidget.description.length <= 500)
+  assert.equal(manifest.description.length, 500)
+  assert.equal(manifest.barWidget.description.length, 500)
   assert.equal(manifest.barWidget.description, manifest.description)
   for (const claim of [
-    "Perception signal room", "five-item daily brief", "device token",
+    "Perception signal room", "Omarchy bar", "Open its panel", "five-item daily brief", "device token",
     "out of process arguments and logs", "last good field", "syncs read state",
     "29 curated HTTPS feeds", "migration fallback", "No article bodies or telemetry"
   ]) assert.match(manifest.description, new RegExp(claim))
@@ -42,12 +42,16 @@ test("both authored marketplace descriptions tell the Perception companion story
 test("Perception credentials stay outside argv and durable public state", () => {
   const service = read("Service.qml")
   const connector = read("connect-perception.sh")
+  const secureState = read("bin/listening-post-secure-state")
   assert.doesNotMatch(service, /Authorization: Bearer|property string deviceToken:/)
   assert.match(service, /\["curl", "--config", root\.credentialPath/)
-  assert.match(connector, /read -r -s device_token/)
-  assert.match(connector, /install -d -m 700/)
-  assert.match(connector, /chmod 600/)
-  assert.match(connector, /header = "Authorization: Bearer %s"/)
+  assert.match(connector, /read -r -s pairing_code/)
+  assert.match(connector, /v1\/pairing\/exchange/)
+  assert.match(connector, /--data-binary @-/)
+  assert.doesNotMatch(connector, /--data(?:=|\s+)['"]?\$pairing_code/)
+  assert.match(connector, /listening-post-secure-state/)
+  for (const primitive of ["O_NOFOLLOW", "O_NONBLOCK", "O_EXCL", "flock", "sync", "same_object"])
+    assert.match(secureState, new RegExp(primitive))
   const persisted = service.match(/stateFile\.setText\(JSON\.stringify\(\{[\s\S]*?\}\)\)/)?.[0] || ""
   assert.doesNotMatch(persisted, /deviceToken|Authorization/)
   assert.match(service, /if \(root\.remoteActivated\)[\s\S]*root\.connectionState = "unpaired"/)

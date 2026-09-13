@@ -14,9 +14,11 @@ import { buildSnapshot } from "./snapshot.js";
 import { secureKeyMatches, scoreAccountSignals, type IngestionService } from "./ingestion.js";
 import { deliverPendingCustomerMessages, type CustomerMessageSender } from "./customer-messages.js";
 import { isProductEventName, recordProductEvent } from "./product-events.js";
+import { createPairingCode, exchangePairingCode } from "./pairing.js";
 
 export type AppConfig = {
-  webOrigin:string; apiOrigin?:string; secureCookies?:boolean; checkoutUrl?:string;
+  webOrigin:string; webAppUrl?:string; apiOrigin?:string; secureCookies?:boolean; checkoutUrl?:string;
+  logLevel?:string;
   magicLinkSender?:MagicLinkSender; lemonSqueezy?:LemonSqueezyConfig;
   customerMessageSender?:CustomerMessageSender;
   ingestionService?:IngestionService; ingestionKey?:string;
@@ -25,8 +27,19 @@ type TopicInput = { id?:unknown; name?:unknown; keywords?:unknown; enabled?:unkn
 
 export async function createApp(database:PerceptionDatabase, config:AppConfig | string) {
   const options:AppConfig = typeof config === "string" ? { webOrigin:config, secureCookies:false } : config;
+  const webAppUrl = options.webAppUrl ?? `${options.webOrigin}/`;
   const secureCookies = options.secureCookies ?? true;
-  const app = Fastify({ logger:false, bodyLimit:64 * 1024, trustProxy:true });
+  const app = Fastify({
+    logger:options.logLevel ? {
+      level:options.logLevel,
+      redact:[
+        "req.headers.authorization", "req.headers.cookie", "req.headers.x-ingestion-key",
+        "req.headers.x-signature", "res.headers.set-cookie",
+      ],
+    } : false,
+    bodyLimit:64 * 1024,
+    trustProxy:true,
+  });
   app.removeContentTypeParser("application/json");
   app.addContentTypeParser("application/json", { parseAs:"buffer" }, (request, body, done) => {
     if (request.url === "/v1/billing/webhook") return done(null, body);
@@ -62,6 +75,14 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
   };
 
   app.get("/healthz", async () => ({ status:"ok", service:"perception-api", contractVersion:"1.0" }));
+  app.get("/readyz", async (_request, reply) => {
+    try {
+      database.prepare("SELECT 1 AS ready").get();
+      return { status:"ready", service:"perception-api", contractVersion:"1.0" };
+    } catch {
+      return reply.code(503).send({ status:"not_ready", service:"perception-api" });
+    }
+  });
 
   app.post("/v1/events", { config:{ rateLimit:{ max:60, timeWindow:"1 minute" } } }, async (request, reply) => {
     const body = request.body;
@@ -98,7 +119,7 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
     if (validEmail(email)) {
       const token = createMagicLink(database, email);
       if (token) {
-        const url = `${options.webOrigin}/#magic=${encodeURIComponent(token)}`;
+        const url = `${webAppUrl}#magic=${encodeURIComponent(token)}`;
         try { await options.magicLinkSender.send({ email:email.trim().toLocaleLowerCase("en-US"), url }); }
         catch { database.prepare("DELETE FROM magic_links WHERE token_hash=?").run(hashOpaqueToken(token)); }
       }
@@ -154,7 +175,7 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
   });
 
   app.get("/v1/devices", async (request, reply) => {
-    const identity = requireBrowser(request, reply); if (!identity) return;
+    const identity = requireSession(request, reply); if (!identity) return;
     reply.header("Cache-Control", "private, no-store");
     const devices = database.prepare(`SELECT id,label,created_at,last_seen_at FROM device_tokens
       WHERE account_id=? AND revoked_at IS NULL ORDER BY created_at DESC`).all(identity.accountId) as Array<{ id:string; label:string; created_at:string; last_seen_at:string | null }>;
@@ -173,8 +194,27 @@ export async function createApp(database:PerceptionDatabase, config:AppConfig | 
     return reply.code(201).send({ device:{ id, label:label.trim(), createdAt:now, lastSeenAt:null }, token });
   });
 
-  app.delete("/v1/devices/:deviceId", async (request, reply) => {
+  app.post("/v1/pairing-codes", { config:{ rateLimit:{ max:10, timeWindow:"1 minute" } } }, async (request, reply) => {
     const identity = requireBrowser(request, reply); if (!identity) return;
+    const label = (request.body as { label?:unknown } | null)?.label;
+    if (typeof label !== "string" || !label.trim() || label.trim().length > 80) return reply.code(400).send({ error:"invalid_device_label" });
+    const active = database.prepare("SELECT count(*) AS count FROM device_tokens WHERE account_id=? AND revoked_at IS NULL").get(identity.accountId) as { count:number };
+    if (active.count >= 8) return reply.code(409).send({ error:"device_limit" });
+    const pairing = createPairingCode(database, identity.accountId, label.trim());
+    reply.header("Cache-Control", "private, no-store");
+    return reply.code(201).send(pairing);
+  });
+
+  app.post("/v1/pairing/exchange", { config:{ rateLimit:{ max:10, timeWindow:"15 minutes" } } }, async (request, reply) => {
+    const code = (request.body as { code?:unknown } | null)?.code;
+    const paired = typeof code === "string" ? exchangePairingCode(database, code) : null;
+    if (!paired) return reply.code(401).send({ error:"invalid_pairing_code" });
+    reply.header("Cache-Control", "private, no-store");
+    return reply.code(201).send(paired);
+  });
+
+  app.delete("/v1/devices/:deviceId", async (request, reply) => {
+    const identity = requireSession(request, reply); if (!identity) return;
     const { deviceId } = request.params as { deviceId:string };
     const result = database.prepare("UPDATE device_tokens SET revoked_at=? WHERE id=? AND account_id=? AND revoked_at IS NULL").run(new Date().toISOString(), deviceId, identity.accountId);
     if (result.changes !== 1) return reply.code(404).send({ error:"device_not_found" });

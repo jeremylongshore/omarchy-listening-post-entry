@@ -35,7 +35,7 @@ The result is a finite brief you can finish.
 
 Perception is the paid web signal room. Listening Post is the free MIT-licensed Omarchy companion that carries the actionable edge into your bar. A model release, pricing change, or open provider incident can speak. Routine chatter stays out of the way.
 
-**Open Perception:** https://perception.intentsolutions.io
+**Open Perception:** https://oma.intentsolutions.io/perception/
 
 Purchase through Lemon Squeezy, then use the purchase email for a one-time sign-in link. No social login. No password to create.
 

@@ -16,12 +16,19 @@ describe("public customer policies", () => {
     const html = renderToStaticMarkup(<PublicExperience page="acceptable-use" />);
     expect(html).toContain("Rollout draft");
     expect(html).toContain("Not yet production terms");
-    expect(html).toContain("Draft as of September 11, 2026");
+    expect(html).toContain("Draft as of September 12, 2026");
     expect(html).toContain("Use the field without harming it.");
     expect(html).toContain("Respect access boundaries");
     expect(html).toContain("Protect service reliability");
     expect(html).toContain("Respect source publishers");
     expect(html).toContain("Enforcement");
+  });
+
+  it("uses the verified operator and support route", () => {
+    const html = renderToStaticMarkup(<PublicExperience page="terms" />);
+    expect(html).toContain("IntentSolutions.io LLC");
+    expect(html).toContain("mailto:support@intentsolutions.io");
+    expect(html).not.toContain("mailto:jeremy@intentsolutions.io");
   });
 
   it("incorporates acceptable use into the service terms", () => {

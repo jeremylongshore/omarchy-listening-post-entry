@@ -45,3 +45,34 @@ test("requires signal ids that are safe for native deep links", async () => {
   assert.equal(result.valid, false);
   assert.match(result.errors.join("\n"), /signals\[0\]/);
 });
+
+test("rejects unknown fields at every strict object boundary", async () => {
+  const mutations = [
+    (snapshot) => { snapshot.unknown = true; },
+    (snapshot) => { snapshot.account.unknown = true; },
+    (snapshot) => { snapshot.topics[0].unknown = true; },
+    (snapshot) => { snapshot.signals[0].unknown = true; },
+    (snapshot) => { snapshot.brief.unknown = true; },
+    (snapshot) => { snapshot.brief.highlights[0].unknown = true; },
+    (snapshot) => { snapshot.sourceHealth[0].unknown = true; }
+  ];
+  for (const mutate of mutations) {
+    const snapshot = await fixture();
+    mutate(snapshot);
+    assert.equal(validateSnapshot(snapshot).valid, false);
+  }
+});
+
+test("rejects reversed time windows and oversized source health", async () => {
+  const snapshot = await fixture();
+  snapshot.staleAfter = "2026-09-01T00:00:00.000Z";
+  snapshot.brief.windowEnd = "2026-09-01T00:00:00.000Z";
+  snapshot.sourceHealth = Array.from({ length: 65 }, (_, index) => ({
+    id: `source_${index}`, name: `Source ${index}`, status: "healthy", checkedAt: "2026-09-12T00:00:00.000Z"
+  }));
+  const result = validateSnapshot(snapshot);
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join("\n"), /staleAfter/);
+  assert.match(result.errors.join("\n"), /windowEnd/);
+  assert.match(result.errors.join("\n"), /sourceHealth/);
+});

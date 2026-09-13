@@ -29,7 +29,7 @@ Install the companion:
 omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-entry --enable
 ```
 
-Open the signal room: https://perception.intentsolutions.io
+Open the signal room: https://oma.intentsolutions.io/perception/
 
 The plugin remains useful before pairing. After its first valid account response, it preserves the last good Perception field through interrupted or malformed responses instead of silently changing data sources.
 

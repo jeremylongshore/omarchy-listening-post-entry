@@ -11,7 +11,7 @@ describe("email account and device flow", () => {
     seedEntitlement(database);
     const sender:MagicLinkSender = { send:async message => { sent.push(message); } };
     app = await createApp(database, {
-      webOrigin:"https://perception.intentsolutions.io", apiOrigin:"https://api.perception.intentsolutions.io",
+      webOrigin:"https://oma.intentsolutions.io", webAppUrl:"https://oma.intentsolutions.io/perception/", apiOrigin:"https://api.perception.intentsolutions.io",
       secureCookies:false, checkoutUrl:"https://example.lemonsqueezy.com/buy/perception", magicLinkSender:sender,
     });
   });
@@ -24,11 +24,11 @@ describe("email account and device flow", () => {
     expect(sent[0].email).toBe("operator@example.com");
     const magicUrl = new URL(sent[0].url);
     const token = new URLSearchParams(magicUrl.hash.slice(1)).get("magic")!;
-    expect(magicUrl.origin + magicUrl.pathname).toBe("https://perception.intentsolutions.io/");
+    expect(magicUrl.origin + magicUrl.pathname).toBe("https://oma.intentsolutions.io/perception/");
     expect(magicUrl.search).toBe("");
     const stored = database.prepare("SELECT token_hash FROM magic_links").get() as { token_hash:string };
     expect(stored.token_hash).not.toContain(token);
-    const consumed = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ token } });
+    const consumed = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ token } });
     expect(consumed.statusCode).toBe(204);
     expect(consumed.headers["cache-control"]).toBe("no-store");
     const session = consumed.cookies.find(item => item.name === SESSION_COOKIE);
@@ -47,7 +47,7 @@ describe("email account and device flow", () => {
 
   it("consumes a magic link once and serves an entitled account", async () => {
     const { session, token } = await login();
-    const replay = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ token } });
+    const replay = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ token } });
     expect(replay.statusCode).toBe(401);
     const account = await app.inject({ method:"GET", url:"/v1/account", cookies:{ [SESSION_COOKIE]:session } });
     expect(account.statusCode).toBe(200);
@@ -60,7 +60,7 @@ describe("email account and device flow", () => {
     await app.inject({ method:"POST", url:"/v1/auth/magic-link", payload:{ email:"operator@example.com" } });
     const token = new URLSearchParams(new URL(sent[0].url).hash.slice(1)).get("magic")!;
     database.prepare("UPDATE magic_links SET expires_at='2000-01-01T00:00:00.000Z'").run();
-    const consumed = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ token } });
+    const consumed = await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ token } });
     expect(consumed.statusCode).toBe(401);
     expect((database.prepare("SELECT count(*) AS count FROM browser_sessions").get() as { count:number }).count).toBe(0);
   });
@@ -73,7 +73,7 @@ describe("email account and device flow", () => {
     expect((await app.inject({ method:"GET", url:"/v1/auth/magic-link/consume" })).statusCode).toBe(404);
     expect((database.prepare("SELECT consumed_at FROM magic_links").get() as { consumed_at:string | null }).consumed_at).toBeNull();
     expect((await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", payload:{ token } })).statusCode).toBe(403);
-    expect((await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://perception.intentsolutions.io" }, payload:{ token } })).statusCode).toBe(204);
+    expect((await app.inject({ method:"POST", url:"/v1/auth/magic-link/consume", headers:{ origin:"https://oma.intentsolutions.io" }, payload:{ token } })).statusCode).toBe(204);
   });
 
   it("denies product data when a signed-in account expires while preserving billing access", async () => {
@@ -84,6 +84,8 @@ describe("email account and device flow", () => {
     expect(snapshot.json()).toMatchObject({ error:"entitlement_required", checkoutUrl:"https://example.lemonsqueezy.com/buy/perception" });
     const account = await app.inject({ method:"GET", url:"/v1/account", cookies:{ [SESSION_COOKIE]:session } });
     expect(account.statusCode).toBe(200); expect(account.json()).toMatchObject({ entitlement:{ status:"expired", entitled:false } });
+    const devices = await app.inject({ method:"GET", url:"/v1/devices", cookies:{ [SESSION_COOKIE]:session } });
+    expect(devices.statusCode).toBe(200);
   });
 
   it("validates and atomically replaces bounded topics", async () => {

@@ -10,7 +10,10 @@ export function trackProductEvent(name:ProductEventName, once = false):void {
   if (once && emitted.has(name)) return;
   if (once) emitted.add(name);
   const origin = apiOrigin();
-  if (!origin || import.meta.env.DEV) return;
+  // A public pre-launch artifact may intentionally omit checkout while the
+  // production API is not yet admitted. Do not generate noisy failed requests
+  // until the paid boundary is fully configured.
+  if (!origin || !import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_URL || import.meta.env.DEV) return;
   void fetch(`${origin}/v1/events`, {
     method:"POST", credentials:"include", keepalive:true,
     headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ name }),

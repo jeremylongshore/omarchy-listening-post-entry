@@ -4,6 +4,11 @@ import { trackProductEvent } from "./product-events";
 type PublicPage = "privacy" | "terms" | "acceptable-use" | "support";
 
 const checkoutUrl = import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_URL as string | undefined;
+const priceLabel = import.meta.env.VITE_PERCEPTION_PRICE_LABEL as string | undefined;
+const billingSummary = import.meta.env.VITE_PERCEPTION_BILLING_SUMMARY as string | undefined;
+const refundSummary = import.meta.env.VITE_PERCEPTION_REFUND_SUMMARY as string | undefined;
+const operatorName = (import.meta.env.VITE_PERCEPTION_LEGAL_OPERATOR as string | undefined) || "IntentSolutions.io LLC";
+const supportEmail = (import.meta.env.VITE_PERCEPTION_SUPPORT_EMAIL as string | undefined) || "support@intentsolutions.io";
 const roomUrl = "?room=1";
 
 const sampleSignals = [
@@ -58,26 +63,26 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <h2>Service providers</h2>
     <p>Lemon Squeezy acts as merchant of record and processes checkout, payment, tax, refund, chargeback, and subscription records. The configured Intent Solutions mail service delivers transactional email. Hosting and network providers process the limited technical data required to serve the web app and API. Perception does not sell personal information or use cross-site advertising trackers.</p>
     <h2>Retention and control</h2>
-    <p>We retain account and entitlement records while access is active and as needed for security, billing reconciliation, legal obligations, and dispute handling. Minimal product funnel events are retained for 90 days and contain only a closed event name, time, and the Perception account identifier when a customer is signed in. You can revoke a device immediately in the signal room. For access, correction, export, or deletion requests, email <a href="mailto:jeremy@intentsolutions.io">jeremy@intentsolutions.io</a>. Some billing records may need to remain with the merchant of record.</p>
+    <p>We retain account and entitlement records while access is active and as needed for security, billing reconciliation, legal obligations, and dispute handling. Minimal product funnel events are retained for 90 days and contain only a closed event name, time, and the Perception account identifier when a customer is signed in. You can revoke a device immediately in the signal room. For access, correction, export, or deletion requests, email <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. Some billing records may need to remain with the merchant of record.</p>
     <h2>Security</h2>
     <p>Magic links expire and work once. Browser sessions use protected cookies. Listening Post tokens are shown once, stored hash-only by the API, and can be revoked from your account. No system can guarantee absolute security; report a suspected issue privately using the repository security instructions.</p>
-    <p className="policy-note">Draft as of September 11, 2026. Final operator identity and jurisdiction-specific language require review before production launch.</p>
+    <p className="policy-note">Draft as of September 12, 2026. Perception is operated by {operatorName}. Governing-law and refund language remain under review.</p>
   </> : page === "terms" ? <>
     <h1>Clear terms for a quiet product.</h1>
     <p className="policy-lead">These terms govern access to the paid Perception web service. Listening Post remains separately available under the MIT license in its source repository.</p>
     <h2>Access and accounts</h2>
     <p>Your Lemon Squeezy purchase email identifies your Perception account. You are responsible for access to that mailbox and for keeping paired-device credentials private. Your use must also follow the <a href="?page=acceptable-use">Acceptable Use Policy</a>.</p>
     <h2>Subscription and cancellation</h2>
-    <p>Price, billing interval, taxes, renewal terms, and any trial are shown at checkout. Lemon Squeezy manages payment and the customer portal. Cancellation stops future renewal; access continues only through the paid-through date represented by your entitlement.</p>
+    <p>{billingSummary || "Price, billing interval, taxes, renewal terms, and any trial are shown at checkout."} Lemon Squeezy manages payment and the customer portal. Cancellation stops future renewal; access continues only through the paid-through date represented by your entitlement.</p>
     <h2>Refunds</h2>
-    <p>Lemon Squeezy, as merchant of record, processes refunds and chargebacks. Eligibility follows the final policy displayed at checkout, applicable law, and any written support commitment. Before launch, the checkout and this page must be updated with the final refund window and operator identity.</p>
+    <p>Lemon Squeezy, as merchant of record, processes refunds and chargebacks. {refundSummary || "Refund eligibility remains pending final approval and must match the policy displayed at checkout."}</p>
     <h2>Service and sources</h2>
     <p>Perception curates and ranks third-party source material. Source availability, timing, and accuracy remain outside our control. The service may change, pause, or end, and it is not a substitute for security, legal, financial, medical, or operational incident advice. Material product changes will be communicated through an appropriate customer channel.</p>
     <h2>Intellectual property</h2>
     <p>The Perception service, interface, and original materials are protected by applicable intellectual-property law. Source articles remain the property of their publishers. The Listening Post repository is governed by its included MIT license.</p>
     <h2>Contact</h2>
-    <p>Questions about access, billing, or these terms can be sent to <a href="mailto:jeremy@intentsolutions.io">jeremy@intentsolutions.io</a>.</p>
-    <p className="policy-note">Draft as of September 11, 2026. This rollout draft requires legal review and final operator, governing-law, liability, and refund language before production launch.</p>
+    <p>Questions about access, billing, or these terms can be sent to <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. Perception is operated by {operatorName}.</p>
+    <p className="policy-note">Draft as of September 12, 2026. Governing-law, liability, and refund language remain subject to final approval before paid production launch.</p>
   </> : page === "acceptable-use" ? <>
     <h1>Use the field without harming it.</h1>
     <p className="policy-lead">This Acceptable Use Policy protects Perception, its customers, the publishers it points to, and the infrastructure that keeps the signal room available.</p>
@@ -92,8 +97,8 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <h2>Enforcement</h2>
     <p>We may limit, suspend, or terminate access when reasonably necessary to investigate or stop prohibited activity, protect customers or infrastructure, comply with law, or respond to an urgent security risk. When practical, we will explain the restriction and provide a route to contact support.</p>
     <h2>Contact</h2>
-    <p>Questions about permitted use or responsible security reporting can be sent to <a href="mailto:jeremy@intentsolutions.io">jeremy@intentsolutions.io</a>.</p>
-    <p className="policy-note">Draft as of September 11, 2026. This rollout draft requires legal review and final operator and enforcement language before production launch.</p>
+    <p>Questions about permitted use or responsible security reporting can be sent to <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.</p>
+    <p className="policy-note">Draft as of September 12, 2026. This rollout draft requires final governing-law and enforcement approval before paid production launch.</p>
   </> : <>
     <h1>Get the signal connected.</h1>
     <p className="policy-lead">Use the purchase email for account access. Use the private connector for Listening Post. If either path stops, start here.</p>
@@ -106,9 +111,9 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <h2>Billing and cancellation</h2>
     <p>Use the customer-portal link in your account for payment details, invoices, and cancellation. Email support if the portal link is missing or the entitlement shown in Perception does not match your receipt.</p>
     <h2>Still stuck?</h2>
-    <p>Email <a href="mailto:jeremy@intentsolutions.io">jeremy@intentsolutions.io</a> with the purchase email, what you expected, and the exact error. Never send a magic-link token, device token, browser cookie, private path, or unrelated logs.</p>
+    <p>Email <a href={`mailto:${supportEmail}`}>{supportEmail}</a> with the purchase email, what you expected, and the exact error. Never send a magic-link token, device token, browser cookie, private path, or unrelated logs.</p>
   </>;
-  return <div className="public-site policy-site"><PublicHeader /><main className="policy-page"><a className="back-link" href="/">Back to Perception</a>{page !== "support" ? <aside className="policy-draft" aria-label="Policy approval status"><strong>Rollout draft</strong><span>Not yet production terms. Operator, jurisdiction, refund, and enforcement language remain under review.</span></aside> : null}{content}</main><PublicFooter /></div>;
+  return <div className="public-site policy-site"><PublicHeader /><main className="policy-page"><a className="back-link" href={import.meta.env.BASE_URL}>Back to Perception</a>{page !== "support" ? <aside className="policy-draft" aria-label="Policy approval status"><strong>Rollout draft</strong><span>Not yet production terms. Governing law, refund eligibility, and final commercial configuration remain under review.</span></aside> : null}{content}</main><PublicFooter /></div>;
 }
 
 export function PublicExperience({ page }:{ page:string | null }) {
@@ -170,7 +175,7 @@ export function PublicExperience({ page }:{ page:string | null }) {
 
       <section id="access" className="access-section">
         <div><h2>Simple, honest access.</h2><p>Purchase Perception through Lemon Squeezy, then use that same email to enter your private field. Listening Post pairs from inside the account and can be revoked at any time.</p></div>
-        <div className="access-offer"><h3>{checkoutUrl ? "Price shown at secure checkout" : "Checkout configuration pending"}</h3><ul><li>Ranked priority field and finite daily brief</li><li>Up to eight customer-defined topics</li><li>Source health and direct source links</li><li>Listening Post device pairing and revocation</li><li>Passwordless purchase-email access</li></ul><a className="primary-action" href={purchaseHref} onClick={() => trackProductEvent(checkoutUrl ? "checkout_opened" : "sign_in_opened")}>{purchaseLabel} <Arrow /></a><small>Billing terms, taxes, renewal, and refund eligibility appear before payment.</small></div>
+        <div className="access-offer"><h3>{checkoutUrl && priceLabel ? priceLabel : checkoutUrl ? "Price shown at secure checkout" : "Checkout configuration pending"}</h3><ul><li>Ranked priority field and finite daily brief</li><li>Up to eight customer-defined topics</li><li>Source health and direct source links</li><li>Listening Post device pairing and revocation</li><li>Passwordless purchase-email access</li></ul><a className="primary-action" href={purchaseHref} onClick={() => trackProductEvent(checkoutUrl ? "checkout_opened" : "sign_in_opened")}>{purchaseLabel} <Arrow /></a><small>{billingSummary || "Billing terms, taxes, renewal, and refund eligibility appear before payment."}</small></div>
       </section>
 
       <section className="faq-section">

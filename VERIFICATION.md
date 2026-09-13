@@ -4,28 +4,29 @@ What has actually been proven, how, and what remains.
 
 ## Unit suite (dev box + CI)
 
-**96 plugin tests and 5 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
+**104 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
 layer: the RSS and Atom parsers against captured bodies from all twenty-nine
 live sources, format detection anchored to the document root, lane
 classification, ISO-week clustering by source with product labels, the
 quiet-changelog collapse, merge and unconditional retention cap, read-state,
-notification gating, personalization mapping, OPML round-trip, the state
+notification gating, personalization mapping, the state
 record, strict Perception contract parsing, and native deep links. Security regressions are pinned: `safeUrl` rejecting every shell
 metacharacter, and `parseFeed` returning in under a second on a 2 MB
 unterminated-CDATA body, arbitrary API origins failing closed, and device tokens
 remaining outside argv and `state.json`. The API suite separately proves
 the full purchase-email account and entitled-device lifecycle.
 
-## Integrated Perception product (2026-09-11)
+## Integrated Perception product (2026-09-13)
 
 The final local tree passes `npm run test:product` and
 `npm run build:product`:
 
-- **96 plugin tests** pass with 100% statement, line, and function coverage
-  and 92.95% branch coverage for `Model.js`.
-- **5 shared-contract tests** pass, including strict native-safe signal IDs,
-  HTTPS links, resource bounds, and brief-reference integrity.
-- **7 web tests and 53 API tests** pass, for **161 tests across the complete
+- **104 plugin tests** pass with 100% statement, line, and function coverage
+  and 95.56% branch coverage for `Model.js`.
+- **7 shared-contract tests** pass, including strict native-safe signal IDs,
+  HTTPS links, unknown-field rejection, exact resource bounds, ordered time
+  windows, and brief-reference integrity.
+- **8 web tests and 65 API tests** pass, for **184 tests across the complete
   product**. The API total includes one continuous
   customer journey: a signed Lemon Squeezy subscription webhook grants the
   purchase email, a one-time magic link creates the browser session, the
@@ -40,6 +41,14 @@ The final local tree passes `npm run test:product` and
   Impeccable mechanical detector returned no findings. The final independent
   visual verdict scored all requested contrast, legal-draft signaling, and
   mobile policy-target fixes resolved and returned `ship`.
+- The real application is live at `https://oma.intentsolutions.io/perception/`
+  through portfolio PRs 20, 21, 22, 24, and 25. The final published revision is
+  `d77d73b25555d5a26e4d5ffa82aa782105384b48` from GitHub Pages run
+  `34736344176`. Final desktop and 390 px browser probes returned HTTP 200 for
+  the root and support query route, one page heading, no horizontal overflow,
+  and zero console errors; versioned `index-k8OO506T.js`, CSS, and
+  `favicon-B3SB3wD4.svg` assets return 200.
+  Illustrative content and pending checkout are explicitly labeled.
 - Lifecycle messages are written to a durable SQLite outbox before delivery.
   Tests prove idempotent creation, single delivery, stale-claim recovery, retry
   backoff, accessible HTML plus plain text, and safe escaping of customer names.
@@ -60,40 +69,43 @@ The final local tree passes `npm run test:product` and
   secret values.
 - The production TypeScript/Vite builds for the web application and API pass.
 - The exact current API tree builds as Docker image
-  `sha256:383e1e69ad172d7ec0c76f1c2272d6df571f387fc2f5ad1e0d5edec945f6104e`
-  (265,555,030 bytes). A disposable production-configured container ran as the
-  non-root `node` user, returned the contract-v1 health payload, reported SQLite
-  integrity `ok`, contained the durable `customer_messages` and `product_events`
-  tables, and stopped cleanly. Its anonymous data volume and container were
-  removed automatically. The earlier full 29-source ingestion and recovery
-  rehearsal below used the immediately preceding API image; the newly added
-  schema is additive and separately covered by the current 53-test API suite.
-- An isolated-volume recovery rehearsal gracefully stopped a populated source
-  database (1 ingestion run, 29 source-health rows, 293 signals), copied it to
-  a backup with SHA-256
-  `1190f8e767a094179451f71fff6f89fdac06b23331b351d81f27bca674c34377`,
-  restored that backup into a separate empty volume, and started the exact same
-  image from it. The restored API returned the expected health response,
-  SQLite integrity remained `ok`, the original run was retained, and a new
-  scheduled ingestion completed. Both temporary volumes and the backup file
-  were then removed.
+  `sha256:5776a08d4b45f29d45811ffc14cadd22bc923699531a92b5a5dd8c79c6be3f0e`
+  (265,599,860 bytes). A disposable development-shaped smoke container ran as
+  the non-root `node` user, returned HTTP 200 from `/healthz` and the
+  database-backed `/readyz`, reported SQLite integrity `ok`, exposed all 22
+  application tables, and contained the `refunds_seen` migration. A separate
+  production-start attempt with intentionally absent provider configuration
+  exited 1 before listen and named only missing field names.
+- An online SQLite backup of that exact image, SHA-256
+  `24a69eb6134924629b4a6df273f01e81d5f16e3945aa3a0375603d5114abc012`,
+  preserved a controlled account marker, restored into a separate empty named
+  volume, passed `/readyz`, retained the marker and all 22 tables, and reported
+  integrity `ok`. The two explicitly named temporary containers, volumes, and
+  backup file were removed after verification. A prior rehearsal also proved a
+  populated 29-source ingestion backup/restore; production ingestion itself is
+  still blocked on deployment.
 - A production-mode browser journey proved the purchase-email login screen,
   non-enumerating magic-link response, checkout route, desktop layout, and
   responsive mobile layout. A separate integrated snapshot journey proved
   signal deep-link focus, ranked rows, the five-item brief cap, and Omarchy
   pairing UI without browser console errors.
-- A fresh temporary Buzz rig accepted the package with the real
-  `omarchy-plugin-validate` command. Qt 6 `qmllint` found no QML syntax errors;
-  standalone lint emitted only the expected unresolved shell import warnings
-  because the shell import path is supplied by the compositor.
+- The prior Buzz rig accepted the package with the real
+  `omarchy-plugin-validate` command and Qt 6 `qmllint` found no QML syntax
+  errors. `qmllint` is not installed in the present environment; current QML
+  behavior is therefore covered by the contract/static suite, not represented
+  as a fresh rig run.
 - `npm audit --omit=dev` is clean in the root, web, and API packages; gitleaks
   found no secret; actionlint accepted every workflow; three repeated
   concurrent plugin-suite runs passed.
-- A release consistency audit scanned 19 Markdown artifacts with no broken
-  relative links, license/runtime conflict, stale authentication claim, or
-  domain contradiction. It aligned the README command lane with CI, documented
-  independent package version lines, and brought the root description and
-  Unreleased changelog forward to the web-product architecture.
+- `npm run test:mutation` evaluated 1,636 mutants: 1,479 killed, 6 timed out,
+  151 survived, none were uncovered or errored, and the 90.77% score passed the
+  unchanged 90% breaking threshold.
+- A fresh document-consistency pass found no deterministic domain, license,
+  version, runtime, or relative-link contradiction. It aligned the README's
+  root validation commands with CI, documented the optional Perl pairing
+  helper, preserved independent package version lines, and kept incomplete
+  production claims explicitly marked. The default authority registry was not
+  present, but no conflicting unowned fact required adjudication.
 
 The account boundary is deliberate: Lemon Squeezy subscription webhooks are
 the entitlement authority, and the normalized purchase email is the account
@@ -105,19 +117,18 @@ Fixtures were captured 2026-08-20 from all twenty-nine live sources; the two
 URLs that had moved that day (Google AI blog, Anthropic status → status.claude.com)
 were re-pointed before capture. Recapture procedure: `docs/FIXTURES.md`.
 
-## Node-free proof (the install-actually-works test)
+## No Node/Python polling proof (historical rig)
 
-The plugin ships **no external runtime**: no `bin/`, no node, no python. This
-matters because a stock Omarchy install has no node on the graphical session
-PATH (Omarchy installs node through mise, whose shims are not exported to the
-session), so a plugin with a node poller would silently never populate for a
-real user even though it works on a developer box.
+The graphical poller ships no Node or Python daemon. This matters because a
+stock Omarchy graphical session does not expose mise's Node shim. The optional
+one-time pairing command added after this rig receipt uses shell, curl, and a
+Perl credential helper, then exits; it is not part of the polling process.
 
 Proven on the Omarchy rig by installing the plugin and then **shadowing `node`
 with a stub that exits 127** before launching the shell:
 
 - [x] `omarchy plugin add <github-url> --enable` clones and enables cleanly
-- [x] the installed tree contains **no `bin/` directory** at all
+- [x] the then-current installed tree contained no runtime daemon
 - [x] with node shadowed out of PATH, the QML service still polled
       **29/29 sources, 324 items**, and wrote its state file
 - [x] the panel rendered every lane from that store (status incidents, model
@@ -148,8 +159,10 @@ plugin. What they caught and this repo then fixed:
   option-shaped title cannot be parsed as an option. Also fixed: quadratic
   ReDoS in the two lazy-scan regexes (input now capped at 64 KB), the
   unread-exempt store cap that let a hostile OPML dark the plugin (cap is
-  now unconditional), symlink-follow in the atomic write (`wx` flag), OPML
-  extras growth and private-host SSRF (capped and host-screened).
+  now unconditional), and symlink-follow in the atomic write (`wx` flag).
+  The custom-feed and OPML surface was subsequently removed entirely, closing
+  the extras-growth and private-host request-forgery path instead of screening
+  user-supplied hosts.
 - **Correctness (BLOCK):** the poll's stale-snapshot write reverted a
   concurrent mark-read (poll now re-reads on-disk read flags before
   writing), and the panel's busy-guard dropped a mark-read keystroke that
@@ -189,17 +202,19 @@ plugin. What they caught and this repo then fixed:
 
 ## Honest boundary
 
-The current QML package is statically proven by the real Omarchy validator,
-Qt lint, 96 plugin tests, and strict contract fixtures. Its earlier local-feed
+The current QML package is statically proven by 104 plugin tests and strict
+contract fixtures. The earlier package passed the real Omarchy validator and
+Qt lint; those tools were not available for a fresh run here. Its earlier local-feed
 mode was also proven by a live rig render. A live compositor journey against a
 deployed Perception account—including offline recovery—is not yet proven.
 
-The exact-tree Docker build and disposable runtime are proven. The host still
-has very little free disk space, and shared Docker cache was left intact because
-it may belong to other projects. GitHub-backed install, upgrade,
-application-revision rollback, and an exact-revision submission run remain
-unproven because this workspace session explicitly forbids all Git operations.
-Database backup and isolated restore are proven locally. The customer product is
-rollout-ready as a local artifact, but no production DNS, Lemon Squeezy, SMTP,
-database, or VPS deployment has been performed. The remaining operator-owned
-gates are tracked in Beads and enumerated in `docs/PERCEPTION-ROLLOUT.md`.
+The exact-tree Docker build, disposable runtime, fail-closed production start,
+and isolated backup/restore are proven. Shared Docker cache was left intact
+because it may belong to other projects. GitHub-backed install, upgrade,
+application-revision rollback, and an exact-revision source publication remain
+unproven because this repository explicitly states `Git authority: no git
+operations`. The real React customer surface is deployed at
+`https://oma.intentsolutions.io/perception/` through the portfolio repository;
+the production API, Lemon Squeezy catalog/webhook, delivered transactional
+email, production ingestion, and live pairing are not deployed or proven. The
+remaining gates are tracked in Beads and `docs/PERCEPTION-ROLLOUT.md`.
