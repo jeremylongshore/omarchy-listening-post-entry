@@ -8,5 +8,8 @@
 | Initialize private state before loading or writing | `tests/contract.test.js`, Buzz E2E |
 | Keep new installs quiet and personalize without reading usage-file contents | `tests/model.test.js`, Buzz E2E |
 | Support pointer and keyboard operation | `tests/a11y.test.js` |
-| Use exact 500-character copy and an authored SVG banner | C43, `tests/contract.test.js` |
+| Tell the Perception companion story within the 500-character allowance and retain an authored SVG banner | C43, `tests/contract.test.js` |
 | Show all four lanes in a direct real-shell marketplace image | Buzz E2E, C43, hash-bound visual approval |
+| Validate bounded contract-v1 snapshots and brief references before replacing last-good | `tests/model.test.js`, shared contract tests |
+| Keep device tokens out of argv, logs, links, and persisted snapshot state | `tests/contract.test.js`, API authentication tests |
+| Share read state between device and account while rechecking entitlement | `api/src/app.test.ts`, `Service.qml` queue contract |

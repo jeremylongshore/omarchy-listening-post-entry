@@ -1,0 +1,129 @@
+#!/usr/bin/perl
+# Descriptor-bound credential publication for Listening Post. The interactive
+# shell connector owns prompting; this helper alone owns persistent writes.
+use strict;
+use warnings;
+
+use Fcntl qw(:DEFAULT :flock :mode);
+use File::Spec;
+use IO::Handle;
+
+umask 0077;
+my $FINAL = 'listening-post.curlrc';
+my $LOCK = '.listening-post.lock';
+my $MAX_INPUT = 300;
+
+sub open_config_chain {
+    my $home = $ENV{HOME} // '';
+    my $base = length($ENV{XDG_CONFIG_HOME} // '')
+        ? $ENV{XDG_CONFIG_HOME}
+        : File::Spec->catdir($home, '.config');
+    die "config root must be absolute\n" unless File::Spec->file_name_is_absolute($base);
+    my $full = File::Spec->catdir($base, 'perception');
+    my @parts = grep { length($_) } File::Spec->splitdir($full);
+    die "unsafe config path\n" if grep { $_ eq '.' || $_ eq '..' } @parts;
+
+    my $current;
+    sysopen($current, '/', O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
+        or die "cannot pin filesystem root\n";
+    my @chain = ($current);
+    for my $part (@parts) {
+        chdir($current) or die "cannot traverse config path\n";
+        my $next;
+        unless (sysopen($next, $part, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)) {
+            mkdir($part, 0700);
+            sysopen($next, $part, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
+                or die "unsafe config path component\n";
+        }
+        my @st = stat($next);
+        die "unsafe config path component\n" unless @st && S_ISDIR($st[2]);
+        push @chain, $next;
+        $current = $next;
+    }
+    my @final_dir = stat($current);
+    die "unsafe config directory owner\n"
+        unless @final_dir && S_ISDIR($final_dir[2]) && $final_dir[4] == $<;
+    chmod(0700, $current) or die "cannot privatize config directory\n";
+    chdir($current) or die "cannot retain config directory\n";
+    return (\@chain, $current);
+}
+
+sub lock_state {
+    my $fh;
+    sysopen($fh, $LOCK, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600)
+        or die "cannot open credential lock\n";
+    my @st = stat($fh);
+    die "unsafe credential lock\n"
+        unless @st && S_ISREG($st[2]) && $st[4] == $<;
+    chmod(0600, $fh) or die "cannot privatize credential lock\n";
+    flock($fh, LOCK_EX) or die "cannot lock credentials\n";
+    return $fh;
+}
+
+sub same_object {
+    my ($left, $right) = @_;
+    return @$left && @$right && $left->[0] == $right->[0]
+        && $left->[1] == $right->[1] && S_ISREG($left->[2]) && S_ISREG($right->[2]);
+}
+
+sub read_input {
+    my $raw = '';
+    while (length($raw) <= $MAX_INPUT) {
+        my $n = sysread(STDIN, my $chunk, 128);
+        last unless defined($n) && $n > 0;
+        $raw .= $chunk;
+    }
+    die "credential input exceeded bound\n" if length($raw) > $MAX_INPUT;
+    $raw =~ s/\r?\n\z//;
+    die "invalid token\n" unless $raw =~ /\A[A-Za-z0-9_-]{32,256}\z/;
+    return sprintf "header = \"Authorization: Bearer %s\"\n", $raw;
+}
+
+sub open_temp {
+    for (1 .. 64) {
+        my $name = sprintf('.listening-post.%d.%08x%08x', $$,
+            int(rand(0xffffffff)), int(rand(0xffffffff)));
+        my $fh;
+        if (sysopen($fh, $name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600)) {
+            chmod(0600, $fh) or die "cannot privatize credential temp\n";
+            return ($name, $fh);
+        }
+    }
+    die "cannot create credential temp\n";
+}
+
+sub publish {
+    my ($payload, $dir_fh) = @_;
+    my ($temp, $fh) = open_temp();
+    my @opened = stat($fh);
+    my $published = 0;
+    my $ok = eval {
+        my $offset = 0;
+        while ($offset < length($payload)) {
+            my $n = syswrite($fh, substr($payload, $offset));
+            die "credential write failed\n" unless defined($n) && $n > 0;
+            $offset += $n;
+        }
+        $fh->sync or die "credential fsync failed\n";
+        my @named = lstat($temp);
+        die "credential temp identity changed\n" unless same_object(\@opened, \@named);
+        rename($temp, $FINAL) or die "credential replace failed\n";
+        $published = 1;
+        my @final = lstat($FINAL);
+        die "credential publication identity changed\n" unless same_object(\@opened, \@final);
+        $dir_fh->sync or die "credential directory fsync failed\n";
+        close($fh) or die "credential close failed\n";
+        1;
+    };
+    return if $ok;
+    my $error = $@ || "credential publication failed\n";
+    close($fh);
+    unlink($temp) unless $published;
+    die $error;
+}
+
+die "usage: listening-post-secure-state --write\n"
+    unless @ARGV == 1 && $ARGV[0] eq '--write';
+my ($chain, $dir_fh) = open_config_chain();
+my $lock_fh = lock_state();
+publish(read_input(), $dir_fh);

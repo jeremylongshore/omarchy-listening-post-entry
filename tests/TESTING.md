@@ -10,7 +10,7 @@ Listening Post uses a seven-layer fail-closed test model.
 | Integration | QML, manifest, fixed-network, state-lifecycle, and accessibility contracts |
 | System | `rig-verify.sh` runs the real Omarchy validator and `qmllint` on Buzz |
 | E2E | `e2e/buzz.sh` starts an isolated real shell, drives unchanged production fetch and parsing boundaries, opens the panel, and captures it |
-| Acceptance | C43 requires exact copy, a themed banner, a hash-bound render receipt, and explicit visual approval |
+| Acceptance | C43 requires bounded companion copy, a themed banner, a hash-bound render receipt, and explicit visual approval |
 
 The default suite enforces 95% statements, lines, and functions plus 90%
 branches. Mutation testing blocks below 90%. The race lane repeats the complete

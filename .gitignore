@@ -8,3 +8,19 @@ render-check.png
 *.tmp
 *.swp
 .DS_Store
+/web/dist/
+/web/*.tsbuildinfo
+/web/vite.config.js
+/web/vite.config.d.ts
+/web/.env*
+!/web/.env.example
+/api/dist/
+/api/data/
+/api/.env*
+!/api/.env.example
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/

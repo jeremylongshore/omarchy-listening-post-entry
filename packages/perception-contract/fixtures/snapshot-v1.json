@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-09-10T18:00:00.000Z",
+  "staleAfter": "2026-09-10T18:30:00.000Z",
+  "account": { "id": "acct_demo", "displayName": "Jeremy" },
+  "topics": [
+    { "id": "topic_agents", "name": "Agent infrastructure", "keywords": ["agent", "MCP", "tool use"], "enabled": true },
+    { "id": "topic_models", "name": "Model releases", "keywords": ["model", "release", "preview"], "enabled": true }
+  ],
+  "signals": [
+    { "id": "signal_claude_status", "title": "Elevated API errors under investigation", "url": "https://status.claude.com/", "source": "Claude Status", "lane": "incident", "relevance": 100, "resolved": false, "quiet": false, "matchedTopicIds": [], "publishedAt": "2026-09-10T17:21:00.000Z", "read": false },
+    { "id": "signal_openai_release", "title": "New model release expands tool-use reliability", "url": "https://openai.com/news/", "source": "OpenAI", "lane": "release", "relevance": 94, "resolved": true, "quiet": false, "matchedTopicIds": ["topic_agents", "topic_models"], "publishedAt": "2026-09-10T15:42:00.000Z", "read": false },
+    { "id": "signal_mcp_engineering", "title": "Building safer boundaries for remote MCP tools", "url": "https://modelcontextprotocol.io/", "source": "Model Context Protocol", "lane": "engineering", "relevance": 82, "resolved": true, "quiet": false, "matchedTopicIds": ["topic_agents"], "publishedAt": "2026-09-10T11:05:00.000Z", "read": true }
+  ],
+  "brief": {
+    "windowStart": "2026-09-09T18:00:00.000Z",
+    "windowEnd": "2026-09-10T18:00:00.000Z",
+    "highlights": [
+      { "signalId": "signal_claude_status", "reason": "Active provider incident; operational impact takes precedence." },
+      { "signalId": "signal_openai_release", "reason": "Matches Agent infrastructure and Model releases." },
+      { "signalId": "signal_mcp_engineering", "reason": "Matches Agent infrastructure." }
+    ]
+  },
+  "sourceHealth": [
+    { "id": "openai", "name": "OpenAI", "status": "healthy", "checkedAt": "2026-09-10T17:59:00.000Z" },
+    { "id": "claude-status", "name": "Claude Status", "status": "healthy", "checkedAt": "2026-09-10T17:59:00.000Z" },
+    { "id": "mcp", "name": "Model Context Protocol", "status": "degraded", "checkedAt": "2026-09-10T17:58:00.000Z" }
+  ]
+}

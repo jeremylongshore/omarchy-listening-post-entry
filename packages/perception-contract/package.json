@@ -1,0 +1,10 @@
+{
+  "name": "@listening-post/perception-contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./schema": "./perception-v1.schema.json"
+  }
+}
