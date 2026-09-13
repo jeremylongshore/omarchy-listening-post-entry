@@ -221,7 +221,7 @@ test("settings reader returns only the bounded Listening Post configuration", ()
       deviceTokenFile: "~/.config/perception/listening-post.curlrc",
       secret: "must-not-leak"
     }] } }
-  }))
+  }), { mode: 0o644 })
   const result = run(x, ["--read-settings"], "")
   assert.equal(result.status, 0, result.stderr)
   assert.deepEqual(JSON.parse(result.stdout), {
@@ -233,8 +233,8 @@ test("settings reader returns only the bounded Listening Post configuration", ()
   cleanup(x)
 })
 
-test("settings reads reject symlinks, FIFOs, oversized files, and malformed JSON without hanging", () => {
-  for (const attack of ["symlink", "fifo", "oversized", "malformed"]) {
+test("settings reads reject symlinks, FIFOs, oversized, writable, and malformed files without hanging", () => {
+  for (const attack of ["symlink", "fifo", "oversized", "writable", "malformed"]) {
     const x = setup(); fs.mkdirSync(x.settingsDir, { recursive: true })
     const final = path.join(x.settingsDir, "shell.json")
     if (attack === "symlink") {
@@ -243,7 +243,9 @@ test("settings reads reject symlinks, FIFOs, oversized files, and malformed JSON
     } else if (attack === "fifo") {
       assert.equal(spawnSync("mkfifo", [final]).status, 0)
     } else {
-      fs.writeFileSync(final, attack === "oversized" ? "x".repeat(256 * 1024 + 1) : "not-json")
+      fs.writeFileSync(final, attack === "oversized" ? "x".repeat(256 * 1024 + 1)
+        : attack === "writable" ? "{}" : "not-json",
+      { mode: attack === "writable" ? 0o666 : 0o600 })
     }
     const result = run(x, ["--read-settings"], "")
     assert.notEqual(result.status, 0, `${attack} unexpectedly passed`)

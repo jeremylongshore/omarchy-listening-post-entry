@@ -118,6 +118,7 @@ sub read_named {
     my @opened = stat($fh);
     return (undef, 'unsafe') unless @opened && S_ISREG($opened[2])
         && $opened[4] == $< && $opened[7] <= $maximum
+        && ($opened[2] & 022) == 0
         && (!$private || ($opened[2] & 077) == 0);
     my $raw = '';
     while (length($raw) <= $maximum) {
