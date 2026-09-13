@@ -17,9 +17,9 @@ status: ready
 
 ## Subject line variants
 
-1. **Perception is on watch** ★ — Clear, compact, and native to the product.
-2. **Nothing new is a feature** — Contrarian; strongest curiosity test.
-3. **I built a quieter way to track AI** — Personal builder note.
+1. **Perception is on watch** ★ - Clear, compact, and native to the product.
+2. **Nothing new is a feature** - Contrarian; strongest curiosity test.
+3. **I built a quieter way to track AI** - Personal builder note.
 
 Preview: **A paid signal room with a free Omarchy post**
 
@@ -45,4 +45,4 @@ https://github.com/jeremylongshore/omarchy-listening-post-entry
 
 Quiet by design.
 
-— Jeremy
+- Jeremy

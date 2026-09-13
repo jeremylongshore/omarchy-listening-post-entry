@@ -8,7 +8,7 @@
 
 **Perception watches the web. Listening Post taps your shoulder when it matters.**
 
-Perception is not another destination a customer must remember to check. The web app does the deep work—watching, ranking, explaining, and preserving sources—while Listening Post delivers only the actionable edge inside Omarchy.
+Perception is not another destination a customer must remember to check. The web app does the deep work-watching, ranking, explaining, and preserving sources-while Listening Post delivers only the actionable edge inside Omarchy.
 
 ## Unique Mechanism
 

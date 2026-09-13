@@ -18,9 +18,9 @@ status: ready-for-automation
 
 ## Subject line variants
 
-1. **Bring your Perception field to Omarchy** ★ — Clear product-to-companion bridge.
-2. **The bar should know when to stay quiet** — Contrarian benefit with brand fit.
-3. **want the signal in your bar?** — Personal question for reply/open-rate testing.
+1. **Bring your Perception field to Omarchy** ★ - Clear product-to-companion bridge.
+2. **The bar should know when to stay quiet** - Contrarian benefit with brand fit.
+3. **want the signal in your bar?** - Personal question for reply/open-rate testing.
 
 Preview: **Pair one workstation with a revocable device credential**
 
@@ -38,4 +38,4 @@ The API stores only the token's hash. You can revoke the device from your accoun
 
 If you do not want a desktop companion, skip this. The Perception signal room remains the complete paid product.
 
-— Perception
+- Perception

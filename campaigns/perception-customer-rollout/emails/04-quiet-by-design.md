@@ -18,9 +18,9 @@ status: ready-for-automation
 
 ## Subject line variants
 
-1. **A quiet field is working** ★ — Reframes a possible objection as product value.
-2. **Perception is allowed to find nothing** — Contrarian and memorable.
-3. **your brief does not need to be endless** — Personal and benefit-led.
+1. **A quiet field is working** ★ - Reframes a possible objection as product value.
+2. **Perception is allowed to find nothing** - Contrarian and memorable.
+3. **your brief does not need to be endless** - Personal and benefit-led.
 
 Preview: **The absence of a signal is part of the product**
 
@@ -36,6 +36,6 @@ The goal is not more reading. It is confidence that you can return to the work.
 
 **Review your brief**
 
-— Perception
+- Perception
 
 Quiet by design.

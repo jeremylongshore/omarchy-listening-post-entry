@@ -206,7 +206,7 @@ The current QML package is statically proven by 104 plugin tests and strict
 contract fixtures. The earlier package passed the real Omarchy validator and
 Qt lint; those tools were not available for a fresh run here. Its earlier local-feed
 mode was also proven by a live rig render. A live compositor journey against a
-deployed Perception account—including offline recovery—is not yet proven.
+deployed Perception account-including offline recovery-is not yet proven.
 
 The exact-tree Docker build, disposable runtime, fail-closed production start,
 and isolated backup/restore are proven. Shared Docker cache was left intact

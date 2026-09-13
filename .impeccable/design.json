@@ -229,7 +229,7 @@
   ],
   "narrative": {
     "northStar": "The Beacon Editorial Field",
-    "overview": "Perception joins two deliberately different environments into one coherent product. The public threshold uses the Intent Solutions Beacon field system: quiet field paper, forest ink, route orange, signal teal, marker yellow, square construction, and a split Intent Solutions / Perception wordmark. It should feel like an assured field document that helps a technical operator decide, not like a conventional SaaS landing page.\n\nThe private signal room remains a dark, dense operational workspace. Newsreader supplies editorial judgment across both surfaces, Manrope makes explanation humane, and DM Mono proves state and provenance. The source-backed field window is the hinge between them: public material and private information grammar in one precise artifact.\n\nHustleStats informed the public conversion sequence only. It is not visual authority: do not import its identity, motifs, styling, or brand vocabulary into Perception.",
+    "overview": "Perception joins two deliberately different environments into one coherent product. The public threshold uses the Intent Solutions Beacon field system: quiet field paper, forest ink, route orange, signal teal, marker yellow, square construction, and a split Intent Solutions / Perception wordmark. It should feel like an assured field document that helps a technical operator decide, not like a conventional SaaS landing page.\n\nThe private signal room remains a dark, dense operational workspace. Newsreader supplies editorial judgment across both surfaces, Manrope makes explanation humane, and DM Mono proves state and provenance. The source-backed field window is the hinge between them: public material and private information grammar in one precise artifact.\n\nA proven product page informed the public conversion sequence only. It is not visual authority: do not import another product's identity, motifs, styling, or brand vocabulary into Perception.",
     "keyCharacteristics": [
       "Light Beacon field paper for public and policy surfaces; dark blue-black for the private signal room.",
       "Forest bands distinguish Listening Post and the closing action from the paper field.",
@@ -260,7 +260,7 @@
       "Don't use Route Orange Action as small text on Field Paper or rely on color alone to communicate state.",
       "Don't turn the interface into a continuous feed or fill a quiet state with synthetic activity.",
       "Don't replace source-backed editorial hierarchy with generic dashboard density.",
-      "Don't import HustleStats visual identity; its influence ends at conversion sequence.",
+      "Don't import another product's visual identity; external influence ends at conversion sequence.",
       "Don't obscure the distinction between Perception, the optional Listening Post companion, and the Intent Solutions parent brand."
     ]
   }

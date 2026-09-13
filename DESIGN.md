@@ -183,10 +183,10 @@ The palette has two coordinated environments: Beacon field materials outside the
 
 ### Hierarchy
 
-- **Display** (500, fluid 58–96px, 0.88): Public hero statements only, balanced tightly with selective italic Route Orange Display emphasis.
-- **Headline** (500, fluid 46–86px, 0.94): Major public sections and strong private-view declarations.
-- **Title** (500, fluid 17–23px, 1.15): Signal titles, compact editorial findings, and offer headings.
-- **Body** (400, 17px, 1.7): Public explanatory copy; private operational copy steps down to the implemented 11–13px range when density requires it.
+- **Display** (500, fluid 58-96px, 0.88): Public hero statements only, balanced tightly with selective italic Route Orange Display emphasis.
+- **Headline** (500, fluid 46-86px, 0.94): Major public sections and strong private-view declarations.
+- **Title** (500, fluid 17-23px, 1.15): Signal titles, compact editorial findings, and offer headings.
+- **Body** (400, 17px, 1.7): Public explanatory copy; private operational copy steps down to the implemented 11-13px range when density requires it.
 - **Label** (500, 10px, 0.1em tracking, uppercase): Field state, provenance, lane, step, and section metadata.
 - **Action** (650, 12px, compact): Primary calls to action, often paired with the forward arrow.
 

@@ -18,9 +18,9 @@ status: implemented
 
 ## Subject line variants
 
-1. **Perception is on watch** ★ — Safe bet; confirms the product state in the brand's language.
-2. **Your field is ready** — Boldest and shortest; useful when the receipt already carries the product name.
-3. **here is your Perception access** — Personal and literal; tests warmth against editorial voice.
+1. **Perception is on watch** ★ - Safe bet; confirms the product state in the brand's language.
+2. **Your field is ready** - Boldest and shortest; useful when the receipt already carries the product name.
+3. **here is your Perception access** - Personal and literal; tests warmth against editorial voice.
 
 Preview: **Your purchase email is now your account**
 
@@ -36,6 +36,6 @@ Your purchase email is now your Perception account. Open the signal room, reques
 
 Listening Post is optional. Pair it from the Omarchy view after the field feels right.
 
-— Perception
+- Perception
 
 Quiet by design.

@@ -42,7 +42,7 @@ GitHub Pages serves only static browser assets. It is not a trusted compute or p
 - Omarchy devices use revocable, high-entropy bearer tokens created from an authenticated browser session. Only token hashes are stored server-side.
 - Device authentication also rechecks the owning account's current entitlement, so expiring a subscription stops both web and plugin product access without rotating credentials.
 - The plugin sends its token only to the configured Perception HTTPS origin and never includes it in logs, UI, links, or persisted snapshots.
-- API responses contain bounded headlines, topic identifiers, reasons, source health, and HTTPS links—not article bodies.
+- API responses contain bounded headlines, topic identifiers, reasons, source health, and HTTPS links-not article bodies.
 - The QML client validates contract version, shape, bounds, and links before replacing its last-good cache.
 
 ## Interface direction
@@ -55,7 +55,7 @@ The web app is an editorial signal room rather than a generic analytics dashboar
 - Each source is fetched with a 12-second timeout and a streaming 2 MB ceiling. RSS and Atom parsing is capped at 60 entries per source and strips markup, controls, bidirectional overrides, and unsafe links before persistence. Article bodies are never stored.
 - Stable source-and-guid hashes deduplicate repeated runs. Signals retain at most 45 days of history and the database retains the newest 100 ingestion receipts.
 - Per-account ranking is deterministic: incidents always score 100 and sort first; release, pricing, and engineering lanes have explicit base scores; case-insensitive literal keyword matches add bounded topic weight and an explainable reason.
-- Snapshot briefs accept a 1–168 hour window, default to 24 hours, and contain at most five ranked signals whose IDs and HTTPS links are present in the same response.
+- Snapshot briefs accept a 1-168 hour window, default to 24 hours, and contain at most five ranked signals whose IDs and HTTPS links are present in the same response.
 - Source failures update health without deleting previously stored signals. Snapshot freshness derives from the last run with at least one healthy source, so an all-source failure exposes the prior field as stale instead of pretending it was refreshed.
 - The scheduler runs immediately at API startup and then every 15 minutes. Operators can run the same single-flight pipeline with `POST /v1/ingestion` and `X-Ingestion-Key`; the key is deployment-only.
 

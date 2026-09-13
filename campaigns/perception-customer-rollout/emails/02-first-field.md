@@ -18,9 +18,9 @@ status: ready-for-automation
 
 ## Subject line variants
 
-1. **Two minutes to your first useful field** ★ — Direct benefit and honest time commitment.
-2. **Do not configure everything** — Contrarian; reduces setup anxiety.
-3. **one thing to do in Perception** — Personal; makes the next action feel small.
+1. **Two minutes to your first useful field** ★ - Direct benefit and honest time commitment.
+2. **Do not configure everything** - Contrarian; reduces setup anxiety.
+3. **one thing to do in Perception** - Personal; makes the next action feel small.
 
 Preview: **Confirm a topic, then open one real source**
 
@@ -38,4 +38,4 @@ You can tune the rest after the field proves useful.
 
 Next, I will show you how Listening Post carries that same field into Omarchy without turning the bar into another feed.
 
-— Perception
+- Perception
