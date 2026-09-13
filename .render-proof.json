@@ -1,13 +1,13 @@
 {
-  "fingerprint": "06d4b89a482763f3cae3e47daedcdea1bd59155f7cc08de6f03aa988d7f7e378",
-  "sourceCommit": "84e5d74c747b6f9fedcf3bca82d495c0503a788e",
-  "sourceDirty": false,
-  "sourcePackageSha256": "1dc1f4981af4711ae603b6342be669b960289dacae8d6d00faf1bc1dbac39b51",
-  "remotePackageSha256": "1dc1f4981af4711ae603b6342be669b960289dacae8d6d00faf1bc1dbac39b51",
+  "fingerprint": "96312f189da936d2555c7924e01df09eddd8b689cc34ecac76f9d43ac3662f95",
+  "sourceCommit": "1394ff10bd40c0916dcc7bf8f9aad398c9fb8e5f",
+  "sourceDirty": true,
+  "sourcePackageSha256": "f0fcc6f3668bb2c722c8176b3180d7bfef9907feed6c8040d68cbeebd9793d19",
+  "remotePackageSha256": "f0fcc6f3668bb2c722c8176b3180d7bfef9907feed6c8040d68cbeebd9793d19",
   "rig": "intent-ops-buzz/omarchy-rig",
-  "runId": "listening-post-632688",
-  "rawShellLogSha256": "24d49b24a03fe16f0dcb176431cd7102587232a12c79de12d6381594fb94a1e3",
-  "fixtureSha256": "6acd6f2cf81dcea61c6b8b43882d4f1a4ba666560d6b8e228834bf4490a4eb52",
+  "runId": "listening-post-925535",
+  "rawShellLogSha256": "3c610f5a91ca5e5aa98776dd55e9b10eb6c0529d65f2417a0b43e74caa9e0c6d",
+  "fixtureSha256": "0deda72b431b8fb212856d3ea6cebb5f219349311ad64033a23766b81e97af91",
   "curlArgvLogSha256": "733c3c8760b0c5bc2c18fb3fe15c97bf2ae07399864aa100394997d61f1faec4",
   "packageBoundary": "runtime tree only; receipts, tests, developer scripts, reports, and preview excluded",
   "evidenceBoundary": "isolated real Omarchy shell and unchanged Service, Model, bar, and panel under a dedicated headless compositor; deterministic scrubbed RSS and Atom through the unchanged bounded curl boundary; complete production poll; live IPC toggle; direct full-frame grim capture with no crop or image post-processing",
@@ -25,15 +25,17 @@
   "outputScale": 1.25,
   "visualInspection": {
     "status": "approved",
-    "previewSha256": "589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7",
+    "previewSha256": "1f3aa11e3b3de78aeeebf0862ce7fca3ebf18e03a71c1df6ab79b7089be916bd",
+    "inspector": "jeremylongshore",
+    "inspectedAt": "2026-09-13T23:56:49Z",
     "checks": [
       "product value visible at marketplace scale",
       "no primary content clipped",
       "plugin-specific visual identity"
     ]
   },
-  "previewSha256": "589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7",
+  "previewSha256": "1f3aa11e3b3de78aeeebf0862ce7fca3ebf18e03a71c1df6ab79b7089be916bd",
   "dimensions": "1280 x 720",
   "nonblackCoverage": 0.447635,
-  "capturedAt": "2026-09-13T23:16:36Z"
+  "capturedAt": "2026-09-13T23:56:37Z"
 }

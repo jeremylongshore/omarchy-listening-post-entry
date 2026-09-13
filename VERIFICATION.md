@@ -91,15 +91,16 @@ The final local tree passes `npm run test:product` and
   responsive mobile layout. A separate integrated snapshot journey proved
   signal deep-link focus, ranked rows, the five-item brief cap, and Omarchy
   pairing UI without browser console errors.
-- The Buzz rig accepted source commit `84e5d74c747b6f9fedcf3bca82d495c0503a788e`
+- The Buzz rig accepted source commit `1394ff10bd40c0916dcc7bf8f9aad398c9fb8e5f`
   with the real `omarchy-plugin-validate` command, Qt 6 `qmllint` reported zero
   errors, and the isolated Quickshell render completed all 29 bounded fetches,
   populated all four lanes, and opened the panel through IPC without a
   plugin-sourced warning. The direct 1280 x 720 capture is `preview.png`, SHA-256
-  `589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7`.
+  `1f3aa11e3b3de78aeeebf0862ce7fca3ebf18e03a71c1df6ab79b7089be916bd`.
 - `npm audit --omit=dev` is clean in the root, web, and API packages; gitleaks
   found no secret; actionlint accepted every workflow; three repeated
-  concurrent plugin-suite runs passed.
+  concurrent plugin-suite runs passed. OSV-Scanner v2.3.3 recursively scanned
+  all three lockfiles and reported no issues.
 - `npm run test:mutation` evaluated 1,636 mutants: 1,479 killed, 6 timed out,
   151 survived, none were uncovered or errored, and the 90.77% score passed the
   unchanged 90% breaking threshold.
