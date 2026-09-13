@@ -89,11 +89,12 @@ The final local tree passes `npm run test:product` and
   responsive mobile layout. A separate integrated snapshot journey proved
   signal deep-link focus, ranked rows, the five-item brief cap, and Omarchy
   pairing UI without browser console errors.
-- The prior Buzz rig accepted the package with the real
-  `omarchy-plugin-validate` command and Qt 6 `qmllint` found no QML syntax
-  errors. `qmllint` is not installed in the present environment; current QML
-  behavior is therefore covered by the contract/static suite, not represented
-  as a fresh rig run.
+- The Buzz rig accepted source commit `84e5d74c747b6f9fedcf3bca82d495c0503a788e`
+  with the real `omarchy-plugin-validate` command, Qt 6 `qmllint` reported zero
+  errors, and the isolated Quickshell render completed all 29 bounded fetches,
+  populated all four lanes, and opened the panel through IPC without a
+  plugin-sourced warning. The direct 1280 x 720 capture is `preview.png`, SHA-256
+  `589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7`.
 - `npm audit --omit=dev` is clean in the root, web, and API packages; gitleaks
   found no secret; actionlint accepted every workflow; three repeated
   concurrent plugin-suite runs passed.
@@ -200,20 +201,31 @@ plugin. What they caught and this repo then fixed:
 - [x] No plugin-sourced errors in the shell log (only the standard headless
       pipewire/UPower/hyprland-socket noise)
 
+## Fresh Buzz rig receipt, 2026-09-13
+
+- [x] `omarchy-plugin-validate .` exit 0
+- [x] `qmllint BarWidget.qml Panel.qml Service.qml` 0 errors
+- [x] source and remote validation packages had identical SHA-256 values
+- [x] all 29 bounded production fetch invocations completed through the
+      unchanged curl boundary
+- [x] incident, release, pricing, and engineering lanes populated
+- [x] IPC opened the live panel inside an isolated real Omarchy shell
+- [x] direct 1280 x 720 capture had 0.447635 nonblack coverage
+- [x] visual inspection is bound to the exact preview hash and confirms product
+      value, unclipped primary content, and plugin-specific identity
+
 ## Honest boundary
 
-The current QML package is statically proven by 104 plugin tests and strict
-contract fixtures. The earlier package passed the real Omarchy validator and
-Qt lint; those tools were not available for a fresh run here. Its earlier local-feed
-mode was also proven by a live rig render. A live compositor journey against a
-deployed Perception account-including offline recovery-is not yet proven.
+The current QML package is proven by 104 plugin tests, strict contract fixtures,
+the real Omarchy validator, Qt lint, and a live isolated compositor render of
+the local 29-source migration path. A live compositor journey against a
+deployed Perception account, including offline recovery, is not yet proven.
 
 The exact-tree Docker build, disposable runtime, fail-closed production start,
 and isolated backup/restore are proven. Shared Docker cache was left intact
 because it may belong to other projects. GitHub-backed install, upgrade,
-application-revision rollback, and an exact-revision source publication remain
-unproven because this repository explicitly states `Git authority: no git
-operations`. The real React customer surface is deployed at
+application-revision rollback, and the publication workflow remain unproven
+until the prepared branch passes remote CI and merges. The real React customer surface is deployed at
 `https://oma.intentsolutions.io/perception/` through the portfolio repository;
 the production API, Lemon Squeezy catalog/webhook, delivered transactional
 email, production ingestion, and live pairing are not deployed or proven. The

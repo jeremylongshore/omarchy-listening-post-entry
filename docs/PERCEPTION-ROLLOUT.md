@@ -102,9 +102,9 @@ reader monthly pricing, without an unproven trial or enterprise promise.
   six-hour billing reconciliation.
 - [x] Prove additive migration of the pre-launch database schema and SQLite
   integrity in an isolated file.
-- [ ] Publish the exact repository source revision through the governed VPS
-  workflow. The current source tree cannot be pushed because this repository's
-  Beads policy explicitly says `Git authority: no git operations`.
+- [ ] Publish the exact repository source revision after the prepared clean
+  branch passes remote CI. Production API deployment remains independently
+  gated by provider configuration and the deployment enable variable.
 - [ ] Create `/srv/perception-src/.env` mode 0600 and the persistent data volume,
   then deploy the non-root container on loopback port 8790.
 - [ ] Add the Caddy route and DNS for `api.perception.intentsolutions.io` only

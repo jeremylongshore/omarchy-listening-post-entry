@@ -1,13 +1,13 @@
 {
-  "fingerprint": "ac4b9b31c8b64d369af1ec69fc3ec8b94fba6f10688d9fc499bf3409551c9051",
-  "sourceCommit": "37c5c7e88d958e459f4df851e68a1b58a4ceb705",
+  "fingerprint": "06d4b89a482763f3cae3e47daedcdea1bd59155f7cc08de6f03aa988d7f7e378",
+  "sourceCommit": "84e5d74c747b6f9fedcf3bca82d495c0503a788e",
   "sourceDirty": false,
-  "sourcePackageSha256": "a992a56d477d7a4e65cb0411308cceff916b087f916806114375fd2099eb6e09",
-  "remotePackageSha256": "a992a56d477d7a4e65cb0411308cceff916b087f916806114375fd2099eb6e09",
+  "sourcePackageSha256": "1dc1f4981af4711ae603b6342be669b960289dacae8d6d00faf1bc1dbac39b51",
+  "remotePackageSha256": "1dc1f4981af4711ae603b6342be669b960289dacae8d6d00faf1bc1dbac39b51",
   "rig": "intent-ops-buzz/omarchy-rig",
-  "runId": "listening-post-2191304",
-  "rawShellLogSha256": "db8bd6ccba8bc9427d78a79f92984a984c661a9df9743d5c53a569b4a3a4aa0d",
-  "fixtureSha256": "3097ac9495726bb7bdea40495838edb2bdbd03316465eb0bed53ae2ab9cd57fd",
+  "runId": "listening-post-632688",
+  "rawShellLogSha256": "24d49b24a03fe16f0dcb176431cd7102587232a12c79de12d6381594fb94a1e3",
+  "fixtureSha256": "6acd6f2cf81dcea61c6b8b43882d4f1a4ba666560d6b8e228834bf4490a4eb52",
   "curlArgvLogSha256": "733c3c8760b0c5bc2c18fb3fe15c97bf2ae07399864aa100394997d61f1faec4",
   "packageBoundary": "runtime tree only; receipts, tests, developer scripts, reports, and preview excluded",
   "evidenceBoundary": "isolated real Omarchy shell and unchanged Service, Model, bar, and panel under a dedicated headless compositor; deterministic scrubbed RSS and Atom through the unchanged bounded curl boundary; complete production poll; live IPC toggle; direct full-frame grim capture with no crop or image post-processing",
@@ -25,17 +25,15 @@
   "outputScale": 1.25,
   "visualInspection": {
     "status": "approved",
-    "previewSha256": "532094164a607d8e71e77526828199d0371a997f33357b9aa9bfb1122e7d00a7",
-    "inspector": "jeremylongshore",
-    "inspectedAt": "2026-09-09T04:09:31Z",
+    "previewSha256": "589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7",
     "checks": [
       "product value visible at marketplace scale",
       "no primary content clipped",
       "plugin-specific visual identity"
     ]
   },
-  "previewSha256": "532094164a607d8e71e77526828199d0371a997f33357b9aa9bfb1122e7d00a7",
+  "previewSha256": "589b3888dd31a6f337b82b3cd3e99e8bf6e2c7a11a1de607de7b77bcef744fb7",
   "dimensions": "1280 x 720",
   "nonblackCoverage": 0.447635,
-  "capturedAt": "2026-09-09T04:09:19Z"
+  "capturedAt": "2026-09-13T23:16:36Z"
 }
