@@ -9,6 +9,12 @@ const billingSummary = import.meta.env.VITE_PERCEPTION_BILLING_SUMMARY as string
 const refundSummary = import.meta.env.VITE_PERCEPTION_REFUND_SUMMARY as string | undefined;
 const operatorName = (import.meta.env.VITE_PERCEPTION_LEGAL_OPERATOR as string | undefined) || "IntentSolutions.io LLC";
 const supportEmail = (import.meta.env.VITE_PERCEPTION_SUPPORT_EMAIL as string | undefined) || "support@intentsolutions.io";
+const termsApproved = import.meta.env.VITE_PERCEPTION_TERMS_APPROVED === "true";
+const governingLaw = (import.meta.env.VITE_PERCEPTION_GOVERNING_LAW as string | undefined) || "Alabama, United States";
+const termsEffectiveDate = (import.meta.env.VITE_PERCEPTION_TERMS_EFFECTIVE_DATE as string | undefined) || "September 14, 2026";
+const policyStatus = termsApproved
+  ? <p className="policy-note">Effective {termsEffectiveDate}. Perception is operated by {operatorName}.</p>
+  : <p className="policy-note">Draft as of September 12, 2026. Not yet production terms.</p>;
 const roomUrl = "?room=1";
 
 const sampleSignals = [
@@ -66,7 +72,7 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <p>We retain account and entitlement records while access is active and as needed for security, billing reconciliation, legal obligations, and dispute handling. Minimal product funnel events are retained for 90 days and contain only a closed event name, time, and the Perception account identifier when a customer is signed in. You can revoke a device immediately in the signal room. For access, correction, export, or deletion requests, email <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. Some billing records may need to remain with the merchant of record.</p>
     <h2>Security</h2>
     <p>Magic links expire and work once. Browser sessions use protected cookies. Listening Post tokens are shown once, stored hash-only by the API, and can be revoked from your account. No system can guarantee absolute security; report a suspected issue privately using the repository security instructions.</p>
-    <p className="policy-note">Draft as of September 12, 2026. Perception is operated by {operatorName}. Governing-law and refund language remain under review.</p>
+    {policyStatus}
   </> : page === "terms" ? <>
     <h1>Clear terms for a quiet product.</h1>
     <p className="policy-lead">These terms govern access to the paid Perception web service. Listening Post remains separately available under the MIT license in its source repository.</p>
@@ -80,9 +86,11 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <p>Perception curates and ranks third-party source material. Source availability, timing, and accuracy remain outside our control. The service may change, pause, or end, and it is not a substitute for security, legal, financial, medical, or operational incident advice. Material product changes will be communicated through an appropriate customer channel.</p>
     <h2>Intellectual property</h2>
     <p>The Perception service, interface, and original materials are protected by applicable intellectual-property law. Source articles remain the property of their publishers. The Listening Post repository is governed by its included MIT license.</p>
+    <h2>Governing law</h2>
+    <p>These terms are governed by the laws of {governingLaw}, without regard to its conflict-of-law rules.</p>
     <h2>Contact</h2>
     <p>Questions about access, billing, or these terms can be sent to <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. Perception is operated by {operatorName}.</p>
-    <p className="policy-note">Draft as of September 12, 2026. Governing-law, liability, and refund language remain subject to final approval before paid production launch.</p>
+    {policyStatus}
   </> : page === "acceptable-use" ? <>
     <h1>Use the field without harming it.</h1>
     <p className="policy-lead">This Acceptable Use Policy protects Perception, its customers, the publishers it points to, and the infrastructure that keeps the signal room available.</p>
@@ -98,7 +106,7 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <p>We may limit, suspend, or terminate access when reasonably necessary to investigate or stop prohibited activity, protect customers or infrastructure, comply with law, or respond to an urgent security risk. When practical, we will explain the restriction and provide a route to contact support.</p>
     <h2>Contact</h2>
     <p>Questions about permitted use or responsible security reporting can be sent to <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.</p>
-    <p className="policy-note">Draft as of September 12, 2026. This rollout draft requires final governing-law and enforcement approval before paid production launch.</p>
+    {policyStatus}
   </> : <>
     <h1>Get the signal connected.</h1>
     <p className="policy-lead">Use the purchase email for account access. Use the private connector for Listening Post. If either path stops, start here.</p>
@@ -113,7 +121,7 @@ function PolicyPage({ page }:{ page:PublicPage }) {
     <h2>Still stuck?</h2>
     <p>Email <a href={`mailto:${supportEmail}`}>{supportEmail}</a> with the purchase email, what you expected, and the exact error. Never send a magic-link token, device token, browser cookie, private path, or unrelated logs.</p>
   </>;
-  return <div className="public-site policy-site"><PublicHeader /><main className="policy-page"><a className="back-link" href={import.meta.env.BASE_URL}>Back to Perception</a>{page !== "support" ? <aside className="policy-draft" aria-label="Policy approval status"><strong>Rollout draft</strong><span>Not yet production terms. Governing law, refund eligibility, and final commercial configuration remain under review.</span></aside> : null}{content}</main><PublicFooter /></div>;
+  return <div className="public-site policy-site"><PublicHeader /><main className="policy-page"><a className="back-link" href={import.meta.env.BASE_URL}>Back to Perception</a>{page !== "support" && !termsApproved ? <aside className="policy-draft" aria-label="Policy approval status"><strong>Rollout draft</strong><span>Not yet production terms. Provider catalog and production publication remain incomplete.</span></aside> : null}{content}</main><PublicFooter /></div>;
 }
 
 export function PublicExperience({ page }:{ page:string | null }) {

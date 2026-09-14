@@ -218,6 +218,14 @@ plugin. What they caught and this repo then fixed:
 - [x] direct 1280 x 720 capture had 0.447635 nonblack coverage
 - [x] visual inspection is bound to the exact preview hash and confirms product
       value, unclipped primary content, and plugin-specific identity
+- [x] the exact public default-branch command
+      `omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-entry --enable --yes`
+      succeeded in an isolated real Omarchy shell at merged revision
+      `8ab32e3684c92d08f773a583a1e5513d1563eb7b`; enablement was present and the
+      installed runtime helper retained mode 0755
+
+The sanitized command/output receipt is retained at
+`docs/receipts/buzz-default-install-2026-09-14.txt`.
 
 ## Honest boundary
 
@@ -228,9 +236,9 @@ deployed Perception account, including offline recovery, is not yet proven.
 
 The exact-tree Docker build, disposable runtime, fail-closed production start,
 and isolated backup/restore are proven. Shared Docker cache was left intact
-because it may belong to other projects. GitHub-backed install, upgrade,
-application-revision rollback, and the publication workflow remain unproven
-until the prepared branch passes remote CI and merges. The real React customer surface is deployed at
+because it may belong to other projects. GitHub-backed default-branch install
+and source publication are proven at merge revision `8ab32e3684c`; upgrade and
+application-revision rollback remain unproven. The real React customer surface is deployed at
 `https://oma.intentsolutions.io/perception/` through the portfolio repository;
 the production API, Lemon Squeezy catalog/webhook, delivered transactional
 email, production ingestion, and live pairing are not deployed or proven. The

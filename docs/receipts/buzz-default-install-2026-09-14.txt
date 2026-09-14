@@ -1,0 +1,15 @@
+Perception / Listening Post default-branch install receipt
+Captured: 2026-09-14 UTC
+Rig: Buzz, isolated real headless Sway and Quickshell session
+
+PUBLIC_SOURCE=https://github.com/jeremylongshore/omarchy-listening-post-entry
+SOURCE_REVISION=8ab32e3684c92d08f773a583a1e5513d1563eb7b
+COMMAND=omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-entry --enable --yes
+RESULT=success
+INSTALLED_HEAD=8ab32e3684c92d08f773a583a1e5513d1563eb7b
+ENABLEMENT=present
+HELPER_MODE=755
+
+Boundary: this receipt proves public default-branch add and enable. It does not
+claim a live paid Perception account, production API, checkout, email delivery,
+or paired-mode customer journey.

@@ -9,5 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_PERCEPTION_LEGAL_OPERATOR?: string;
   readonly VITE_PERCEPTION_SUPPORT_EMAIL?: string;
   readonly VITE_PERCEPTION_TERMS_APPROVED?: string;
+  readonly VITE_PERCEPTION_GOVERNING_LAW?: string;
+  readonly VITE_PERCEPTION_TERMS_EFFECTIVE_DATE?: string;
 }
 interface ImportMeta { readonly env: ImportMetaEnv; }
