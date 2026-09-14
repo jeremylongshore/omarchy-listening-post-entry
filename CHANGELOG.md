@@ -34,6 +34,10 @@ Regenerate with `scripts/gen-changelog.sh`.
 
 - Treat Perception as the primary web product and Listening Post as its free,
   compact Omarchy interface. Wait State remains a separate plugin.
+- Replace direct QML state and credential file access with a short-lived
+  `/usr/bin/perl` helper. A stock Omarchy installation was verified to provide
+  Perl and curl; absence or failure leaves paid pairing unavailable without
+  stopping the unpaired curated-feed mode.
 - Move the canonical product route to `https://oma.intentsolutions.io/perception/`
   under the shared OMA portfolio and retire the standalone web hostname.
 - Publish the real React product experience at the canonical route while
@@ -42,6 +46,13 @@ Regenerate with `scripts/gen-changelog.sh`.
 - Keep the original 29-source poller as unpaired migration behavior. After the
   first valid Perception response, retain only the last-good account field
   through offline, authentication, entitlement, and malformed-response states.
+
+### Removed
+
+- Remove the unused `Model.parseOpml` and `Model.toOpml` helpers. Custom feed
+  hosts were already removed in 1.1.0, the panel exposed no OPML controls, and
+  existing users retain the shipped 29-source curated feed with no data
+  migration required.
 
 ### Security
 
