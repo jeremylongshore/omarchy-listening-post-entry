@@ -30,8 +30,9 @@ events, and a public pre-launch bundle are identified separately.
   and audit-harness gates pass. Exact commands and counts are in
   `VERIFICATION.md`.
 - [x] Set repository web inputs `PERCEPTION_DEMO_MODE=false` and
-  `PERCEPTION_API_URL=https://api.perception.intentsolutions.io`; provider and
-  approved-commercial inputs remain intentionally absent.
+  `PERCEPTION_API_URL=https://api.perception.intentsolutions.io`. The approved
+  price, billing, refund, and terms variables are also set; checkout remains
+  intentionally absent and `PERCEPTION_PRODUCTION_BUNDLE_ENABLED=false`.
 
 ## 1. Commercial and legal authority
 

@@ -63,6 +63,8 @@ jobs:
           VITE_PERCEPTION_LEGAL_OPERATOR: IntentSolutions.io LLC
           VITE_PERCEPTION_SUPPORT_EMAIL: support@intentsolutions.io
           VITE_PERCEPTION_TERMS_APPROVED: ${{ vars.PERCEPTION_TERMS_APPROVED }}
+          VITE_PERCEPTION_GOVERNING_LAW: Alabama, United States
+          VITE_PERCEPTION_TERMS_EFFECTIVE_DATE: September 14, 2026
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: perception-site-bundle
