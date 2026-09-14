@@ -42,6 +42,7 @@ describe("public customer policies", () => {
   it("removes rollout qualifiers only for the validated approved build", async () => {
     vi.stubEnv("VITE_PERCEPTION_TERMS_APPROVED", "true");
     vi.stubEnv("VITE_PERCEPTION_GOVERNING_LAW", "Alabama, United States");
+    vi.stubEnv("VITE_PERCEPTION_TERMS_EFFECTIVE_DATE", "September 14, 2026");
     vi.resetModules();
     const { PublicExperience: ApprovedExperience } = await import("./PublicExperience");
     const html = renderToStaticMarkup(<ApprovedExperience page="terms" />);

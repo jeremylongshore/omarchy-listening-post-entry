@@ -224,6 +224,9 @@ plugin. What they caught and this repo then fixed:
       `8ab32e3684c92d08f773a583a1e5513d1563eb7b`; enablement was present and the
       installed runtime helper retained mode 0755
 
+The sanitized command/output receipt is retained at
+`docs/receipts/buzz-default-install-2026-09-14.txt`.
+
 ## Honest boundary
 
 The current QML package is proven by 112 plugin tests, strict contract fixtures,

@@ -119,6 +119,18 @@ reader monthly pricing, without an unproven trial or enterprise promise.
 - [ ] Run production ingestion, inspect aggregate source/run/outbox state,
   create an encrypted backup, and restore it to an isolated volume.
 
+Post-merge CI receipts for revision `8ab32e3684c` are
+[gates run 34792639602](https://github.com/jeremylongshore/omarchy-listening-post-entry/actions/runs/34792639602),
+[test run 34792639716](https://github.com/jeremylongshore/omarchy-listening-post-entry/actions/runs/34792639716),
+[API build-gate run 34792640213](https://github.com/jeremylongshore/omarchy-listening-post-entry/actions/runs/34792640213),
+and [web-bundle run 34792639591](https://github.com/jeremylongshore/omarchy-listening-post-entry/actions/runs/34792639591).
+The API deploy job in run 34792640213 was intentionally skipped. The four
+configured GitHub secret names are `TS_OIDC_CLIENT_ID`, `TS_AUDIENCE`,
+`VPS_DEPLOY_KEY`, and `VPS_HOST_KEY`. The staged VPS checkout is
+`/srv/perception-src` at `8ab32e3684c`; image ID
+`sha256:a6e0bea08bdd18e89d3a6556439a8f2fa9bacf8249c0d29baf3c2c153c6cd5ab`
+was built without starting a container or creating an environment file.
+
 ## 4. Web publication
 
 - [x] Publish the actual application, not the coming-soon page, at the canonical

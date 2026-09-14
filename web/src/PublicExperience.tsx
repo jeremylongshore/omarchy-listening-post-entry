@@ -11,8 +11,9 @@ const operatorName = (import.meta.env.VITE_PERCEPTION_LEGAL_OPERATOR as string |
 const supportEmail = (import.meta.env.VITE_PERCEPTION_SUPPORT_EMAIL as string | undefined) || "support@intentsolutions.io";
 const termsApproved = import.meta.env.VITE_PERCEPTION_TERMS_APPROVED === "true";
 const governingLaw = (import.meta.env.VITE_PERCEPTION_GOVERNING_LAW as string | undefined) || "Alabama, United States";
+const termsEffectiveDate = (import.meta.env.VITE_PERCEPTION_TERMS_EFFECTIVE_DATE as string | undefined) || "September 14, 2026";
 const policyStatus = termsApproved
-  ? <p className="policy-note">Effective September 14, 2026. Perception is operated by {operatorName}.</p>
+  ? <p className="policy-note">Effective {termsEffectiveDate}. Perception is operated by {operatorName}.</p>
   : <p className="policy-note">Draft as of September 12, 2026. Not yet production terms.</p>;
 const roomUrl = "?room=1";
 

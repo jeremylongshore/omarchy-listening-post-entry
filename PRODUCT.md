@@ -72,6 +72,9 @@ artifact remains unpublished until the matching Lemon Squeezy variant exists:
 - Cancellation at any time, effective at the end of the paid period.
 - Alabama governing law, reflecting the company's principal place of operation.
 
+This is an owner-level approval recorded in Beads issue `lp-ajt.8`; it is not
+represented as a legal opinion or counsel review.
+
 The monthly price deliberately sits near specialist reader products without pretending Perception is an enterprise intelligence platform. Public comparison points checked on 2026-09-12 were Readwise Reader at $12.99 monthly or $119.88 annually, Inoreader Pro at $9.99 monthly or $7.50 per month billed annually, Ground News Premium at $39.99 annually, and Feedly Market Intelligence at $1,600 per month billed annually. Source links and the resulting approval gate are recorded in `docs/PERCEPTION-ROLLOUT.md`.
 
 ## Product Principles
