@@ -2,15 +2,16 @@
 
 # Listening Post
 
-A curated AI vendor release radar for the Omarchy bar that keeps working
-where RSS does not. The pill only speaks when a model shipped, the bill
-changed, or a provider is down; the panel is a drainable queue, not a feed.
+The Omarchy companion for **Perception**, the private web signal room at
+[`oma.intentsolutions.io/perception/`](https://oma.intentsolutions.io/perception/). Listening Post carries the same ranked field,
+five-item brief, and read state into the bar. The pill only speaks when a model
+shipped, the bill changed, or a provider is down.
 
-```
-                              nothing new: the slot collapses
-AI: 3 new                     releases or pricing changes you have not seen
-OpenAI incident               a provider status page has an open incident
-```
+The bar has three deliberate states:
+
+- **Nothing new:** the slot collapses completely.
+- **AI: 3 new:** unseen releases or pricing changes need a look.
+- **OpenAI incident:** a provider status page has an open incident.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U5S225PTME)
 
@@ -40,10 +41,22 @@ omarchy plugin add https://github.com/jeremylongshore/omarchy-listening-post-ent
 ```
 
 Then add **Listening Post** to your bar layout (Omarchy menu, Bar, or
-`~/.config/omarchy/shell.json`). The background service starts polling on
-enable. The first poll begins immediately; completion time depends on how
-quickly the 29 independent publishers respond, with every request capped at
-12 seconds.
+`~/.config/omarchy/shell.json`). Sign in to Perception with the email used for
+your Lemon Squeezy purchase, open **Omarchy**, create a device, and paste the
+one-time token into the plugin's private connector:
+
+```bash
+~/.config/omarchy/plugins/io.github.jeremylongshore.listening-post/connect-perception.sh
+```
+
+The script prompts without echo and writes the credential to a mode-0600 file;
+the token never enters shell history, process arguments, `shell.json`, or QML.
+Refresh Listening Post and it will use your account's ranked snapshot and brief.
+
+Until a device token is added, the original 29-source local radar remains
+available as a migration fallback. After the first valid Perception response,
+the plugin stays on that account field and preserves its last-good snapshot
+through offline, malformed-response, entitlement, or API failures.
 
 ## Remove
 
@@ -61,7 +74,9 @@ Standard Omarchy panel keys, same as the Herald and the first-party panels:
 | Key | Action |
 | --- | --- |
 | `j` / `k` or arrows | Move the cursor |
-| `Enter` or `o` | Open the item in your browser |
+| `Enter` or `o` | Open the source in your browser |
+| `w` | Open the selected signal in Perception |
+| `p` | Open Perception |
 | `x` or `a` | Mark the selected row read |
 | `c` | Mark everything read |
 | `r` | Refresh now |
@@ -130,6 +145,8 @@ commits and engineering posts never notify. Turn it all off in settings.
 | --- | --- | --- |
 | Desktop notifications | On | New releases and unresolved incidents only |
 | Rank by agents you use | On | Read-only file listing of the Agents plugin usage folder |
+| Perception API | `https://api.perception.intentsolutions.io` | Canonical endpoint; other origins fail closed |
+| Perception credential file | `~/.config/perception/listening-post.curlrc` | Managed by `connect-perception.sh`; other paths fail closed |
 
 Polling cadence is fixed at 15 minutes, the same house rate the first-party
 Agents plugin uses. Feed publishing cadence is hours; polling harder buys
@@ -138,52 +155,79 @@ nothing and costs the publishers.
 ## Architecture
 
 ```
-Service.qml   the whole poll cycle, in QML, with no external runtime
-        |  curl -fsS --proto =https --max-filesize, one GET per source
-        |  Model.js parses on Quickshell's own JS engine
+Service.qml   account snapshot + local migration poller, no Node/Python daemon
+        |  short-lived descriptor helper -> curl header on stdin
+        |  Model.js validates contract v1 on Quickshell's JS engine
         v
-~/.local/state/omarchy/listening-post/state.json   FileView atomic write
+~/.local/state/omarchy/listening-post/state.json   descriptor-bound atomic write
         ^
-        |  read + mark-read, synchronously
+        |  last-good render + queued read sync
 BarWidget.qml + Panel.qml (render + keys)
 ```
 
-**No Node.js, no Python, no external runtime.** A stock Omarchy install has no
-node on the graphical session PATH (Omarchy installs it through mise, whose
-shims are not exported to the session), so this plugin depends on nothing but
-Quickshell and the `curl` every Omarchy box already ships. That is the same
-pattern the marketplace-validated MLB Booth and Pit Wall widgets use.
+**No Node.js or Python service.** Polling and rendering stay inside Quickshell.
+A short-lived absolute-system-Perl helper opens settings, state, locks, and
+credentials with descriptor-bound no-follow operations, then invokes the stock
+`curl` for authenticated requests. The optional pairing command uses the same
+helper for mode-0600 credential publication. Nothing remains running afterward.
 
-`Service.qml` owns the item store: it fetches, merges, persists (via
-`FileView`, the API the first-party clipboard and agents plugins use), and
-notifies. The panel renders that store and calls straight into the service, so
+`Service.qml` owns the item store: it fetches, merges, persists through the
+bounded helper, and notifies. The panel renders that store and calls straight into the service, so
 marking an item read takes effect immediately instead of round-tripping
 through a subprocess. Parsing, classification, merging, and sanitizing live in
 `Model.js`, pure ES5 functions loaded identically by Quickshell and by the
 offline unit suite.
 
-Network hosts contacted (GET only): the curated feed hosts (`openai.com`,
+When paired, the plugin contacts only `api.perception.intentsolutions.io` for
+snapshot reads and read-state writes. The helper reads the bearer token from a
+mode-0600 config inside the mode-0700 Perception config directory and passes its
+HTTP header to curl on standard input. It is never loaded into QML or put in
+`shell.json`, process arguments, notifications, links, logs, or `state.json`. API endpoints
+from settings are accepted only when they equal the canonical origin.
+
+In unpaired migration mode, network hosts contacted are the curated feed hosts (`openai.com`,
 `blog.google`, `deepmind.google`, `huggingface.co`, `together.ai`,
 `raw.githubusercontent.com`, `theverge.com`, `huyenchip.com`,
 `lilianweng.github.io`, `status.claude.com`, `status.openai.com`,
 `code.claude.com`, `cursor.com`, `github.com`). That list is fixed at build
 time and there is no way for a user, a config file or a feed body to add a host
-to it. No account, no token, no telemetry, nothing sent anywhere.
+to it. No telemetry is collected in either mode.
 
 ## Testing
 
 ```bash
-npm test
+npm run test:product
+npm run build:product
 ```
 
-The 91-test enforced suite covers the pure data layer, QML contracts,
-accessibility, and release artifacts. It requires at least 95% line, statement,
-and function coverage, 90% branch coverage, a 90% mutation score, and three
-concurrent race passes. Parser tests exercise RSS and Atom against captured
-bodies from all twenty-nine live sources, lane classification, week clustering,
-merge and retention, read-state, notification gating, personalization
-mapping, the feed-list parser, and the state record. Offline by design; the
-capture procedure is in `docs/FIXTURES.md`.
+The root CI workflow runs the following exact validation commands when the
+change-scope classifier selects the full lane:
+
+```bash
+npm test
+npm run test:race
+npm run test:mutation
+npm run audit
+shellcheck --severity=warning scripts/*.sh e2e/*.sh .githooks/pre-push
+```
+
+The product lane runs 112 plugin tests, 7 shared-contract tests, 8 web tests, and
+65 API tests (192 total), then builds both product surfaces. The plugin lane requires at
+least 95% line, statement, and function coverage, 90% branch coverage, a 90%
+mutation score, and three concurrent race passes. Parser tests exercise RSS and
+Atom against captured bodies from all twenty-nine live sources, lane
+classification, week clustering, merge and retention, read-state, notification
+gating, personalization mapping, the feed-list parser, and the state record.
+Offline by design; the capture procedure is in `docs/FIXTURES.md`. CI also runs
+the vendored Omarchy gate lane and builds the deployable Docker image.
+
+Perception operators should also use
+[`docs/PERCEPTION-OPERATIONS.md`](docs/PERCEPTION-OPERATIONS.md) for production
+secrets, privacy handling, backup and restore, smoke checks, credential
+containment, and rollback; [`docs/PERCEPTION-ROLLOUT.md`](docs/PERCEPTION-ROLLOUT.md)
+for the fail-closed go-live sequence; and
+[`docs/PERCEPTION-ANALYTICS.md`](docs/PERCEPTION-ANALYTICS.md) for the minimal
+first-party funnel and retention boundary.
 
 ## Maintainers wanted
 

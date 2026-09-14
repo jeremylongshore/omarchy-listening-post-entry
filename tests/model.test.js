@@ -4,6 +4,7 @@ const fs = require("node:fs")
 const path = require("node:path")
 
 const Model = require("../Model.js")
+const snapshotFixture = require("../packages/perception-contract/fixtures/snapshot-v1.json")
 
 // Fixtures are real feed bodies captured live 2026-08-20 from every curated
 // source, trimmed to their first six items. Tests run against captured
@@ -446,27 +447,6 @@ test("parseState sanitizes lane, url, and drops broken rows", () => {
   assert.equal(parsed.items[1].url, "")
 })
 
-// ---- OPML ----
-
-test("toOpml and parseOpml round-trip the curated set", () => {
-  const opml = Model.toOpml(Model.SOURCES, [{ title: "My Feed", url: "https://example.test/feed.xml" }])
-  const parsed = Model.parseOpml(opml)
-  assert.equal(parsed.length, Model.SOURCES.length + 1)
-  assert.ok(parsed.some((o) => o.url === "https://example.test/feed.xml"))
-})
-
-test("parseOpml keeps only https outlines and refuses non-opml bodies", () => {
-  const opml = '<opml version="2.0"><body>'
-    + '<outline type="rss" title="ok" xmlUrl="https://a.test/f"/>'
-    + '<outline type="rss" title="bad" xmlUrl="http://b.test/f"/>'
-    + '<outline type="rss" title="none"/>'
-    + "</body></opml>"
-  const parsed = Model.parseOpml(opml)
-  assert.equal(parsed.length, 1)
-  assert.equal(parsed[0].url, "https://a.test/f")
-  assert.deepEqual(Model.parseOpml("<rss></rss>"), [])
-})
-
 // ---- source table hygiene ----
 
 test("every curated source is https, unique, and carries a known kind", () => {
@@ -504,4 +484,140 @@ test("every fetched source is a compile-time constant, none is user supplied", (
   for (const s of Model.SOURCES) {
     assert.ok(typeof s.url === "string" && s.url.startsWith("https://"), s.url)
   }
+})
+
+test("Perception snapshots normalize into the native queue and brief", () => {
+  const parsed = Model.parsePerceptionSnapshot(JSON.stringify(snapshotFixture))
+  assert.equal(parsed.valid, true)
+  assert.equal(parsed.accountName, "Jeremy")
+  assert.equal(parsed.items.length, 3)
+  assert.deepEqual(parsed.items[0], {
+    guid: "signal_claude_status", sourceId: "claude-status", vendor: "claude-status",
+    vendorName: "Claude Status", product: "", lane: "incident", quiet: false,
+    title: "Elevated API errors under investigation", url: "https://status.claude.com/",
+    timeMs: Date.parse("2026-09-10T17:21:00.000Z"), resolved: false, read: false,
+    used: true, relevance: 100
+  })
+  assert.deepEqual(parsed.highlights[0], {
+    signalId: "signal_claude_status",
+    reason: "Active provider incident; operational impact takes precedence."
+  })
+  assert.equal(parsed.sources[2].ok, false)
+  assert.equal(parsed.sources[2].status, "degraded")
+})
+
+test("Perception parser rejects malformed fields instead of partially replacing last-good", () => {
+  assert.deepEqual(Model.parsePerceptionSnapshot("not json"), { valid: false })
+  assert.deepEqual(Model.parsePerceptionSnapshot("x".repeat(Model.MAX_BODY_CHARS + 1)), { valid: false })
+  for (const mutate of [
+    value => { value.schemaVersion = "2.0" },
+    value => { value.signals[0].url = "http://127.0.0.1/private" },
+    value => { value.signals[0].id = "bad/id" },
+    value => { value.signals.push({ ...value.signals[0] }) },
+    value => { value.brief.highlights[0].signalId = "missing" },
+    value => { value.sourceHealth[0].status = "unknown" },
+    value => { value.topics = Array.from({ length: 9 }, (_, i) => ({ id:String(i), name:"x", keywords:[], enabled:true })) }
+  ]) {
+    const value = JSON.parse(JSON.stringify(snapshotFixture))
+    mutate(value)
+    assert.equal(Model.parsePerceptionSnapshot(JSON.stringify(value)).valid, false)
+  }
+})
+
+test("Perception native parser enforces every contract boundary", () => {
+  const invalid = [
+    value => { value.generatedAt = null }, value => { value.generatedAt = "not-a-date" },
+    value => { value.staleAfter = null }, value => { value.staleAfter = "not-a-date" },
+    value => { value.staleAfter = "2026-09-01T00:00:00.000Z" },
+    value => { value.account = null }, value => { value.account.id = 1 },
+    value => { value.account.id = "" }, value => { value.account.id = "x".repeat(129) },
+    value => { value.account.displayName = 1 }, value => { value.account.displayName = " " },
+    value => { value.account.displayName = "x".repeat(81) },
+    value => { value.topics = null }, value => { value.signals = null },
+    value => { value.signals = Array.from({ length:401 }, (_, index) => ({ ...value.signals[0], id:`signal_${index}` })) },
+    value => { value.brief = null }, value => { value.brief.highlights = null },
+    value => { value.brief.highlights = Array.from({ length:6 }, () => ({ ...value.brief.highlights[0] })) },
+    value => { value.sourceHealth = null },
+    value => { value.sourceHealth = Array.from({ length:65 }, (_, index) => ({ ...value.sourceHealth[0], id:`source_${index}` })) },
+    value => { value.topics[0] = null }, value => { value.topics[0].id = 1 },
+    value => { value.topics[0].id = "" }, value => { value.topics[0].id = "x".repeat(129) },
+    value => { value.topics[0].name = 1 }, value => { value.topics[0].name = " " },
+    value => { value.topics[0].name = "x".repeat(41) }, value => { value.topics[0].enabled = "true" },
+    value => { value.topics[0].keywords = null },
+    value => { value.topics[0].keywords = Array.from({ length:9 }, () => "x") },
+    value => { value.topics[0].keywords[0] = 1 }, value => { value.topics[0].keywords[0] = " " },
+    value => { value.topics[0].keywords[0] = "x".repeat(65) },
+    value => { value.signals[0] = null }, value => { value.signals[0].id = 1 },
+    value => { value.signals[0].id = "" }, value => { value.signals[0].id = "x".repeat(161) },
+    value => { value.signals[0].title = 1 }, value => { value.signals[0].title = " " },
+    value => { value.signals[0].title = "x".repeat(241) }, value => { value.signals[0].source = 1 },
+    value => { value.signals[0].source = " " }, value => { value.signals[0].source = "x".repeat(81) },
+    value => { value.signals[0].lane = "unknown" }, value => { value.signals[0].relevance = "100" },
+    value => { value.signals[0].relevance = -1 }, value => { value.signals[0].relevance = 101 },
+    value => { value.signals[0].resolved = 1 }, value => { value.signals[0].quiet = 0 },
+    value => { value.signals[0].matchedTopicIds = null }, value => { value.signals[0].publishedAt = "not-a-date" },
+    value => { value.signals[0].read = 0 }, value => { value.signals[0].matchedTopicIds[0] = 1 },
+    value => { value.signals[0].matchedTopicIds[0] = "" },
+    value => { value.signals[0].matchedTopicIds[0] = "x".repeat(129) },
+    value => { value.brief.windowStart = null }, value => { value.brief.windowEnd = "not-a-date" },
+    value => { value.brief.windowEnd = "2026-09-01T00:00:00.000Z" },
+    value => { value.brief.highlights[0] = null }, value => { value.brief.highlights[0].signalId = 1 },
+    value => { value.brief.highlights[0].reason = 1 }, value => { value.brief.highlights[0].reason = " " },
+    value => { value.brief.highlights[0].reason = "x".repeat(241) },
+    value => { value.sourceHealth[0] = null }, value => { value.sourceHealth[0].id = 1 },
+    value => { value.sourceHealth[0].id = "" }, value => { value.sourceHealth[0].id = "x".repeat(129) },
+    value => { value.sourceHealth[0].name = 1 }, value => { value.sourceHealth[0].name = " " },
+    value => { value.sourceHealth[0].name = "x".repeat(81) }, value => { value.sourceHealth[0].checkedAt = null }
+  ]
+  for (const mutate of invalid) {
+    const value = JSON.parse(JSON.stringify(snapshotFixture))
+    mutate(value)
+    assert.deepEqual(Model.parsePerceptionSnapshot(JSON.stringify(value)), { valid:false })
+  }
+})
+
+test("Perception native parser rejects unknown fields at every strict object boundary", () => {
+  const mutations = [
+    value => { value.unknown = true }, value => { value.account.unknown = true },
+    value => { value.topics[0].unknown = true }, value => { value.signals[0].unknown = true },
+    value => { value.brief.unknown = true }, value => { value.brief.highlights[0].unknown = true },
+    value => { value.sourceHealth[0].unknown = true }
+  ]
+  for (const mutate of mutations) {
+    const value = JSON.parse(JSON.stringify(snapshotFixture))
+    mutate(value)
+    assert.deepEqual(Model.parsePerceptionSnapshot(JSON.stringify(value)), { valid:false })
+  }
+})
+
+test("Perception native parser accepts exact resource and string limits", () => {
+  const value = JSON.parse(JSON.stringify(snapshotFixture))
+  value.account.id = "a".repeat(128)
+  value.account.displayName = "a".repeat(80)
+  value.topics = Array.from({ length:8 }, (_, index) => ({
+    id:"t".repeat(124) + String(index).padStart(4, "0"), name:"n".repeat(40), enabled:true,
+    keywords:Array.from({ length:8 }, () => "k".repeat(64))
+  }))
+  value.signals = Array.from({ length:Model.MAX_ITEMS }, (_, index) => ({
+    ...value.signals[0], id:`signal_${index}`, title:"t".repeat(240), source:"s".repeat(80),
+    relevance:index === 0 ? 0 : 100, matchedTopicIds:["m".repeat(128)]
+  }))
+  value.brief.highlights = Array.from({ length:5 }, (_, index) => ({
+    signalId:`signal_${index}`, reason:"r".repeat(240)
+  }))
+  value.sourceHealth = Array.from({ length:64 }, (_, index) => ({
+    ...value.sourceHealth[0], id:"s".repeat(124) + String(index).padStart(4, "0"), name:"n".repeat(80)
+  }))
+  assert.equal(Model.parsePerceptionSnapshot(JSON.stringify(value)).valid, true)
+})
+
+test("Perception endpoint and device token validation fail closed", () => {
+  assert.equal(Model.perceptionEndpoint("https://api.perception.intentsolutions.io/"), "https://api.perception.intentsolutions.io")
+  for (const endpoint of ["http://api.perception.intentsolutions.io", "https://evil.test", "https://api.perception.intentsolutions.io.evil.test"])
+    assert.equal(Model.perceptionEndpoint(endpoint), "")
+  assert.equal(Model.validDeviceToken("a".repeat(32)), true)
+  assert.equal(Model.validDeviceToken("a".repeat(31)), false)
+  assert.equal(Model.validDeviceToken("token with spaces"), false)
+  assert.equal(Model.validCredentialSetting("~/.config/perception/listening-post.curlrc"), true)
+  assert.equal(Model.validCredentialSetting("/tmp/stolen.curlrc"), false)
 })

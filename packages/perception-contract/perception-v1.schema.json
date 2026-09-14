@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oma.intentsolutions.io/perception/contracts/snapshot-v1.json",
+  "title": "Perception Snapshot v1",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "staleAfter", "account", "topics", "signals", "brief", "sourceHealth"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "staleAfter": { "type": "string", "format": "date-time" },
+    "account": {
+      "type": "object",
+      "required": ["id", "displayName"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id128" },
+        "displayName": { "$ref": "#/$defs/nonEmpty80" }
+      },
+      "additionalProperties": false
+    },
+    "topics": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "keywords", "enabled"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id128" },
+          "name": { "$ref": "#/$defs/nonEmpty40" },
+          "keywords": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/nonEmpty64" } },
+          "enabled": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "signals": {
+      "type": "array",
+      "maxItems": 400,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "url", "source", "lane", "relevance", "resolved", "quiet", "matchedTopicIds", "publishedAt", "read"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9_-]+$" },
+          "title": { "$ref": "#/$defs/nonEmpty240" },
+          "url": { "type": "string", "format": "uri", "maxLength": 2048, "pattern": "^https://" },
+          "source": { "$ref": "#/$defs/nonEmpty80" },
+          "lane": { "enum": ["incident", "release", "pricing", "engineering"] },
+          "relevance": { "type": "number", "minimum": 0, "maximum": 100 },
+          "resolved": { "type": "boolean" },
+          "quiet": { "type": "boolean" },
+          "matchedTopicIds": { "type": "array", "items": { "$ref": "#/$defs/id128" } },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "read": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "brief": {
+      "type": "object",
+      "required": ["windowStart", "windowEnd", "highlights"],
+      "properties": {
+        "windowStart": { "type": "string", "format": "date-time" },
+        "windowEnd": { "type": "string", "format": "date-time" },
+        "highlights": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["signalId", "reason"],
+            "properties": {
+              "signalId": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9_-]+$" },
+              "reason": { "$ref": "#/$defs/nonEmpty240" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceHealth": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "status", "checkedAt"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id128" },
+          "name": { "$ref": "#/$defs/nonEmpty80" },
+          "status": { "enum": ["healthy", "degraded", "unavailable"] },
+          "checkedAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "id128": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": ".*\\S.*" },
+    "nonEmpty40": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": ".*\\S.*" },
+    "nonEmpty64": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": ".*\\S.*" },
+    "nonEmpty80": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": ".*\\S.*" },
+    "nonEmpty240": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": ".*\\S.*" }
+  },
+  "additionalProperties": false
+}

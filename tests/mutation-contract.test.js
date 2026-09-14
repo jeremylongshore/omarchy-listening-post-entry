@@ -2,6 +2,7 @@ const test = require("node:test")
 const assert = require("node:assert/strict")
 const crypto = require("node:crypto")
 const Model = require("../Model.js")
+const snapshotFixture = require("../packages/perception-contract/fixtures/snapshot-v1.json")
 
 test("the complete public model surface has a deterministic behavioral signature", () => {
   const now = Date.parse("2026-08-29T18:00:00Z")
@@ -24,8 +25,11 @@ test("the complete public model surface has a deterministic behavioral signature
     mk({ guid: "s:" + index, title: "item " + index, timeMs: now - index }))
   const manySources = Array.from({ length: 65 }, (_, index) =>
     ({ id: "source-" + index, ok: index % 2 === 0, title: "Source " + index, error: index % 2 ? "down" : "" }))
-  const manyOutlines = '<opml><body>' + Array.from({ length: 51 }, (_, index) =>
-    '<outline title="Feed ' + index + '" xmlUrl="https://example.test/' + index + '"/>').join("") + '</body></opml>'
+  const snapshotCase = mutate => {
+    const value = JSON.parse(JSON.stringify(snapshotFixture))
+    mutate(value)
+    return Model.parsePerceptionSnapshot(JSON.stringify(value))
+  }
   const cases = {
     constants: [Model.SOURCES, Model.AGENT_VENDORS, Model.MAX_BODY_CHARS, Model.RETENTION_DAYS, Model.MAX_ITEMS],
     clean: [null, "", "<b>x</b>", "a\u0000b\u202ec", "x".repeat(63), "x".repeat(64), "x".repeat(65)]
@@ -33,6 +37,9 @@ test("the complete public model surface has a deterministic behavioral signature
     entities: ["", "&amp;", "&quot;", "&apos;", "&nbsp;", "&#39;", "&#x27;", "&#0;", "&#99999999;", "&lt;x&gt;"].map(Model.decodeEntities),
     urls: ["", " http://x ", " https://x/a ", "https://user@x/a", "https://x/a;b",
       "https://x/" + "a".repeat(490), "https://x/" + "a".repeat(491)].map(Model.safeUrl),
+    tokenBounds: ["a".repeat(31), "a".repeat(32), "a".repeat(256), "a".repeat(257),
+      "!" + "a".repeat(32), "a".repeat(32) + "!"].map(Model.validDeviceToken),
+    endpointBounds: ["https://api.perception.intentsolutions.io///", "https://api.perception.intentsolutions.io/path"].map(Model.perceptionEndpoint),
     feeds: ["", "junk", feed, feed.repeat(100000)].map(Model.parseFeed),
     lanes: ["rate limit", "rate limits", "per-token", "per token", "usage limit", "usage limits",
       "cost of API", "costs per token", "$9 tier", "price cut", "price drop", "price increase", "price change",
@@ -67,16 +74,28 @@ test("the complete public model surface has a deterministic behavioral signature
     tooltips: [null, { incidents: 0, unread: 0 }, { incidents: 1, unread: 1 },
       { incidents: 2, unread: 2 }].map(c => Model.tooltipText(c, now - 3600000, now)),
     ages: [now, now - 30000, now - 60000, now - 3 * 3600000, now - 48 * 3600000, 0].map(v => Model.ageText(v, now)),
+    snapshotBounds: [
+      snapshotCase(value => {
+        value.generatedAt = value.staleAfter = value.brief.windowStart = value.brief.windowEnd = "1970-01-01T00:00:00.000Z"
+        value.signals.forEach(signal => { signal.publishedAt = "1970-01-01T00:00:00.000Z" })
+        value.sourceHealth.forEach(sourceHealth => { sourceHealth.checkedAt = "1970-01-01T00:00:00.000Z" })
+      }).valid,
+      snapshotCase(value => { value.signals[0].lane = "xrelease" }).valid,
+      snapshotCase(value => { value.signals[0].lane = "releasex" }).valid,
+      snapshotCase(value => { value.sourceHealth[0].status = "xhealthy" }).valid,
+      snapshotCase(value => { value.sourceHealth[0].status = "healthyx" }).valid,
+      snapshotCase(value => {
+        value.brief.highlights = Array.from({ length:5 }, (_, index) => ({
+          signalId:value.signals[index % value.signals.length].id, reason:"r".repeat(240)
+        }))
+      }).valid
+    ],
     states: ["", "{", state, JSON.stringify({ generatedAt: now, items: manyItems, sources: manySources })].map(Model.parseState),
     stateFlags: Model.parseState(JSON.stringify({ generatedAt: now, sources: [], items: [
       mk({ guid: "flags", lane: "xrelease", quiet: true, resolved: false, read: true, used: true }),
       mk({ guid: "anchors", lane: "releasex", quiet: false, resolved: true, read: false, used: false })
-    ] })),
-    opmlText: Model.toOpml(Model.SOURCES.slice(0, 2), [{ title: '<X & "Y">', url: "https://x/a?b=1&c=2" }]),
-    opmlEmpty: Model.toOpml(null, null),
-    opmlMissing: Model.toOpml([{ title: null, url: null }], null),
-    opml: [Model.parseOpml(Model.toOpml(Model.SOURCES.slice(0, 2), [])), Model.parseOpml(manyOutlines)]
+    ] }))
   }
   const signature = crypto.createHash("sha256").update(JSON.stringify(cases)).digest("hex")
-  assert.equal(signature, "76d7f0bea03c3b1a6192159fb15e9a27258a2468807edc1a13805cb4460c1e5a")
+  assert.equal(signature, "b9dfd7c3986033f1e6067b2d7b0cbff409c7cf855a2f1c84a1fed0268aab8607")
 })

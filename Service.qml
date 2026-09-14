@@ -4,14 +4,13 @@ import Quickshell.Io
 import "Model.js" as Model
 
 // Listening Post background service: owns the entire poll cycle in QML, with
-// NO external runtime. A stock Omarchy install has no node (Omarchy installs
+// no Node or Python daemon. A stock Omarchy install has no node (Omarchy installs
 // it through mise, whose shims are not on the graphical session PATH), so the
-// only things this plugin may depend on are Quickshell itself and the
-// coreutils/curl every Omarchy box already has. This mirrors the
-// marketplace-proven MLB Booth and Pit Wall pattern: curl through a QML
-// Process, parsing in Model.js on Quickshell's own JS engine, persistence
-// through FileView (the same API the first-party clipboard and agents plugins
-// use to write their state).
+// only things this background service may depend on are Quickshell itself and
+// the stock curl, coreutils, and absolute-system-Perl boundary every Omarchy box
+// provides. QML and Model.js still own polling and parsing. A short-lived Perl
+// helper owns descriptor-bound state, settings, credentials, and authenticated
+// curl execution; it is never a daemon and secrets never enter QML or argv.
 //
 // Fetch is sequential and one source at a time: 29 concurrent curls would
 // spike the shell process, and feed publishing cadence is hours, so there is
@@ -23,9 +22,8 @@ Item {
   property var manifest: null
 
   readonly property string home: Quickshell.env("HOME") || ""
-  readonly property string stateDir:
-    (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/listening-post"
-  readonly property string statePath: stateDir + "/state.json"
+  readonly property string secureStatePath:
+    Qt.resolvedUrl("bin/listening-post-secure-state").toString().replace("file://", "")
   readonly property string agentsUsageDir:
     (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy/agents/usage"
 
@@ -36,26 +34,38 @@ Item {
   readonly property int fetchTimeoutSec: 12
   readonly property int notifyCap: 3
 
-  // ---- Settings, read from this plugin's bar-layout entry in shell.json.
-  //      The service is not a bar widget, so it reads the file directly the
-  //      same way the poller CLI used to.
+  // ---- Settings, sanitized from this plugin's bar-layout entry in shell.json
+  //      by the same descriptor-bound helper that owns runtime state.
   property string notificationsMode: "On"
   property string personalizationMode: "On"
+  property string apiEndpointSetting: "https://api.perception.intentsolutions.io"
+  property string deviceTokenFileSetting: "~/.config/perception/listening-post.curlrc"
 
   // ---- Poll state.
   property var storedItems: []          // last-good merged items
   property var sourceStatus: []         // per-source ok/error for the panel
   property double generatedAt: 0
   property bool firstRun: true
-  property bool stateDirReady: false
   property bool stateLoaded: false
+  property string stateReadRaw: ""
+  property string stateWriteRaw: ""
+  property string queuedStateRaw: ""
+  property string settingsRaw: ""
 
   property var allSources: []           // the curated SOURCES list for this run
   property int fetchIndex: -1           // -1 idle; else index into allSources
   property string fetchOutput: ""       // stdout for the current Process run
+  property string readOutput: ""
   property var freshItems: []           // accumulated across this run
   property var prevGuids: ({})          // guids present before this run
   property bool polling: false
+  property bool remoteActivated: false   // sticky after the first valid API field
+  property string connectionState: "local"
+  property double staleAfter: 0
+  property string accountName: ""
+  property var briefHighlights: []
+  property var topics: []
+  property var pendingReadGuids: []
 
   // Named feedStateChanged, not stateChanged: the root is an Item, which already
   // owns a `state` property and therefore a built-in stateChanged() signal.
@@ -77,21 +87,16 @@ Item {
       "--", url]
   }
 
-  function readSettings() {
+  function applySettings(raw) {
     var conf
-    try { conf = JSON.parse(shellConfigFile.text() || "") } catch (e) { return }
-    if (!conf || !conf.bar || !conf.bar.layout) return
-    var zones = ["left", "center", "right"]
-    for (var z = 0; z < zones.length; z++) {
-      var list = conf.bar.layout[zones[z]] || []
-      for (var i = 0; i < list.length; i++) {
-        var e = list[i]
-        if (!e || e.id !== root.moduleId) continue
-        root.notificationsMode = e.notifications === "Off" ? "Off" : "On"
-        root.personalizationMode = e.personalization === "Off" ? "Off" : "On"
-        return
-      }
-    }
+    try { conf = JSON.parse(String(raw || "")) } catch (e) { return }
+    if (!conf || typeof conf !== "object") return
+    root.notificationsMode = conf.notifications === "Off" ? "Off" : "On"
+    root.personalizationMode = conf.personalization === "Off" ? "Off" : "On"
+    root.apiEndpointSetting = String(conf.perceptionEndpoint
+      || "https://api.perception.intentsolutions.io")
+    root.deviceTokenFileSetting = String(conf.deviceTokenFile
+      || "~/.config/perception/listening-post.curlrc")
   }
 
   readonly property string moduleId: "io.github.jeremylongshore.listening-post"
@@ -106,8 +111,31 @@ Item {
   function poll() {
     if (root.polling) return
     if (!root.stateLoaded) return
-    root.readSettings()
+    if (settingsProc.running) return
+    root.settingsRaw = ""
+    settingsProc.running = true
+  }
+
+  function pollAfterSettings() {
+    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
+    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) {
+      if (root.remoteActivated) {
+        root.connectionState = "unpaired"
+        root.feedStateChanged()
+      } else root.pollLocal()
+      return
+    }
     root.polling = true
+    root.connectionState = root.remoteActivated ? "refreshing" : "checking"
+    root.fetchOutput = ""
+    apiFetchProc.command = [root.secureStatePath, "--snapshot"]
+    apiFetchProc.running = true
+    root.feedStateChanged()
+  }
+
+  function pollLocal() {
+    root.polling = true
+    root.connectionState = "local"
     root.freshItems = []
     root.sourceStatus = []
     var seen = ({})
@@ -116,6 +144,52 @@ Item {
     root.allSources = Model.SOURCES
     root.fetchIndex = 0
     root.fetchCurrent()
+  }
+
+  function onPerceptionFetched(output, processOk) {
+    var text = String(output || "")
+    var match = /\n([0-9]{3})$/.exec(text)
+    var status = match ? Number(match[1]) : 0
+    var body = match ? text.slice(0, match.index) : ""
+    if (!processOk || status !== 200) {
+      root.finishPerceptionFailure(status === 401 ? "unpaired"
+        : status === 402 ? "entitlement" : "offline")
+      return
+    }
+    var parsed = Model.parsePerceptionSnapshot(body)
+    if (!parsed.valid) {
+      root.finishPerceptionFailure("invalid")
+      return
+    }
+    var wasRemote = root.remoteActivated
+    var prior = ({})
+    for (var i = 0; i < root.storedItems.length; i++) prior[root.storedItems[i].guid] = true
+    var pending = ({})
+    for (var p = 0; p < root.pendingReadGuids.length; p++) pending[root.pendingReadGuids[p]] = true
+    for (var j = 0; j < parsed.items.length; j++) {
+      if (pending[parsed.items[j].guid]) parsed.items[j].read = true
+    }
+    root.storedItems = parsed.items
+    root.sourceStatus = parsed.sources
+    root.generatedAt = parsed.generatedAt
+    root.staleAfter = parsed.staleAfter
+    root.accountName = parsed.accountName
+    root.briefHighlights = parsed.highlights
+    root.topics = parsed.topics
+    root.remoteActivated = true
+    root.connectionState = Date.now() > parsed.staleAfter ? "stale" : "connected"
+    root.firstRun = false
+    root.polling = false
+    if (wasRemote && root.notificationsMode === "On")
+      root.notifyNew(Model.newNotifiables(prior, root.storedItems, false))
+    root.persist()
+    root.syncNextRead()
+  }
+
+  function finishPerceptionFailure(state) {
+    root.connectionState = state
+    root.polling = false
+    root.feedStateChanged()
   }
 
   function fetchCurrent() {
@@ -254,28 +328,80 @@ Item {
         changed = true
       }
     }
+    if (root.remoteActivated) root.queueRemoteReads(guids)
     if (changed) root.persist()
   }
 
   function markAllRead() {
     var changed = false
+    var guids = []
     for (var i = 0; i < root.storedItems.length; i++) {
-      if (!root.storedItems[i].read) { root.storedItems[i].read = true; changed = true }
+      if (!root.storedItems[i].read) {
+        root.storedItems[i].read = true
+        guids.push(root.storedItems[i].guid)
+        changed = true
+      }
     }
+    if (root.remoteActivated) root.queueRemoteReads(guids)
     if (changed) root.persist()
+  }
+
+  function queueRemoteReads(guids) {
+    var queued = ({})
+    for (var p = 0; p < root.pendingReadGuids.length; p++) queued[root.pendingReadGuids[p]] = true
+    var next = root.pendingReadGuids.slice(0)
+    for (var g = 0; g < guids.length; g++) {
+      var id = String(guids[g] || "")
+      if (/^[A-Za-z0-9_-]{1,160}$/.test(id) && !queued[id]) {
+        queued[id] = true
+        next.push(id)
+      }
+    }
+    root.pendingReadGuids = next
+    root.persist()
+    root.syncNextRead()
+  }
+
+  function syncNextRead() {
+    if (readProc.running || root.pendingReadGuids.length === 0) return
+    var endpoint = Model.perceptionEndpoint(root.apiEndpointSetting)
+    if (!endpoint || !Model.validCredentialSetting(root.deviceTokenFileSetting)) return
+    var id = root.pendingReadGuids[0]
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(id)) {
+      root.pendingReadGuids = root.pendingReadGuids.slice(1)
+      root.syncNextRead()
+      return
+    }
+    readProc.command = [root.secureStatePath, "--mark-read", id]
+    root.readOutput = ""
+    readProc.running = true
   }
 
   // ------------------------------------------------------------ persistence
 
   function persist() {
-    if (!root.stateDirReady || !root.stateLoaded) return
-    stateFile.setText(JSON.stringify({
+    if (!root.stateLoaded) return
+    var raw = JSON.stringify({
       generatedAt: root.generatedAt,
       firstRun: root.firstRun,
+      mode: root.remoteActivated ? "perception" : "local",
+      staleAfter: root.staleAfter,
+      accountName: root.accountName,
+      connectionState: root.connectionState,
+      briefHighlights: root.briefHighlights,
+      topics: root.topics,
+      pendingReadGuids: root.pendingReadGuids,
       sources: root.sourceStatus,
       items: root.storedItems
-    }))
+    })
+    if (stateWriter.running) root.queuedStateRaw = raw
+    else root.startStateWrite(raw)
     root.feedStateChanged()
+  }
+
+  function startStateWrite(raw) {
+    root.stateWriteRaw = String(raw || "")
+    stateWriter.running = true
   }
 
   function loadState(raw) {
@@ -289,6 +415,27 @@ Item {
       var data
       try { data = JSON.parse(String(raw || "")) } catch (e) { data = null }
       root.firstRun = data && data.firstRun === true ? true : parsed.items.length === 0
+      if (data && data.mode === "perception") {
+        root.remoteActivated = true
+        root.staleAfter = Number(data.staleAfter) || 0
+        root.accountName = Model.clean(data.accountName, 80)
+        root.connectionState = "last-good"
+        root.topics = Array.isArray(data.topics) ? data.topics.slice(0, 8) : []
+        var itemIds = ({})
+        for (var q = 0; q < parsed.items.length; q++) itemIds[parsed.items[q].guid] = true
+        var highlights = []
+        var rawHighlights = Array.isArray(data.briefHighlights) ? data.briefHighlights : []
+        for (var h = 0; h < rawHighlights.length && highlights.length < 5; h++) {
+          var hi = rawHighlights[h]
+          if (hi && itemIds[hi.signalId] && typeof hi.reason === "string" && hi.reason.trim())
+            highlights.push({ signalId: String(hi.signalId), reason: Model.clean(hi.reason, 240) })
+        }
+        root.briefHighlights = highlights
+        var pending = Array.isArray(data.pendingReadGuids) ? data.pendingReadGuids : []
+        root.pendingReadGuids = pending.filter(function(id) {
+          return /^[A-Za-z0-9_-]{1,160}$/.test(String(id || ""))
+        }).slice(0, Model.MAX_ITEMS)
+      }
     }
     root.stateLoaded = true
     root.feedStateChanged()
@@ -313,6 +460,61 @@ Item {
       if (!root.polling || root.fetchIndex < 0) return
       var body = String(fetchStdout.text || root.fetchOutput || "")
       root.onFetched(body, code === 0 && body.length > 0)
+    }
+  }
+
+  Process {
+    id: apiFetchProc
+    stdout: StdioCollector {
+      id: apiFetchStdout
+      waitForEnd: true
+      onStreamFinished: root.fetchOutput = String(text || "")
+    }
+    onExited: function(code) {
+      if (code === 3 && !root.remoteActivated) {
+        root.polling = false
+        root.pollLocal()
+        return
+      }
+      if (code === 3) {
+        root.finishPerceptionFailure("unpaired")
+        return
+      }
+      root.onPerceptionFetched(String(apiFetchStdout.text || root.fetchOutput || ""), code === 0)
+    }
+  }
+
+  Process {
+    id: settingsProc
+    command: [root.secureStatePath, "--read-settings"]
+    stdout: StdioCollector {
+      id: settingsStdout
+      waitForEnd: true
+      onStreamFinished: root.settingsRaw = String(text || "")
+    }
+    onExited: function(code) {
+      if (code === 0) root.applySettings(String(settingsStdout.text || root.settingsRaw || ""))
+      root.pollAfterSettings()
+    }
+  }
+
+  Process {
+    id: readProc
+    stdout: StdioCollector {
+      id: readStdout
+      waitForEnd: true
+      onStreamFinished: root.readOutput = String(text || "")
+    }
+    onExited: function(code) {
+      var status = Number(String(readStdout.text || root.readOutput || ""))
+      // 204 synced; 404 means the bounded server retention already removed
+      // the signal, so it is terminal rather than a head-of-line blocker.
+      if (code === 0 && (status === 204 || status === 404)
+          && root.pendingReadGuids.length > 0) {
+        root.pendingReadGuids = root.pendingReadGuids.slice(1)
+        root.persist()
+        root.syncNextRead()
+      }
     }
   }
 
@@ -348,36 +550,34 @@ Item {
   }
 
   Process {
-    id: stateDirProc
-    command: ["install", "-d", "-m", "700", "--", root.stateDir]
+    id: stateReader
+    command: [root.secureStatePath, "--read-state"]
+    stdout: StdioCollector {
+      id: stateReadStdout
+      waitForEnd: true
+      onStreamFinished: root.stateReadRaw = String(text || "")
+    }
     onExited: function(code) {
-      root.stateDirReady = code === 0
-      if (!root.stateDirReady) {
-        root.stateLoaded = true
-        root.feedStateChanged()
+      root.loadState(code === 0
+        ? String(stateReadStdout.text || root.stateReadRaw || "") : "")
+    }
+  }
+
+  Process {
+    id: stateWriter
+    command: [root.secureStatePath, "--write-state"]
+    stdinEnabled: true
+    onStarted: {
+      write(root.stateWriteRaw + "\n")
+      root.stateWriteRaw = ""
+    }
+    onExited: function(code) {
+      if (root.queuedStateRaw.length > 0) {
+        var next = root.queuedStateRaw
+        root.queuedStateRaw = ""
+        Qt.callLater(function() { root.startStateWrite(next) })
       }
     }
-  }
-
-  // ------------------------------------------------------------- file views
-
-  FileView {
-    id: stateFile
-    path: root.stateDirReady ? root.statePath : ""
-    atomicWrites: true
-    printErrors: false
-    onLoaded: {
-      if (root.stateDirReady) root.loadState(text())
-    }
-    onLoadFailed: {
-      if (root.stateDirReady) root.loadState("")
-    }
-  }
-
-  FileView {
-    id: shellConfigFile
-    path: (Quickshell.env("XDG_CONFIG_HOME") || root.home + "/.config") + "/omarchy/shell.json"
-    printErrors: false
   }
 
   Timer {
@@ -387,5 +587,5 @@ Item {
     onTriggered: root.poll()
   }
 
-  Component.onCompleted: stateDirProc.running = true
+  Component.onCompleted: stateReader.running = true
 }

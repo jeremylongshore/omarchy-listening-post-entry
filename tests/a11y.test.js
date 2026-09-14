@@ -30,6 +30,6 @@ test("the panel exposes focus, close, navigation, activation, deletion, and refr
 test("the queue stays clipped, scrollable, and plain-text only", () => {
   const qml = read("Panel.qml")
   assert.match(qml, /Flickable\s*{[\s\S]*clip:\s*true[\s\S]*interactive:\s*contentHeight\s*>\s*height/)
-  assert.match(qml, /j\/k move · enter open · x read · c clear · r refresh/)
+  assert.match(qml, /j\/k move · enter source · w web · x read · c clear · r refresh · p Perception/)
   assert.doesNotMatch(qml, /Text\.StyledText/)
 })

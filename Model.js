@@ -125,6 +125,8 @@ var MAX_BODY_CHARS = 2000000
 var RETENTION_DAYS = 45
 var MAX_ITEMS = 400
 var MAX_ITEMS_PER_SOURCE = 60
+var CONTRACT_VERSION = "1.0"
+var MAX_BRIEF_HIGHLIGHTS = 5
 
 // Sanitize every string that comes from the network before it reaches a QML
 // Text or a notification. Strips angle brackets (a bar label renders as Qt
@@ -248,6 +250,150 @@ function safeUrl(u) {
   var authority = s.slice(8).split(/[\/?#]/)[0]
   if (authority.indexOf("@") !== -1) return ""
   return s.length > 500 ? "" : s
+}
+
+// Listening Post talks only to the canonical Perception service. The endpoint
+// remains a native Omarchy setting so development and future migrations do not
+// require QML edits, but an arbitrary hostname would turn the plugin into an
+// SSRF client. Fail closed until another origin is explicitly shipped here.
+function perceptionEndpoint(value) {
+  var endpoint = String(value || "").replace(/\/+$/, "")
+  return endpoint === "https://api.perception.intentsolutions.io" ? endpoint : ""
+}
+
+function validDeviceToken(value) {
+  return /^[A-Za-z0-9_-]{32,256}$/.test(String(value || ""))
+}
+
+function validCredentialSetting(value) {
+  return String(value || "") === "~/.config/perception/listening-post.curlrc"
+}
+
+function isoTime(value) {
+  if (value === null) return 0
+  if (typeof value !== "string" || value.length > 40) return -1
+  var parsed = Date.parse(value)
+  return isNaN(parsed) ? -1 : parsed
+}
+
+function sourceSlug(value) {
+  var slug = clean(value, 80).toLowerCase().replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return slug || "perception"
+}
+
+function hasOnlyKeys(value, allowed) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  var keys = Object.keys(value)
+  for (var i = 0; i < keys.length; i++) {
+    if (allowed.indexOf(keys[i]) === -1) return false
+  }
+  return true
+}
+
+// Strict ES5 mirror of @listening-post/perception-contract. A malformed or
+// oversized response is rejected as a whole so Service.qml can retain the
+// previous last-good field instead of mixing partially trusted data into it.
+function parsePerceptionSnapshot(raw) {
+  var s = String(raw || "")
+  if (!s || s.length > MAX_BODY_CHARS) return { valid: false }
+  var data
+  try { data = JSON.parse(s) } catch (e) { return { valid: false } }
+  if (!hasOnlyKeys(data, ["schemaVersion", "generatedAt", "staleAfter", "account", "topics", "signals", "brief", "sourceHealth"])
+      || data.schemaVersion !== CONTRACT_VERSION) return { valid: false }
+  if (typeof data.generatedAt !== "string" || typeof data.staleAfter !== "string") return { valid: false }
+  var generatedAt = isoTime(data.generatedAt)
+  var staleAfter = isoTime(data.staleAfter)
+  if (generatedAt < 0 || staleAfter < 0 || staleAfter < generatedAt) return { valid: false }
+  if (!hasOnlyKeys(data.account, ["id", "displayName"])
+      || typeof data.account.id !== "string" || !data.account.id.trim()
+      || data.account.id.length > 128 || typeof data.account.displayName !== "string"
+      || !data.account.displayName.trim() || data.account.displayName.length > 80) return { valid: false }
+  if (!Array.isArray(data.topics) || data.topics.length > 8
+      || !Array.isArray(data.signals) || data.signals.length > MAX_ITEMS
+      || !data.brief || !Array.isArray(data.brief.highlights)
+      || data.brief.highlights.length > MAX_BRIEF_HIGHLIGHTS
+      || !Array.isArray(data.sourceHealth) || data.sourceHealth.length > 64) return { valid: false }
+
+  var topics = []
+  for (var t = 0; t < data.topics.length; t++) {
+    var topic = data.topics[t]
+    if (!hasOnlyKeys(topic, ["id", "name", "enabled", "keywords"])
+        || typeof topic.id !== "string" || !topic.id.trim() || topic.id.length > 128
+        || typeof topic.name !== "string" || !topic.name.trim() || topic.name.length > 40
+        || typeof topic.enabled !== "boolean" || !Array.isArray(topic.keywords)
+        || topic.keywords.length > 8) return { valid: false }
+    var keywords = []
+    for (var k = 0; k < topic.keywords.length; k++) {
+      if (typeof topic.keywords[k] !== "string" || !topic.keywords[k].trim()
+          || topic.keywords[k].length > 64) return { valid: false }
+      keywords.push(clean(topic.keywords[k], 64))
+    }
+    topics.push({ id: clean(topic.id, 128), name: clean(topic.name, 40),
+      enabled: topic.enabled, keywords: keywords })
+  }
+
+  var items = []
+  var byId = ({})
+  for (var i = 0; i < data.signals.length; i++) {
+    var signal = data.signals[i]
+    var published = signal ? isoTime(signal.publishedAt) : -1
+    if (!hasOnlyKeys(signal, ["id", "title", "url", "source", "lane", "relevance", "resolved", "quiet", "matchedTopicIds", "publishedAt", "read"])
+        || typeof signal.id !== "string" || !/^[A-Za-z0-9_-]{1,160}$/.test(signal.id)
+        || byId[signal.id] || typeof signal.title !== "string" || !signal.title.trim()
+        || signal.title.length > 240 || !safeUrl(signal.url)
+        || typeof signal.source !== "string" || !signal.source.trim() || signal.source.length > 80
+        || !/^(release|pricing|incident|engineering)$/.test(String(signal.lane))
+        || typeof signal.relevance !== "number" || !isFinite(signal.relevance)
+        || signal.relevance < 0 || signal.relevance > 100
+        || typeof signal.resolved !== "boolean" || typeof signal.quiet !== "boolean"
+        || !Array.isArray(signal.matchedTopicIds) || published < 0
+        || typeof signal.read !== "boolean") return { valid: false }
+    for (var m = 0; m < signal.matchedTopicIds.length; m++) {
+      if (typeof signal.matchedTopicIds[m] !== "string" || !signal.matchedTopicIds[m].trim()
+          || signal.matchedTopicIds[m].length > 128) return { valid: false }
+    }
+    var source = clean(signal.source, 80)
+    var item = {
+      guid: signal.id, sourceId: sourceSlug(source), vendor: sourceSlug(source),
+      vendorName: source, product: "", lane: String(signal.lane), quiet: signal.quiet,
+      title: clean(signal.title, 240), url: safeUrl(signal.url), timeMs: published,
+      resolved: signal.resolved, read: signal.read, used: signal.relevance > 0,
+      relevance: signal.relevance
+    }
+    byId[signal.id] = item
+    items.push(item)
+  }
+
+  if (!hasOnlyKeys(data.brief, ["windowStart", "windowEnd", "highlights"])
+      || typeof data.brief.windowStart !== "string" || typeof data.brief.windowEnd !== "string") return { valid: false }
+  var windowStart = isoTime(data.brief.windowStart)
+  var windowEnd = isoTime(data.brief.windowEnd)
+  if (windowStart < 0 || windowEnd < 0 || windowEnd < windowStart) return { valid: false }
+  var highlights = []
+  for (var h = 0; h < data.brief.highlights.length; h++) {
+    var highlight = data.brief.highlights[h]
+    if (!hasOnlyKeys(highlight, ["signalId", "reason"])
+        || typeof highlight.signalId !== "string" || !byId[highlight.signalId]
+        || typeof highlight.reason !== "string" || !highlight.reason.trim()
+        || highlight.reason.length > 240) return { valid: false }
+    highlights.push({ signalId: highlight.signalId, reason: clean(highlight.reason, 240) })
+  }
+
+  var sources = []
+  for (var j = 0; j < data.sourceHealth.length; j++) {
+    var health = data.sourceHealth[j]
+    if (!hasOnlyKeys(health, ["id", "name", "status", "checkedAt"])
+        || typeof health.id !== "string" || !health.id.trim() || health.id.length > 128
+        || typeof health.name !== "string" || !health.name.trim() || health.name.length > 80
+        || !/^(healthy|degraded|unavailable)$/.test(String(health.status))
+        || typeof health.checkedAt !== "string" || isoTime(health.checkedAt) < 0) return { valid: false }
+    sources.push({ id: clean(health.id, 128), title: clean(health.name, 80),
+      ok: health.status === "healthy", status: String(health.status), error: health.status })
+  }
+  return { valid: true, generatedAt: generatedAt, staleAfter: staleAfter,
+    accountName: clean(data.account.displayName, 80), topics: topics,
+    items: items, highlights: highlights, sources: sources }
 }
 
 // One text field, feed to display: CDATA off, entities decoded, tags
@@ -664,49 +810,6 @@ function parseState(raw) {
   return { valid: true, generatedAt: num(data.generatedAt), sources: sources, items: items }
 }
 
-// ---- OPML import/export for the user's extra sources. Import accepts any
-//      OPML 1/2 body and returns the https xmlUrl outlines; export renders
-//      the curated set plus the user's extras so a feed reader can take the
-//      whole list.
-
-function parseOpml(raw) {
-  var s = String(raw || "")
-  if (!s || s.length > MAX_BODY_CHARS) return []
-  if (!/<opml[\s>]/i.test(s)) return []
-  var outlines = s.match(/<outline\b[^>]*>/gi) || []
-  var out = []
-  for (var i = 0; i < outlines.length && out.length < 50; i++) {
-    var o = outlines[i]
-    var urlM = /xmlUrl="([^"]*)"/i.exec(o)
-    if (!urlM) continue
-    var url = safeUrl(urlM[1])
-    if (!url) continue
-    var titleM = /(?:title|text)="([^"]*)"/i.exec(o)
-    out.push({
-      title: feedText(titleM ? titleM[1] : url, 60),
-      url: url
-    })
-  }
-  return out
-}
-
-function toOpml(curated, extras) {
-  var lines = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<opml version="2.0">',
-    '  <head><title>Listening Post sources</title></head>',
-    "  <body>"
-  ]
-  var all = (curated || []).concat(extras || [])
-  for (var i = 0; i < all.length; i++) {
-    var t = String(all[i].title || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")
-    var u = String(all[i].url || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")
-    lines.push('    <outline type="rss" text="' + t + '" title="' + t + '" xmlUrl="' + u + '"/>')
-  }
-  lines.push("  </body>", "</opml>", "")
-  return lines.join("\n")
-}
-
 if (typeof module !== "undefined") {
   module.exports = {
     SOURCES: SOURCES,
@@ -714,11 +817,16 @@ if (typeof module !== "undefined") {
     MAX_BODY_CHARS: MAX_BODY_CHARS,
     RETENTION_DAYS: RETENTION_DAYS,
     MAX_ITEMS: MAX_ITEMS,
+    CONTRACT_VERSION: CONTRACT_VERSION,
     clean: clean,
     decodeEntities: decodeEntities,
     stripTags: stripTags,
     feedText: feedText,
     safeUrl: safeUrl,
+    perceptionEndpoint: perceptionEndpoint,
+    validDeviceToken: validDeviceToken,
+    validCredentialSetting: validCredentialSetting,
+    parsePerceptionSnapshot: parsePerceptionSnapshot,
     parseFeed: parseFeed,
     classifyLane: classifyLane,
     normalizeItems: normalizeItems,
@@ -733,8 +841,6 @@ if (typeof module !== "undefined") {
     tooltipText: tooltipText,
     ageText: ageText,
     emptyState: emptyState,
-    parseState: parseState,
-    parseOpml: parseOpml,
-    toOpml: toOpml
+    parseState: parseState
   }
 }

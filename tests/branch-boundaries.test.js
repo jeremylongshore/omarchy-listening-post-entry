@@ -64,7 +64,7 @@ test("row, count, pill, tooltip, and age boundaries cover quiet and active state
   assert.match(Model.tooltipText({ incidents: 2, unread: 1 }, NOW - 3600000, NOW), /2 active incidents, 1 unread/)
 })
 
-test("state and OPML readers cover invalid source rows, missing titles, and empty exports", () => {
+test("state reader covers invalid source rows and missing titles", () => {
   const state = Model.parseState(JSON.stringify({
     generatedAt: "bad", sources: [null, {}, { id: "ok", ok: false, title: null, error: "down" }],
     items: [item({ guid: "", title: "drop" }), item({ guid: "drop", title: null }),
@@ -74,14 +74,4 @@ test("state and OPML readers cover invalid source rows, missing titles, and empt
   assert.equal(state.sources.length, 1)
   assert.equal(state.items.length, 1)
   assert.equal(state.generatedAt, 0)
-  assert.deepEqual(Model.parseOpml(null), [])
-  assert.deepEqual(Model.parseOpml("<opml><body></body></opml>"), [])
-  assert.deepEqual(Model.parseOpml("x".repeat(Model.MAX_BODY_CHARS + 1)), [])
-  const opml = '<opml><body><outline/><outline xmlUrl="http://bad"/><outline xmlUrl="https://example.test/feed"/></body></opml>'
-  assert.deepEqual(Model.parseOpml(opml), [{ title: "https://example.test/feed", url: "https://example.test/feed" }])
-  const empty = Model.toOpml(null, null)
-  assert.match(empty, /<opml version="2.0">/)
-  const escaped = Model.toOpml([{ title: '<A & "B">', url: 'https://example.test/a?x=1&y=2' }], null)
-  assert.match(escaped, /&lt;A &amp; &quot;B&quot;>/)
-  assert.match(escaped, /x=1&amp;y=2/)
 })
