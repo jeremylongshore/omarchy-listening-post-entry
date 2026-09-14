@@ -46,6 +46,9 @@ Regenerate with `scripts/gen-changelog.sh`.
 - Keep the original 29-source poller as unpaired migration behavior. After the
   first valid Perception response, retain only the last-good account field
   through offline, authentication, entitlement, and malformed-response states.
+- Record the owner-approved USD 9 monthly offer, no-trial and 14-day
+  first-payment refund policy, paid-through cancellation behavior, and Alabama
+  governing law while keeping provider-bound production publication fail closed.
 
 ### Removed
 
@@ -90,6 +93,8 @@ Regenerate with `scripts/gen-changelog.sh`.
 - Add pre-launch schema migration, provider timeout/restart recovery, refund
   replay, single-use pairing, incorrect callback/hostname, and public OMA
   subpath refresh coverage.
+- Prove a GitHub-backed default-branch add-and-enable on Buzz at the merged
+  source revision and record the post-merge green CI receipts.
 
 ## [1.2.0] - 2026-08-29
 

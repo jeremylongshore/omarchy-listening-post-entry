@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PublicExperience } from "./PublicExperience";
 
 describe("public customer policies", () => {
@@ -35,5 +35,21 @@ describe("public customer policies", () => {
     const html = renderToStaticMarkup(<PublicExperience page="terms" />);
     expect(html).toContain("Acceptable Use Policy");
     expect(html).toContain("?page=acceptable-use");
+    expect(html).toContain("Governing law");
+    expect(html).toContain("laws of Alabama, United States");
+  });
+
+  it("removes rollout qualifiers only for the validated approved build", async () => {
+    vi.stubEnv("VITE_PERCEPTION_TERMS_APPROVED", "true");
+    vi.stubEnv("VITE_PERCEPTION_GOVERNING_LAW", "Alabama, United States");
+    vi.resetModules();
+    const { PublicExperience: ApprovedExperience } = await import("./PublicExperience");
+    const html = renderToStaticMarkup(<ApprovedExperience page="terms" />);
+    expect(html).not.toContain("Rollout draft");
+    expect(html).not.toContain("Not yet production terms");
+    expect(html).toContain("Effective September 14, 2026");
+    expect(html).toContain("laws of Alabama, United States");
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });

@@ -39,7 +39,8 @@ events, and a public pre-launch bundle are identified separately.
   configuration evidence.
 - [x] Make price, billing, refund, and policy copy configuration-driven and make
   production builds fail closed while approval is absent.
-- [ ] Approve the exact values in the table below.
+- [x] Record the owner's explicit commercial and legal approval for the exact
+  values in the table below (2026-09-14 UTC).
 - [ ] Replace rollout-draft qualifiers only after the approved values are
   recorded in `PRODUCT.md` and the web production validator passes.
 
@@ -49,13 +50,13 @@ events, and a public pre-launch bundle are identified separately.
 | --- | --- | --- | --- |
 | Legal operator | `IntentSolutions.io LLC`, Delaware LLC | evidenced | none |
 | Support | `support@intentsolutions.io`; MXroute forwarder and authenticated domain | evidenced | a controlled delivery is still required |
-| Price | USD 9.00 per month | owner approval required | no production variant or checkout |
-| Currency | USD | owner approval required | no production variant or checkout |
-| Billing interval | Monthly | owner approval required | no production variant or checkout |
-| Trial | No trial | owner approval required | checkout cannot state trial behavior |
-| Refund | First payment refundable within 14 days through Lemon Squeezy; later payments handled as required by law or merchant-of-record policy | owner/counsel approval required | terms remain a rollout draft |
-| Cancellation | Stop renewal; retain access through the paid-through `ends_at` date | implemented, owner approval required | terms remain a rollout draft |
-| Governing law | Alabama recommended because the company is principally operated there; counsel must resolve Alabama versus Delaware | counsel/owner approval required | terms remain a rollout draft |
+| Price | USD 9.00 per month | owner approved 2026-09-14 | no production variant or checkout |
+| Currency | USD | owner approved 2026-09-14 | no production variant or checkout |
+| Billing interval | Monthly | owner approved 2026-09-14 | no production variant or checkout |
+| Trial | No trial | owner approved 2026-09-14 | checkout cannot state trial behavior |
+| Refund | First payment refundable within 14 days through Lemon Squeezy; later payments handled as required by law or merchant-of-record policy | owner approved 2026-09-14 | provider catalog and checkout must match |
+| Cancellation | Stop renewal; retain access through the paid-through `ends_at` date | implemented and owner approved 2026-09-14 | provider catalog and checkout must match |
+| Governing law | Alabama, United States | owner approved 2026-09-14; not represented as counsel-reviewed | production web validator enforces the exact value |
 
 The price recommendation was calibrated against official prices checked on
 2026-09-12: [Readwise Reader](https://readwise.io/pricing/reader) at $12.99
@@ -102,11 +103,17 @@ reader monthly pricing, without an unproven trial or enterprise promise.
   six-hour billing reconciliation.
 - [x] Prove additive migration of the pre-launch database schema and SQLite
   integrity in an isolated file.
-- [ ] Publish the exact repository source revision after the prepared clean
-  branch passes remote CI. Production API deployment remains independently
-  gated by provider configuration and the deployment enable variable.
+- [x] Publish source through PR 18 at squash revision
+  `8ab32e3684c92d08f773a583a1e5513d1563eb7b`; all post-merge test, gate, API
+  build, and web-bundle workflows passed. Production API deployment remains
+  independently gated by provider configuration and the deployment enable
+  variable.
+- [x] Provision the repository-scoped Tailscale identity, dedicated deployment
+  key, four GitHub deployment secrets, VPS variables, clean VPS source checkout,
+  and prebuilt API image. `PERCEPTION_API_DEPLOY_ENABLED` remains `false`.
 - [ ] Create `/srv/perception-src/.env` mode 0600 and the persistent data volume,
-  then deploy the non-root container on loopback port 8790.
+  install the reviewed force command after Intent OS PR 601 merges, then deploy
+  the non-root container on loopback port 8790.
 - [ ] Add the Caddy route and DNS for `api.perception.intentsolutions.io` only
   after the service passes local readiness, then prove public TLS.
 - [ ] Run production ingestion, inspect aggregate source/run/outbox state,
@@ -154,6 +161,6 @@ Commands and decision points are in `docs/PERCEPTION-OPERATIONS.md`.
 The public product experience is online. It is intentionally not labeled
 customer-ready: checkout, production API, production ingestion, delivered test
 email, live pairing, and a real end-to-end purchase remain unproven. The only
-upstream blockers are the consolidated commercial approval, Lemon Squeezy
-credentials/catalog authority, repository Git publication authority, and
-explicit approval for an internal test-email recipient and any real charge.
+upstream blockers are Lemon Squeezy credentials/catalog authority and explicit
+approval for an internal test-email recipient and any real charge. The owner
+approved the consolidated commercial terms and source publication is complete.
