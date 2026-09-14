@@ -91,12 +91,12 @@ The final local tree passes `npm run test:product` and
   responsive mobile layout. A separate integrated snapshot journey proved
   signal deep-link focus, ranked rows, the five-item brief cap, and Omarchy
   pairing UI without browser console errors.
-- The Buzz rig accepted source commit `83c1402e02b59cfe600652b8fc97074af4a6878c`
+- The Buzz rig accepted source commit `1c5ad0af9ec10054dc75320cc95655ebccf6a4c3`
   with the real `omarchy-plugin-validate` command, Qt 6 `qmllint` reported zero
   errors, and the isolated Quickshell render completed all 29 bounded fetches,
   populated all four lanes, and opened the panel through IPC without a
   plugin-sourced warning. The direct 1280 x 720 capture is `preview.png`, SHA-256
-  `7f89965e238e9b79f3d0727f064e233acbf2b46c2b1b2261a03dda7d18bcb6e0`.
+  `fb39438b61cde3b3eb896c9c24386c72be82cf55d9ad239567cd11626be18857`.
 - `npm audit --omit=dev` is clean in the root, web, and API packages; gitleaks
   found no secret; actionlint accepted every workflow; three repeated
   concurrent plugin-suite runs passed. OSV-Scanner v2.3.3 recursively scanned
@@ -206,7 +206,7 @@ plugin. What they caught and this repo then fixed:
 - [x] No plugin-sourced errors in the shell log (only the standard headless
       pipewire/UPower/hyprland-socket noise)
 
-## Fresh Buzz rig receipt, 2026-09-13
+## Fresh Buzz rig receipt, 2026-09-14
 
 - [x] `omarchy-plugin-validate .` exit 0
 - [x] `qmllint BarWidget.qml Panel.qml Service.qml` 0 errors
