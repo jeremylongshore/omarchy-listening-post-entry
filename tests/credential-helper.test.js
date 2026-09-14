@@ -246,6 +246,10 @@ test("settings reads reject symlinks, FIFOs, oversized, writable, and malformed 
       fs.writeFileSync(final, attack === "oversized" ? "x".repeat(256 * 1024 + 1)
         : attack === "writable" ? "{}" : "not-json",
       { mode: attack === "writable" ? 0o666 : 0o600 })
+      // CI runners commonly use a 0022 umask, which turns a requested 0666
+      // create mode into 0644. Set the unsafe final mode explicitly so this
+      // fixture exercises the helper's writable-file rejection everywhere.
+      if (attack === "writable") fs.chmodSync(final, 0o666)
     }
     const result = run(x, ["--read-settings"], "")
     assert.notEqual(result.status, 0, `${attack} unexpectedly passed`)

@@ -124,9 +124,10 @@ were re-pointed before capture. Recapture procedure: `docs/FIXTURES.md`.
 ## No Node/Python polling proof (historical rig)
 
 The graphical poller ships no Node or Python daemon. This matters because a
-stock Omarchy graphical session does not expose mise's Node shim. The optional
-one-time pairing command added after this rig receipt uses shell, curl, and a
-Perl credential helper, then exits; it is not part of the polling process.
+stock Omarchy graphical session does not expose mise's Node shim. Settings,
+state, pairing, and authenticated API operations use a short-lived Perl helper
+that invokes curl when needed and exits after each operation; no helper daemon
+or long-running Node/Python process participates in polling.
 
 Proven on the Omarchy rig by installing the plugin and then **shadowing `node`
 with a stub that exits 127** before launching the shell:
