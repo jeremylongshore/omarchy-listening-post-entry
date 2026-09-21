@@ -1,13 +1,13 @@
 {
-  "fingerprint": "96312f189da936d2555c7924e01df09eddd8b689cc34ecac76f9d43ac3662f95",
-  "sourceCommit": "83c1402e02b59cfe600652b8fc97074af4a6878c",
+  "fingerprint": "8c930fdbe7e32c4b9860f3b727ef33adb6cec64970947f8277d95d97c90bc7ad",
+  "sourceCommit": "e919af1bd9a5bd2587d854a89aa8f1848c46eba3",
   "sourceDirty": false,
-  "sourcePackageSha256": "352eae907440015fdc0e8de633211b411680b09361ea35efe53809c4470ea267",
-  "remotePackageSha256": "352eae907440015fdc0e8de633211b411680b09361ea35efe53809c4470ea267",
+  "sourcePackageSha256": "2faaff72b70f1c184e22bd4312bd17a0e081d6eeaed5964dd4947ef901ca278c",
+  "remotePackageSha256": "2faaff72b70f1c184e22bd4312bd17a0e081d6eeaed5964dd4947ef901ca278c",
   "rig": "intent-ops-buzz/omarchy-rig",
   "evidenceBoundary": "real Omarchy validator and qmllint; no live compositor render",
   "omarchyPluginValidate": 0,
   "qmllintErrors": 0,
-  "validatedAtEpoch": 1789343857,
-  "validatedAt": "2026-09-13T23:57:37Z"
+  "validatedAtEpoch": 1789955786,
+  "validatedAt": "2026-09-21T01:56:26Z"
 }

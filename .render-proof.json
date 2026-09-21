@@ -1,20 +1,20 @@
 {
-  "fingerprint": "504566c25b438baa2ff0005814f5239f5a9cc578d265f01519e4f4501f51efd3",
-  "sourceCommit": "1c5ad0af9ec10054dc75320cc95655ebccf6a4c3",
+  "fingerprint": "8c930fdbe7e32c4b9860f3b727ef33adb6cec64970947f8277d95d97c90bc7ad",
+  "sourceCommit": "e919af1bd9a5bd2587d854a89aa8f1848c46eba3",
   "sourceDirty": false,
-  "sourcePackageSha256": "7a60bf064c42c99c0e921906b86c657f4bbd698109a7d35d44373e6201744d9b",
-  "remotePackageSha256": "7a60bf064c42c99c0e921906b86c657f4bbd698109a7d35d44373e6201744d9b",
+  "sourcePackageSha256": "c642548f2059c77734335acb09696d043808e29f0b17eee564957d9e88012cdf",
+  "remotePackageSha256": "c642548f2059c77734335acb09696d043808e29f0b17eee564957d9e88012cdf",
   "rig": "intent-ops-buzz/omarchy-rig",
-  "runId": "listening-post-1030276",
-  "rawShellLogSha256": "52598eaf6695828e79b4394eb41165055a0399a03a36d61f3d021386fbfe10dc",
-  "fixtureSha256": "0adfcb6984d0ded802bba42c2440721daa450ebe834375b57c766518d5f15a42",
-  "curlArgvLogSha256": "733c3c8760b0c5bc2c18fb3fe15c97bf2ae07399864aa100394997d61f1faec4",
+  "runId": "listening-post-2711404",
+  "rawShellLogSha256": "53800fcd9d29a3abff9d45f91cca9d0f4924482ba3850679a1813ebd13896d33",
+  "fixtureSha256": "a735868a69bc44ab1d7f79fc53418460efffcc4f1302ba5ef6b16d58aa291df3",
+  "curlArgvLogSha256": "056bbf3293eea66eb3de02904c3fb4817a8998e2c93eef78150c44d06795230b",
   "packageBoundary": "runtime tree only; receipts, tests, developer scripts, reports, and preview excluded",
   "evidenceBoundary": "isolated real Omarchy shell and unchanged Service, Model, bar, and panel under a dedicated headless compositor; deterministic scrubbed RSS and Atom through the unchanged bounded curl boundary; complete production poll; live IPC toggle; direct full-frame grim capture with no crop or image post-processing",
-  "fixture": "rig-only four-feed response set plus 25 explicit fetch failures; no production fixture branch",
+  "fixture": "rig-only four-feed response set plus 29 explicit fetch failures; no production fixture branch",
   "primaryAction": "live production poll completed and IPC opened all four lanes",
   "storyEvidence": {
-    "sourceCount": 29,
+    "sourceCount": 33,
     "laneCount": 4,
     "activeIncidentCount": 1,
     "releaseCount": 1,
@@ -25,17 +25,17 @@
   "outputScale": 1.25,
   "visualInspection": {
     "status": "approved",
-    "previewSha256": "fb39438b61cde3b3eb896c9c24386c72be82cf55d9ad239567cd11626be18857",
+    "previewSha256": "35c7e19483b9b50d1a2d69b73030d2c5ce5e288cecbc8386852efc5c0429e5df",
     "inspector": "jeremylongshore",
-    "inspectedAt": "2026-09-14T00:10:39Z",
+    "inspectedAt": "2026-09-21T02:39:38Z",
     "checks": [
       "product value visible at marketplace scale",
       "no primary content clipped",
       "plugin-specific visual identity"
     ]
   },
-  "previewSha256": "fb39438b61cde3b3eb896c9c24386c72be82cf55d9ad239567cd11626be18857",
+  "previewSha256": "35c7e19483b9b50d1a2d69b73030d2c5ce5e288cecbc8386852efc5c0429e5df",
   "dimensions": "1280 x 720",
   "nonblackCoverage": 0.447635,
-  "capturedAt": "2026-09-14T00:10:06Z"
+  "capturedAt": "2026-09-21T01:56:49Z"
 }
