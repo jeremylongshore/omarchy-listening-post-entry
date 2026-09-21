@@ -1,7 +1,7 @@
 # Acceptance journeys
 
 1. Install on stock Omarchy and create the private state directory before first load.
-2. Poll the 29 fixed sources with HTTPS, body, redirect, and time boundaries.
+2. Poll the 33 fixed sources with HTTPS, body, redirect, and time boundaries.
 3. Parse releases, pricing, incidents, and engineering posts into separate lanes.
 4. Float locally used providers first without opening their usage files.
 5. Operate the queue by pointer, keyboard, and IPC; persist bounded read state.

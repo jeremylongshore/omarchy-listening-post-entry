@@ -621,3 +621,25 @@ test("Perception endpoint and device token validation fail closed", () => {
   assert.equal(Model.validCredentialSetting("~/.config/perception/listening-post.curlrc"), true)
   assert.equal(Model.validCredentialSetting("/tmp/stolen.curlrc"), false)
 })
+
+test("the Omarchy platform sources are fixed HTTPS feeds that land in the expected lanes", () => {
+  const want = {
+    "omarchy-releases": ["github.com", "release"],
+    "hyprland-releases": ["github.com", "release"],
+    "quickshell-releases": ["github.com", "release"],
+    "dhh": ["world.hey.com", "engineering"]
+  }
+  for (const id of Object.keys(want)) {
+    const src = Model.SOURCES.find((s) => s.id === id)
+    assert.ok(src, id + " is in the curated list")
+    const url = new URL(src.url)
+    assert.equal(url.protocol, "https:")
+    assert.equal(url.hostname, want[id][0])
+    const items = Model.normalizeItems(Model.parseFeed(fixture(id + ".xml")), src, NOW_MS)
+    assert.ok(items.length > 0, id + " fixture parses into items")
+    for (const it of items) assert.equal(it.lane, want[id][1], id + " item lane")
+  }
+  assert.equal(Model.SOURCES.length, 33)
+  assert.equal(new Set(Model.SOURCES.map((s) => s.id)).size, 33, "source ids are unique")
+})
+

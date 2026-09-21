@@ -51,7 +51,11 @@ The web app is an editorial signal room rather than a generic analytics dashboar
 
 ## Intelligence pipeline
 
-- The API owns the same 29 reviewed sources proven by Listening Post. Source URLs are compile-time constants; redirects are rejected and no user-controlled hostname enters the fetcher.
+- The API owns the 29 reviewed AI sources first proven by Listening Post. Since
+  plugin 1.3.0 the plugin's unpaired mode also polls four Omarchy platform
+  sources (Omarchy, Hyprland and Quickshell releases, and DHH's blog) that the
+  API does not ingest, so an unpaired plugin sees 33 sources and a paired one
+  sees the API's 29. Source URLs are compile-time constants; redirects are rejected and no user-controlled hostname enters the fetcher.
 - Each source is fetched with a 12-second timeout and a streaming 2 MB ceiling. RSS and Atom parsing is capped at 60 entries per source and strips markup, controls, bidirectional overrides, and unsafe links before persistence. Article bodies are never stored.
 - Stable source-and-guid hashes deduplicate repeated runs. Signals retain at most 45 days of history and the database retains the newest 100 ingestion receipts.
 - Per-account ranking is deterministic: incidents always score 100 and sort first; release, pricing, and engineering lanes have explicit base scores; case-insensitive literal keyword matches add bounded topic weight and an explainable reason.

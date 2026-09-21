@@ -192,7 +192,7 @@ attempt=0
 while [ \$attempt -lt 30 ]; do
   STATE="\$STATE_ROOT/omarchy/listening-post/state.json"
   if [ -f "\$STATE" ] && jq -e \
-    '(.sources | length) == 29 and
+    '(.sources | length) == 33 and
      ([.items[] | select(.lane == "incident" and .resolved == false)] | length) == 1 and
      ([.items[] | select(.lane == "release")] | length) >= 1 and
      ([.items[] | select(.lane == "pricing")] | length) >= 1 and
@@ -201,7 +201,7 @@ while [ \$attempt -lt 30 ]; do
   attempt=\$((attempt + 1)); sleep 1
 done
 [ \$attempt -lt 30 ] || { echo "rig-render: real service did not complete all four lanes" >&2; tail -80 "\$QS_LOG" >&2; cat "\$STATE" >&2 2>/dev/null || true; exit 1; }
-[ "\$(wc -l < "\$FIXTURES/curl.log")" -eq 29 ] || { echo "rig-render: production service did not issue exactly 29 bounded fetches" >&2; exit 1; }
+[ "\$(wc -l < "\$FIXTURES/curl.log")" -eq 33 ] || { echo "rig-render: production service did not issue exactly 33 bounded fetches" >&2; exit 1; }
 if grep -Ev -- '--proto =https --max-time 12 --max-filesize 2000000 .* -- https://' "\$FIXTURES/curl.log" >/dev/null; then
   echo "rig-render: a production fetch escaped the required argv bounds" >&2; exit 1
 fi
@@ -284,9 +284,9 @@ jq -n --arg fp "$FP" --arg commit "$SOURCE_COMMIT" --argjson dirty "$SOURCE_DIRT
     rawShellLogSha256:$logSha,fixtureSha256:$fixtureSha,curlArgvLogSha256:$curlLogSha,
     packageBoundary:"runtime tree only; receipts, tests, developer scripts, reports, and preview excluded",
     evidenceBoundary:"isolated real Omarchy shell and unchanged Service, Model, bar, and panel under a dedicated headless compositor; deterministic scrubbed RSS and Atom through the unchanged bounded curl boundary; complete production poll; live IPC toggle; direct full-frame grim capture with no crop or image post-processing",
-    fixture:"rig-only four-feed response set plus 25 explicit fetch failures; no production fixture branch",
+    fixture:"rig-only four-feed response set plus 29 explicit fetch failures; no production fixture branch",
     primaryAction:"live production poll completed and IPC opened all four lanes",
-    storyEvidence:{sourceCount:29,laneCount:4,activeIncidentCount:1,releaseCount:1,pricingCount:1,engineeringCount:2,allPrimaryRowsExpected:true},
+    storyEvidence:{sourceCount:33,laneCount:4,activeIncidentCount:1,releaseCount:1,pricingCount:1,engineeringCount:2,allPrimaryRowsExpected:true},
     outputScale:($scale|tonumber),visualInspection:{status:"pending",previewSha256:$sha,checks:[]},
     previewSha256:$sha,dimensions:$dimensions,nonblackCoverage:($coverage|tonumber),capturedAt:$at}' \
   > "$TARGET/.render-proof.json"

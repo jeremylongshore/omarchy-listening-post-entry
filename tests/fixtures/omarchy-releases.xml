@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/omacom/omarchy/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/omacom/omarchy/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/omacom/omarchy/releases.atom"/>
+  <title>Release notes from omarchy</title>
+  <updated>2026-09-15T05:34:12Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/994093166/v4.0.4</id>
+    <updated>2026-09-15T22:15:08Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/omacom/omarchy/releases/tag/v4.0.4"/>
+    <title>v4.0.4</title>
+    <content type="html">&lt;p&gt;This release brings our bespoke kernel to everyone. The Omarchy kernel is tuned to keep the desktop responsive and multitasking smooth, even under heavy load or memory pressure. It improves gaming compatibility, enables smoother gaming on supported AMD HDMI displays, speeds up common Btrfs file operations, and refines power management. It also fixes everyday hardware frustrations, including missing audio, unresponsive touchpads, display freezes, and slow startup or resume on affected machines.&lt;/p&gt;
+&lt;p&gt;You can upgrade existing machines with Update &amp;gt; Omarchy.&lt;/p&gt;
+&lt;p&gt;Install on new machines with the ISO:&lt;/p&gt;
+&lt;p&gt;Download: &lt;a href=&quot;https://iso.omarchy.org/omarchy-4.0.4.iso&quot; rel=&quot;nofollow&quot;&gt;https://iso.omarchy.org/omarchy-4.0.4.iso&lt;/a&gt;&lt;br&gt;
+SHA256: ddeded2758c48318d201dfdac905ecb28f570441883f0c052ea3cd5d05acf92d&lt;/p&gt;
+&lt;h2&gt;Improvements&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Install our bespoke kernel and set &lt;code&gt;linux-omarchy&lt;/code&gt; as the default boot option by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/kwilczynski/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/kwilczynski&quot;&gt;@kwilczynski&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Fix webcam issues on XPS systems in the 7.2.x kernel by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/spencerbull/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/spencerbull&quot;&gt;@spencerbull&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Full Changelog&lt;/strong&gt;: &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/omacom/omarchy/compare/v4.0.3...v4.0.4&quot;&gt;&lt;tt&gt;v4.0.3...v4.0.4&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>ryanrhughes</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1630358?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/994093166/v4.0.3</id>
+    <updated>2026-09-08T19:50:46Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/omacom/omarchy/releases/tag/v4.0.3"/>
+    <title>v4.0.3</title>
+    <content type="html">&lt;p&gt;This release brings amazing out-of-the-box integration for both Hermes and Openclaw as well as additional set of security fixes that were validated and examined by the &lt;a href=&quot;https://omarchy.org/teams/#security&quot; rel=&quot;nofollow&quot;&gt;Omarchy Security team&lt;/a&gt;. If you ever find security issues with Omarchy, please follow the responsible disclosure procedure on &lt;a href=&quot;https://omarchy.org/security/&quot; rel=&quot;nofollow&quot;&gt;omarchy.org/security&lt;/a&gt;. 🙏&lt;/p&gt;
+&lt;p&gt;You can upgrade existing machines with Update &amp;gt; Omarchy.&lt;/p&gt;
+&lt;p&gt;Install on new machines with the ISO:&lt;/p&gt;
+&lt;p&gt;Download: &lt;a href=&quot;https://iso.omarchy.org/omarchy-4.0.3.iso&quot; rel=&quot;nofollow&quot;&gt;https://iso.omarchy.org/omarchy-4.0.3.iso&lt;/a&gt;&lt;br&gt;
+SHA256: 03d60bc74306dca51f96e1a84b690871d8d606826b260edd0208962da8507d14&lt;/p&gt;
+&lt;h2&gt;Additional agentware is here&lt;/h2&gt;
+&lt;h3&gt;Add OpenClaw as a desktop app and default coding agent by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/spencerbull/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/spencerbull&quot;&gt;@spencerbull&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Install OpenClaw from &lt;em&gt;Install &amp;gt; AI&lt;/em&gt;, open its Control UI as an app, or choose its terminal interface as your default agent. Omarchy manages onboarding and the local user gateway; removal asks before deleting your data.&lt;/p&gt;
+&lt;h3&gt;Add Hermes Desktop and terminal-agent integration by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/spencerbull/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/spencerbull&quot;&gt;@spencerbull&lt;/a&gt; and &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/smfworks/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/smfworks&quot;&gt;@smfworks&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Install Hermes from &lt;em&gt;Install &amp;gt; AI&lt;/em&gt; and use the same installation from the desktop, terminal, and default-agent launcher. Prompted sessions use the native interactive interface, and Omarchy skills are linked into Hermes.&lt;/p&gt;
+&lt;h2&gt;More agents, more everywhere!&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Add T3 Code with Omarchy theme support by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/omarchybot/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/omarchybot&quot;&gt;@omarchybot&lt;/a&gt;, &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Add the Perplexity desktop app to the AI menu by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/spencerbull/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/spencerbull&quot;&gt;@spencerbull&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Add Cursor CLI as a default coding agent by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/dhh/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/dhh&quot;&gt;@dhh&lt;/a&gt;, &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/cavanaug/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/cavanaug&quot;&gt;@cavanaug&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Add Muse Code as a default coding agent by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/jp30566347/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/jp30566347&quot;&gt;@jp30566347&lt;/a&gt;, &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/dhh/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/dhh&quot;&gt;@dhh&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Compatibility&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Improve fingerprint-reader support during setup by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/powderluv/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/powderluv&quot;&gt;@powderluv&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Update the Panther Lake kernel to 7.2.3 by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Fix mise upgrades removing tool versions still in use by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/dhh/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/dhh&quot;&gt;@dhh&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Fix oversized 1Password windows on scaled displays by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/dhh/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/dhh&quot;&gt;@dhh&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Switch Broadcom Wi-Fi to the DKMS driver after Arch dropped the prebuilt module by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Security&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Harden mise command-wrapper input handling by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/Adolanium/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/Adolanium&quot;&gt;@Adolanium&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Restrict plugin access to authentication services by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/acrogenesis/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/acrogenesis&quot;&gt;@acrogenesis&lt;/a&gt;, &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/barmstrong/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/barmstrong&quot;&gt;@barmstrong&lt;/a&gt;, &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Require expiry setup for temporary passwordless sudo by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ErikMelton/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ErikMelton&quot;&gt;@ErikMelton&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Harden locate indexing with packaged service defaults by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Harden ownership of installed sleep hooks by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/acrogenesis/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/acrogenesis&quot;&gt;@acrogenesis&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Harden lock-screen authentication command lookup by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/mdisec/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/mdisec&quot;&gt;@mdisec&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Restrict Kitty remote control to local sockets by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/ryanrhughes/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/ryanrhughes&quot;&gt;@ryanrhughes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</content>
+    <author>
+      <name>ryanrhughes</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1630358?s=60&amp;v=4"/>
+  </entry>
+</feed>

@@ -10,7 +10,21 @@ Regenerate with `scripts/gen-changelog.sh`.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.3.0] - 2026-09-21
+
+The first version number for the Perception pairing work below, which had been on
+`main` since 2026-09-14 while the manifest still read 1.2.0.
+
 ### Added
+
+- Four Omarchy platform sources, taking the curated list from 29 to 33: Omarchy,
+  Hyprland and Quickshell releases (release lane) and DHH's blog (engineering
+  lane). Three are GitHub release feeds on a host already in the list. The blog
+  adds one host, `world.hey.com`. Each answers 200 directly with the plugin's
+  no-redirect fetch and sits well inside the 2 MB response bound. The Perception
+  API does not ingest these four, so they appear in unpaired mode only.
 
 - Build the Perception React signal room, Fastify API, SQLite persistence,
   shared contract-v1 package, curated ingestion, account topics, ranked signals,

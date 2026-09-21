@@ -35,7 +35,7 @@ test("both authored marketplace descriptions use the full allowance and tell the
   for (const claim of [
     "Perception signal room", "Omarchy bar", "Open its panel", "five-item daily brief", "device token",
     "out of process arguments and logs", "last good field", "syncs read state",
-    "29 curated HTTPS feeds", "migration fallback", "No article bodies or telemetry"
+    "33 curated HTTPS feeds", "migration fallback", "No article bodies or telemetry"
   ]) assert.match(manifest.description, new RegExp(claim))
 })
 

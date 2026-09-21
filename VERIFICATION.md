@@ -5,7 +5,7 @@ What has actually been proven, how, and what remains.
 ## Unit suite (dev box + CI)
 
 **112 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
-layer: the RSS and Atom parsers against captured bodies from all twenty-nine
+layer: the RSS and Atom parsers against captured bodies from all thirty-three
 live sources, format detection anchored to the document root, lane
 classification, ISO-week clustering by source with product labels, the
 quiet-changelog collapse, merge and unconditional retention cap, read-state,
@@ -117,7 +117,7 @@ identity. Browser access is passwordless and cookie-based. Omarchy gets a
 separate high-entropy, revocable device token whose hash alone is stored by the
 API. Firebase and GitHub OAuth are not authentication dependencies.
 
-Fixtures were captured 2026-08-20 from all twenty-nine live sources; the two
+Fixtures were captured 2026-08-20 from the original twenty-nine live sources, and on 2026-09-21 from the four Omarchy platform sources; the two
 URLs that had moved that day (Google AI blog, Anthropic status → status.claude.com)
 were re-pointed before capture. Recapture procedure: `docs/FIXTURES.md`.
 
