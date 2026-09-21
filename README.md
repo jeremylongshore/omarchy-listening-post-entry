@@ -215,7 +215,7 @@ npm run audit
 shellcheck --severity=warning scripts/*.sh e2e/*.sh .githooks/pre-push
 ```
 
-The product lane runs 112 plugin tests, 7 shared-contract tests, 8 web tests, and
+The product lane runs 117 plugin tests, 7 shared-contract tests, 8 web tests, and
 65 API tests (192 total), then builds both product surfaces. The plugin lane requires at
 least 95% line, statement, and function coverage, 90% branch coverage, a 90%
 mutation score, and three concurrent race passes. Parser tests exercise RSS and

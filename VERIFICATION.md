@@ -4,7 +4,7 @@ What has actually been proven, how, and what remains.
 
 ## Unit suite (dev box + CI)
 
-**112 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
+**117 plugin tests and 7 shared-contract tests, all passing** (`npm test`), offline. The whole `Model.js` data
 layer: the RSS and Atom parsers against captured bodies from all thirty-three
 live sources, format detection anchored to the document root, lane
 classification, ISO-week clustering by source with product labels, the
@@ -23,7 +23,7 @@ the full purchase-email account and entitled-device lifecycle.
 The final local tree passes `npm run test:product` and
 `npm run build:product`:
 
-- **112 plugin tests** pass with 100% statement, line, and function coverage
+- **117 plugin tests** pass with 100% statement, line, and function coverage
   and 95.56% branch coverage for `Model.js`.
 - **7 shared-contract tests** pass, including strict native-safe signal IDs,
   HTTPS links, unknown-field rejection, exact resource bounds, ordered time
@@ -229,7 +229,7 @@ The sanitized command/output receipt is retained at
 
 ## Honest boundary
 
-The current QML package is proven by 112 plugin tests, strict contract fixtures,
+The current QML package is proven by 117 plugin tests, strict contract fixtures,
 the real Omarchy validator, Qt lint, and a live isolated compositor render of
 the local 29-source migration path. A live compositor journey against a
 deployed Perception account, including offline recovery, is not yet proven.
@@ -243,3 +243,25 @@ application-revision rollback remain unproven. The real React customer surface i
 the production API, Lemon Squeezy catalog/webhook, delivered transactional
 email, production ingestion, and live pairing are not deployed or proven. The
 remaining gates are tracked in Beads and `docs/PERCEPTION-ROLLOUT.md`.
+
+## Addendum, 2026-09-21: 33 sources (plugin 1.3.0)
+
+Plugin 1.3.0 adds four Omarchy platform sources, taking the curated list from 29
+to 33. Statements above in the present tense were updated. **Dated measurements
+above are left exactly as recorded**, including "29/29 sources ok, 324 items" and
+"all 29 bounded production fetch invocations": they describe what was observed on
+that date against the list as it then was, and rewriting them would falsify the
+record. The measurements for the current list are:
+
+- `npm test`: 117 plugin tests and 7 shared-contract tests pass. Four of the five
+  added tests come from the per-source loop in `tests/model.test.js`, which
+  generates one test for each entry in `SOURCES`; the fifth pins the four new
+  sources, their hosts, their lanes, a total of 33 and unique ids.
+- Each new URL answered HTTP 200 with no redirect to the plugin's exact curl argv
+  on the rig (curl 8.21.0): Omarchy 214,537 bytes, Hyprland 525,141, Quickshell
+  4,536, DHH 158,966, against the 2,000,000 byte bound.
+- Live first run on the rig with a pass-through curl: 33 of 33 feeds fetched,
+  every one exit 0 with a non-empty body.
+- The isolated Quickshell render completed all 33 bounded fetches and populated
+  all four lanes, with no QML warnings.
+
