@@ -97,7 +97,24 @@ var SOURCES = [
     url: "https://github.com/modelcontextprotocol/servers/releases.atom" },
   { id: "cursor", vendor: "cursor", vendorName: "Cursor",
     title: "Cursor Changelog", product: "Cursor", kind: "changelog",
-    url: "https://cursor.com/changelog/rss.xml" }
+    url: "https://cursor.com/changelog/rss.xml" },
+
+  // ---- Omarchy platform (the desktop this plugin runs on) ----
+  // A reader that lives in the Omarchy bar should notice when Omarchy, its
+  // compositor or its shell toolkit ships. Three are GitHub release feeds, a
+  // host already in the list. The fourth adds one host, world.hey.com.
+  { id: "omarchy-releases", vendor: "omarchy", vendorName: "Omarchy",
+    title: "Omarchy Releases", product: "Omarchy", kind: "releases",
+    url: "https://github.com/omacom/omarchy/releases.atom" },
+  { id: "hyprland-releases", vendor: "hyprland", vendorName: "Hyprland",
+    title: "Hyprland Releases", product: "Hyprland", kind: "releases",
+    url: "https://github.com/hyprwm/Hyprland/releases.atom" },
+  { id: "quickshell-releases", vendor: "quickshell", vendorName: "Quickshell",
+    title: "Quickshell Releases", product: "Quickshell", kind: "releases",
+    url: "https://github.com/quickshell-mirror/quickshell/releases.atom" },
+  { id: "dhh", vendor: "omarchy", vendorName: "DHH",
+    title: "DHH", kind: "blog",
+    url: "https://world.hey.com/dhh/feed.atom" }
 ]
 
 // Which local agent usage records (the first-party agents plugin writes one

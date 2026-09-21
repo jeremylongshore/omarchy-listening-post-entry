@@ -12,7 +12,7 @@ import "Model.js" as Model
 // helper owns descriptor-bound state, settings, credentials, and authenticated
 // curl execution; it is never a daemon and secrets never enter QML or argv.
 //
-// Fetch is sequential and one source at a time: 29 concurrent curls would
+// Fetch is sequential and one source at a time: 33 concurrent curls would
 // spike the shell process, and feed publishing cadence is hours, so there is
 // nothing to gain from parallelism.
 Item {

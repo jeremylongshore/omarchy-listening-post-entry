@@ -3,7 +3,7 @@
 ## Threat model
 
 Listening Post renders bounded Perception API snapshots and, before pairing,
-strings from twenty-nine fixed public feeds. Both are attacker-influenceable
+strings from thirty-three fixed public feeds. Both are attacker-influenceable
 network content; the shell process must never execute or mis-render them. The
 device bearer token must not enter process listings, logs, links, notifications,
 or the persisted public snapshot state.
@@ -100,7 +100,7 @@ remain direct argv processes. The helper exits after every operation.
 
 ## What this plugin reads and writes
 
-- Reads: the canonical Perception API when paired; otherwise the twenty-nine
+- Reads: the canonical Perception API when paired; otherwise the thirty-three
   curated feed URLs. It also reads `~/.config/omarchy/shell.json` (its own
   settings entry, containing only the managed credential path) and the file *names* under
   `~/.local/state/omarchy/agents/usage/` for personalization (never file

@@ -97,5 +97,5 @@ test("the complete public model surface has a deterministic behavioral signature
     ] }))
   }
   const signature = crypto.createHash("sha256").update(JSON.stringify(cases)).digest("hex")
-  assert.equal(signature, "b9dfd7c3986033f1e6067b2d7b0cbff409c7cf855a2f1c84a1fed0268aab8607")
+  assert.equal(signature, "58d8927abfb32be144a05bc464b29e8dbf65c773df3ef15723a542c7bec9626a")
 })

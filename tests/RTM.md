@@ -2,7 +2,7 @@
 
 | Requirement | Verification |
 | --- | --- |
-| Parse and sanitize all 29 fixed feed shapes within hard bounds | `tests/model.test.js`, `tests/mutation-contract.test.js` |
+| Parse and sanitize all 33 fixed feed shapes within hard bounds | `tests/model.test.js`, `tests/mutation-contract.test.js` |
 | Reject userinfo, shell metacharacters, non-HTTPS links, custom hosts, and redirects | `tests/model.test.js`, `tests/contract.test.js`, C34, C38, C42 |
 | Cap item count, retention, source body, usage-file names, and poll time | `tests/model.test.js`, `tests/contract.test.js` |
 | Initialize private state before loading or writing | `tests/contract.test.js`, Buzz E2E |

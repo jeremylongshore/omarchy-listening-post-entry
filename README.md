@@ -17,7 +17,7 @@ The bar has three deliberate states:
 
 ## Why this is not another RSS reader
 
-- **The source list is the product.** Twenty-nine curated feeds across every
+- **The source list is the product.** Thirty-three curated feeds across every
   major lab, provider, and AI tool. For the vendors that publish no
   first-party blog feed (Anthropic, xAI, Mistral, Meta, and more), Listening
   Post pulls a curated community RSS mirror for news plus their GitHub release
@@ -53,7 +53,7 @@ The script prompts without echo and writes the credential to a mode-0600 file;
 the token never enters shell history, process arguments, `shell.json`, or QML.
 Refresh Listening Post and it will use your account's ranked snapshot and brief.
 
-Until a device token is added, the original 29-source local radar remains
+Until a device token is added, the original 33-source local radar remains
 available as a migration fallback. After the first valid Perception response,
 the plugin stays on that account field and preserves its last-good snapshot
 through offline, malformed-response, entitlement, or API failures.
@@ -87,7 +87,7 @@ Left-click opens, right-click marks read. Middle-click the pill to refresh.
 
 ## Sources
 
-Twenty-nine curated sources.
+Thirty-three curated sources.
 
 - **Vendor news (first-party RSS):** OpenAI, Google AI, Google DeepMind,
   Hugging Face, Together AI.
@@ -99,6 +99,10 @@ Twenty-nine curated sources.
 - **Status incidents:** Claude Status, OpenAI Status.
 - **Releases and changelogs:** Claude Code (releases and changelog), the
   Anthropic / xAI / Mistral SDKs, Ollama, vLLM, MCP Servers, Cursor.
+- **Omarchy platform:** Omarchy, Hyprland and Quickshell releases, and DHH's
+  blog. This plugin lives in the Omarchy bar, so it should notice when the
+  desktop, its compositor or its shell toolkit ships. Releases land in the
+  release lane and the blog in engineering.
 
 The community RSS mirror ([Olshansk/rss-feeds](https://github.com/Olshansk/rss-feeds))
 is third-party and labeled as such; every source is polled independently, so
@@ -125,7 +129,7 @@ problem, because the resolution belongs to `curl` and no amount of regex reaches
 Making it safe would have meant resolving each host, rejecting every non-public
 result, pinning the validated address to the request, and revalidating every
 redirect hop. That is a real amount of machinery to protect a field nobody
-installs this plugin for. Twenty-nine curated sources is the pitch.
+installs this plugin for. Thirty-three curated sources is the pitch.
 
 Every source is now a compile-time constant. If a feed you want is missing,
 open an issue and it can be added to the curated list where it gets reviewed
@@ -189,7 +193,7 @@ In unpaired migration mode, network hosts contacted are the curated feed hosts (
 `blog.google`, `deepmind.google`, `huggingface.co`, `together.ai`,
 `raw.githubusercontent.com`, `theverge.com`, `huyenchip.com`,
 `lilianweng.github.io`, `status.claude.com`, `status.openai.com`,
-`code.claude.com`, `cursor.com`, `github.com`). That list is fixed at build
+`code.claude.com`, `cursor.com`, `github.com`, `world.hey.com`). That list is fixed at build
 time and there is no way for a user, a config file or a feed body to add a host
 to it. No telemetry is collected in either mode.
 
@@ -211,11 +215,11 @@ npm run audit
 shellcheck --severity=warning scripts/*.sh e2e/*.sh .githooks/pre-push
 ```
 
-The product lane runs 112 plugin tests, 7 shared-contract tests, 8 web tests, and
+The product lane runs 117 plugin tests, 7 shared-contract tests, 8 web tests, and
 65 API tests (192 total), then builds both product surfaces. The plugin lane requires at
 least 95% line, statement, and function coverage, 90% branch coverage, a 90%
 mutation score, and three concurrent race passes. Parser tests exercise RSS and
-Atom against captured bodies from all twenty-nine live sources, lane
+Atom against captured bodies from all thirty-three live sources, lane
 classification, week clustering, merge and retention, read-state, notification
 gating, personalization mapping, the feed-list parser, and the state record.
 Offline by design; the capture procedure is in `docs/FIXTURES.md`. CI also runs

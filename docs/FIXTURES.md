@@ -40,7 +40,11 @@ Run `npm test` after recapture. Two classes of failure matter:
 
 ## Capture provenance
 
-Current fixtures were captured 2026-08-20 from all twenty-nine live sources.
+Current fixtures were captured 2026-08-20 from the original twenty-nine live
+sources, and on 2026-09-21 from the four Omarchy platform sources. The Omarchy
+and Hyprland release feeds carry very long release notes, so those two are
+trimmed to their first two entries rather than six; they remain a byte-for-byte
+prefix of the live body.
 The two URLs that had moved that day (Google AI blog, Anthropic status,
 which now lives at status.claude.com) were re-pointed to their final
 locations before capture, which is exactly the drift this procedure

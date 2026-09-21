@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/quickshell-mirror/quickshell/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/quickshell-mirror/quickshell/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/quickshell-mirror/quickshell/releases.atom"/>
+  <title>Release notes from quickshell</title>
+  <updated>2026-08-21T02:29:34Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/766993934/v0.3.1</id>
+    <updated>2026-08-21T02:37:12Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/quickshell-mirror/quickshell/releases/tag/v0.3.1"/>
+    <title>v0.3.1</title>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;/quickshell-mirror/quickshell/blob/v0.3.1/changelog/v0.3.1.md&quot;&gt;0.3.1  Changelog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Commit log:  &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/quickshell-mirror/quickshell/compare/v0.3.0...v0.3.1&quot;&gt;&lt;tt&gt;v0.3.0...v0.3.1&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>outfoxxed</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/83010835?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/766993934/v0.3.0</id>
+    <updated>2026-05-04T09:39:49Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/quickshell-mirror/quickshell/releases/tag/v0.3.0"/>
+    <title>v0.3.0</title>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;/quickshell-mirror/quickshell/blob/v0.3.0/changelog/v0.3.0.md&quot;&gt;0.3.0  Changelog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Commit log:  &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/quickshell-mirror/quickshell/compare/v0.2.1...v0.3.0&quot;&gt;&lt;tt&gt;v0.2.1...v0.3.0&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>outfoxxed</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/83010835?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/766993934/v0.2.1</id>
+    <updated>2025-10-12T00:36:35Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/quickshell-mirror/quickshell/releases/tag/v0.2.1"/>
+    <title>0.2.1</title>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;/quickshell-mirror/quickshell/blob/v0.2.1/changelog/v0.2.1.md&quot;&gt;0.2.1 Changelog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Commit log:  &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/quickshell-mirror/quickshell/compare/v0.2.0...v0.2.1&quot;&gt;&lt;tt&gt;v0.2.0...v0.2.1&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>outfoxxed</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/83010835?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/766993934/v0.2.0</id>
+    <updated>2025-07-27T06:12:35Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/quickshell-mirror/quickshell/releases/tag/v0.2.0"/>
+    <title>v0.2.0</title>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;/quickshell-mirror/quickshell/blob/v0.2.0/changelog/v0.2.0.md&quot;&gt;0.2.0 Changelog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Commit log:  &lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/quickshell-mirror/quickshell/compare/v0.1.0...v0.2.0&quot;&gt;&lt;tt&gt;v0.1.0...v0.2.0&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>outfoxxed</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/83010835?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/766993934/v0.1.0</id>
+    <updated>2025-06-13T01:26:13Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/quickshell-mirror/quickshell/releases/tag/v0.1.0"/>
+    <title>0.1.0</title>
+    <content type="html">&lt;p&gt;0.1 has been released!&lt;/p&gt;
+&lt;p&gt;Packaging changes / future plans: &lt;a href=&quot;https://outfoxxed.me/blog/quickshell-0-1&quot; rel=&quot;nofollow&quot;&gt;https://outfoxxed.me/blog/quickshell-0-1&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>outfoxxed</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/83010835?s=60&amp;v=4"/>
+  </entry>
+</feed>
