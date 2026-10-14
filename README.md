@@ -2,6 +2,12 @@
 
 # Listening Post
 
+<!-- intent-select-partner:start -->
+<p><a href="https://intentsolutions.io/"><img src="https://raw.githubusercontent.com/intent-solutions-io/.github/b82af5d3e7951d85e39ea9e65cc24ee8278722a7/assets/brand/claude-select-partner.svg" alt="Intent Solutions: Claude Partner Network Select Services Partner" width="300" height="95" /></a></p>
+
+Intent Solutions is a Claude Partner Network Select Services Partner.
+<!-- intent-select-partner:end -->
+
 The Omarchy companion for **Perception**, the private web signal room at
 [`oma.intentsolutions.io/perception/`](https://oma.intentsolutions.io/perception/). Listening Post carries the same ranked field,
 five-item brief, and read state into the bar. The pill only speaks when a model
