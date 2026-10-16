@@ -47,7 +47,9 @@ function PublicFooter() {
   return <footer className="public-footer">
     <a href="./"><Wordmark /></a>
     <p>Source-backed intelligence for people who would rather keep working.</p>
-    <nav aria-label="Policies and support">
+    <nav aria-label="Policies, support and more Intent work">
+      <a href="https://intentsolutions.io/projects/">Explore all Intent</a>
+      <a href="https://oma.intentsolutions.io/">Omarchy tools and games</a>
       <a href="?page=support">Support</a>
       <a href="?page=privacy">Privacy</a>
       <a href="?page=terms">Terms</a>
