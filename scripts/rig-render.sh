@@ -102,6 +102,16 @@ chmod 700 "\$RUNTIME" "\$RIG_ROOT" "\$RIG_ROOT/.config" \
   "\$PLUGIN_DIR" "\$STATE_ROOT" "\$STATE_ROOT/omarchy" \
   "\$STATE_ROOT/omarchy/listening-post" "\$RIG_BIN" "\$FIXTURES"
 tar xzf /tmp/rigrender-\$RUN_ID.tgz -C "\$PLUGIN_DIR"
+# A real Omarchy install always has a current theme. Seed the state
+# omarchy-theme-set writes (current/theme, theme.name, background) with the stock
+# tokyo-night theme: current first-party shell plugins (image-picker, lock) read
+# it from HOME/.local/state and log QML warnings when it is missing, which would
+# otherwise read here as plugin warnings.
+CURRENT="\$RIG_ROOT/.local/state/omarchy/current"
+mkdir -p "\$CURRENT"
+ln -nsf /root/omarchy/themes/tokyo-night "\$CURRENT/theme"
+printf 'tokyo-night\n' > "\$CURRENT/theme.name"
+ln -nsf "\$CURRENT/theme/backgrounds/0-liftoff.webp" "\$CURRENT/background"
 
 # Seed one previously-read row so the unchanged first-run rule treats the live
 # rig responses as new. The real service still loads and rewrites this record.
