@@ -2,6 +2,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+// Qt 6.12 adds its own Color type, so Omarchy's palette singleton must be
+// qualified (docs/omarchy-shell.md, Theme tokens).
+import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -326,7 +329,7 @@ Panel {
               Text {
                 text: "LISTENING POST"
                 textFormat: Text.PlainText
-                color: root.bar ? root.bar.foreground : Color.foreground
+                color: root.bar ? root.bar.foreground : Commons.Color.foreground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
                 font.bold: true
@@ -366,7 +369,7 @@ Panel {
                 // and a reader sees a sentence that stops mid-word.
                 width: parent.width
                 wrapMode: Text.WordWrap
-                color: root.bar ? Qt.darker(root.bar.foreground, 1.4) : Color.muted
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.4) : Commons.Color.muted
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
                 font.letterSpacing: 1
@@ -393,7 +396,7 @@ Panel {
                 anchors.bottom: parent.bottom
                 text: rowItem.isHeader ? rowItem.modelData.text : ""
                 leftPadding: Style.space(16)
-                foreground: root.bar ? root.bar.foreground : Color.foreground
+                foreground: root.bar ? root.bar.foreground : Commons.Color.foreground
                 fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
               }
 
@@ -403,7 +406,7 @@ Panel {
                 anchors.leftMargin: Style.space(8)
                 anchors.rightMargin: Style.space(8)
                 radius: Style.cornerRadius
-                color: root.bar ? root.bar.foreground : Color.foreground
+                color: root.bar ? root.bar.foreground : Commons.Color.foreground
                 opacity: 0.12
               }
 
@@ -433,7 +436,7 @@ Panel {
                   text: "●"
                   textFormat: Text.PlainText
                   anchors.verticalCenter: parent.verticalCenter
-                  color: root.bar ? root.bar.urgent : Color.urgent
+                  color: root.bar ? root.bar.urgent : Commons.Color.urgent
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                 }
@@ -444,7 +447,7 @@ Panel {
                   width: Math.min(implicitWidth, contentColumn.width * 0.25)
                   elide: Text.ElideRight
                   anchors.verticalCenter: parent.verticalCenter
-                  color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
+                  color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Commons.Color.muted
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
                   font.pixelSize: Style.font.bodySmall
                   // The personalization dot of honor: vendors whose agents
@@ -457,7 +460,7 @@ Panel {
                   textFormat: Text.PlainText
                   anchors.verticalCenter: parent.verticalCenter
                   color: {
-                    if (!root.bar) return Color.foreground
+                    if (!root.bar) return Commons.Color.foreground
                     if (rowItem.isHot) return root.bar.foreground
                     return rowItem.modelData.read
                       ? Qt.darker(root.bar.foreground, 1.45)
@@ -482,7 +485,7 @@ Panel {
                 text: rowItem.isBrief ? rowItem.modelData.reason : ""
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
-                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Commons.Color.muted
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
               }
@@ -497,7 +500,7 @@ Panel {
                 textFormat: Text.PlainText
                 width: Math.min(implicitWidth, contentColumn.width * 0.15)
                 elide: Text.ElideRight
-                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+                color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Commons.Color.muted
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
               }
@@ -513,7 +516,7 @@ Panel {
             textFormat: Text.PlainText
             width: parent.width - Style.space(32)
             wrapMode: Text.WordWrap
-            color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Color.muted
+            color: root.bar ? Qt.darker(root.bar.foreground, 1.35) : Commons.Color.muted
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.body
           }
@@ -523,7 +526,7 @@ Panel {
             width: parent.width
             spacing: Style.space(2)
 
-            PanelSeparator { foreground: root.bar ? root.bar.foreground : Color.foreground }
+            PanelSeparator { foreground: root.bar ? root.bar.foreground : Commons.Color.foreground }
 
             Text {
               anchors.left: parent.left
@@ -532,7 +535,7 @@ Panel {
               textFormat: Text.PlainText
               width: parent.width - Style.space(32)
               wrapMode: Text.WordWrap
-              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Commons.Color.muted
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -546,7 +549,7 @@ Panel {
               textFormat: Text.PlainText
               width: parent.width - Style.space(32)
               wrapMode: Text.WordWrap
-              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Color.muted
+              color: root.bar ? Qt.darker(root.bar.foreground, 1.45) : Commons.Color.muted
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
             }
